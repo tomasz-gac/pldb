@@ -1,13 +1,10 @@
 package com.tgac.pldb.relations;
-import com.tgac.functional.Functions;
+import com.tgac.functional.recursion.Recur;
 import com.tgac.logic.Goal;
 import com.tgac.logic.LVal;
 import com.tgac.logic.MiniKanren;
 import com.tgac.logic.Unifiable;
 import com.tgac.pldb.Database;
-import com.tgac.pldb.events.DatabaseEventListener;
-import com.tgac.pldb.events.FactsChanged;
-import com.tgac.functional.recursion.Recur;
 import io.vavr.collection.Array;
 import lombok.Value;
 
@@ -59,12 +56,5 @@ public class RelationN implements Relation {
 
 	public Fact apply(Object... vs) {
 		return Fact.of(this, Array.of(vs));
-	}
-
-	public DatabaseEventListener listener(Functions._2<FactsChanged, Object[], DatabaseEventListener> listener){
-		return e -> e.asFactsChanged()
-				.filter(fc -> fc.getFact().getRelation().equals(this))
-				.map(fc -> listener.apply(fc, fc.getFact().getValues().toJavaArray()))
-				.orElseGet(() -> listener(listener));
 	}
 }

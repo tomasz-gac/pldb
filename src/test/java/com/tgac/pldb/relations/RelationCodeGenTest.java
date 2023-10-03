@@ -21,27 +21,29 @@ public class RelationCodeGenTest {
 				.just(List.of(
 						"",
 						"",
-						"import com.tgac.monads.functional.Consumers;",
-						"import com.tgac.monads.functional.Functions;",
-						"import com.tgac.monads.functional.Numbers;",
-						"import com.tgac.monads.functional.Tuples;",
+						"import com.tgac.functional.Consumers;",
+						"import com.tgac.functional.Functions;",
+						"import com.tgac.functional.Numbers;",
+						"import com.tgac.functional.Tuples;",
 						"import com.tgac.logic.Goal;",
 						"import com.tgac.logic.LVal;",
+						"import com.tgac.logic.LVar;",
 						"import com.tgac.logic.Unifiable;",
 						"import com.tgac.pldb.Database;",
 						"import com.tgac.pldb.events.DatabaseEventListener;",
-						"import com.tgac.pldb.events.FactChangedEvent;",
+						"import com.tgac.pldb.events.DatabaseChange;",
 						"import io.vavr.collection.Array;",
 						"import io.vavr.collection.Seq;",
-						"import io.vavr.control.Validation;",
+						"import io.vavr.control.Try;",
 						"import lombok.AccessLevel;",
 						"import lombok.NoArgsConstructor;",
 						"import lombok.RequiredArgsConstructor;",
 						"import lombok.Value;",
+						"import java.util.Optional;",
 						"",
 						"import java.util.stream.Collectors;",
 						"",
-						"import static com.tgac.monads.functional.Tuples.tuple;",
+						"import static com.tgac.functional.Tuples.tuple;",
 						"import static com.tgac.logic.LVar.lvar;",
 						"",
 						"",
@@ -74,7 +76,7 @@ public class RelationCodeGenTest {
 	}
 	@Test
 	public void shouldGenerateRelation() {
-		int n = 0;
+		int n = 2;
 		String code = generateRelation(n, 10)
 				.collect(Collectors.joining("\n"));
 		System.out.println(code);
@@ -120,31 +122,50 @@ public class RelationCodeGenTest {
 						.append("public String toString()")
 						.appendAll(codeBlock("return name + properties;"))
 						.append(""))
-				.map(l -> generateObserver(n, l).append(""))
 				.map(l -> n < maxN - 1 ? generateDerivedRelationBuilder(n, l) : l)
 				.apply(Function.identity());
 	}
+	private static List<String> generateFunctionApply(int n, List<String> l) {
+		return l.append(format("public Goal apply(Database db, Functions._%s%s f)",
+						n, genericsList(genericNames("T", n)
+								.map(s -> "Unifiable<" + s + ">")
+								.append("Goal"))))
+				.appendAll(codeBlock(
+						List.of(format("Tuples._%s%s vars = Tuples.tuple(%s);",
+										n, genericsList(genericNames("T", n)
+												.map(s -> "Unifiable<" + s + ">")),
+										range(0, n).map(i -> "LVar.lvar()").collect(Collectors.joining(", "))))
+								.append(format("return vars.apply(f).and(RelationN.relation(%s));",
+										List.of("db", "this")
+												.appendAll(genericNames("vars._", n))
+												.collect(Collectors.joining(", "))))));
+	}
+
+	//	public Goal apply(Database db, Functions._2<Unifiable<T0>, Unifiable<T1>, Goal> f){
+	//		Tuples._2<Unifiable<T0>, Unifiable<T1>> vars = tuple(LVar.lvar(), LVar.lvar());
+	//		return vars.apply(f).and(apply(db, vars._0, vars._1));
+	//	}
 
 	private static List<String> generateObserver(int n, List<String> l) {
 		return l.append("@SuppressWarnings(\"unchecked\")")
-				.append(format("public DatabaseEventListener observer(FactChangedEvent event, Consumers._%s%s l)",
+				.append(format("public DatabaseEventListener observer(DatabaseChange kind, Consumers._%s%s l)",
 						n, genericsList(genericNames("T", n))))
 				.appendAll(codeBlock(List.of(
-						"return e -> e.asFactsChanged()",
+						"return e -> Optional.of(e)",
 						"\t\t.filter(f -> f.getFact().getRelation().equals(this))",
-						"\t\t.filter(f -> f.getEvent().equals(event))",
+						"\t\t.filter(f -> f.getKind().equals(kind))",
 						format("\t\t.map(f -> %s)",
 								codeBlock(List.of(format("l.accept(%s);",
 												range(0, n)
 														.map(i -> format("(T%s) f.getFact().getValues().get(%s)", i, i))
 														.collect(Collectors.joining(", "))),
-										"return observer(event, l);")).collect(Collectors.joining("\n"))),
-						"\t\t.orElseGet(() -> observer(event, l));")));
+										"return observer(kind, l);")).collect(Collectors.joining("\n"))),
+						"\t\t.orElseGet(() -> observer(kind, l));")));
 	}
 
 	private static List<String> generateDerivedRelationBuilder(int n, List<String> l) {
 		return l.append(format(
-						"public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._%s%s goal)",
+						"public Functions._1<Database, Try<Database>> derived(Functions._%s%s goal)",
 						n + 1, genericsList(List.of("Database")
 								.appendAll(genericNames("T", n)
 										.map(v -> "Unifiable<" + v + ">"))

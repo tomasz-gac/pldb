@@ -27,7 +27,7 @@ public class ImmutableDatabaseTest {
 	private static final Relations._2<String, String> parent = relation("parent", name, child);
 
 	private static Database loadGeneology(Database db) {
-		return db.facts(Arrays.asList(
+		return db.withFacts(Arrays.asList(
 						man.fact("Michał"),
 						man.fact("Franciszek"),
 						man.fact("Czesław"),

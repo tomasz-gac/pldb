@@ -1,5 +1,4 @@
 package com.tgac.pldb;
-import com.tgac.functional.exceptions.Exceptions;
 import com.tgac.logic.Goal;
 import com.tgac.logic.Goals;
 import com.tgac.logic.LList;
@@ -15,7 +14,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -45,7 +43,7 @@ public class DatabaseWithRelationsTest {
 			Relations.relation("parent", parentId.indexed(), childId.indexed());
 
 	private static Database loadGeneology(Database db) {
-		return db.facts(Arrays.asList(
+		return db.withFacts(Arrays.asList(
 						person.fact(1, "Michał", "Gac", Gender.MALE),
 						person.fact(2, "Franciszek", "Żyduch", Gender.MALE),
 						person.fact(3, "Czesław", "Kroc", Gender.MALE),
@@ -67,10 +65,8 @@ public class DatabaseWithRelationsTest {
 						person.fact(20, "Magda", "Gac", Gender.FEMALE),
 						person.fact(21, "Weronika", "Kroc", Gender.FEMALE),
 						person.fact(22, "Monika", "Kroc", Gender.FEMALE)))
-				.mapError(e -> new RuntimeException(e.collect(Collectors.joining(","))))
-				.toEither()
-				.fold(Exceptions::throwNow, Function.identity())
-				.facts(Arrays.asList(
+				.get()
+				.withFacts(Arrays.asList(
 						parent.fact(10, 11),
 						parent.fact(1, 5),
 						parent.fact(12, 5),
@@ -92,9 +88,7 @@ public class DatabaseWithRelationsTest {
 						parent.fact(6, 19),
 						parent.fact(6, 22),
 						parent.fact(22, 21)))
-				.mapError(e -> new RuntimeException(e.collect(Collectors.joining(", "))))
-				.toEither()
-				.fold(Exceptions::throwNow, Function.identity());
+				.get();
 	}
 
 	private static final Database idb = loadGeneology(ImmutableDatabase.empty());

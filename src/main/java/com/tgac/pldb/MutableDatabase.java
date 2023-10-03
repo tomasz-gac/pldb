@@ -1,7 +1,5 @@
 package com.tgac.pldb;
 import com.tgac.logic.LVal;
-import com.tgac.pldb.events.DatabaseEvent;
-import com.tgac.pldb.events.DatabaseEventListener;
 import com.tgac.pldb.index.Index;
 import com.tgac.pldb.index.MutableIndex;
 import com.tgac.pldb.relations.Fact;
@@ -9,8 +7,6 @@ import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import io.vavr.control.Option;
-import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,11 +21,10 @@ import java.util.stream.Stream;
 @ToString
 public class MutableDatabase extends AbstractIndexedDatabase {
 	private final MutableIndex<Tuple2<Integer, Object>, Set<IndexedSeq<Object>>> index = new MutableIndex<>();
-	@Getter(AccessLevel.PROTECTED)
-	private final List<DatabaseEventListener> listeners = new ArrayList<>();
+	private final List<Trigger> triggers = new ArrayList<>();
 
 	@Override
-	protected AbstractIndexedDatabase fact(Fact f) {
+	protected AbstractIndexedDatabase withFact(Fact f) {
 		createIndexPaths(f)
 				.flatMap(index::createPath)
 				.forEach(index ->
@@ -43,11 +38,15 @@ public class MutableDatabase extends AbstractIndexedDatabase {
 	}
 
 	@Override
-	protected AbstractIndexedDatabase retract(Fact fact) {
+	protected AbstractIndexedDatabase withoutFact(Fact fact) {
 		index.remove(getIndices(fact.getRelation(), fact.getValues()
 				.map(LVal::lval))
 				.collect(Array.collector()));
 		return this;
+	}
+	@Override
+	protected Stream<Trigger> getTriggers() {
+		return triggers.stream();
 	}
 
 	@Override
@@ -57,13 +56,8 @@ public class MutableDatabase extends AbstractIndexedDatabase {
 				.getOrElse(Collections::emptySet);
 	}
 	@Override
-	public Database observe(DatabaseEventListener handler) {
-		listeners.add(handler);
+	public Database withTrigger(Trigger trigger) {
+		triggers.add(trigger);
 		return this;
-	}
-
-	@Override
-	protected void notify(DatabaseEvent e){
-		listeners.forEach(l -> l.accept(e));
 	}
 }

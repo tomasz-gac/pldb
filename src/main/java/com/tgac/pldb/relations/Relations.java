@@ -1,6 +1,5 @@
 package com.tgac.pldb.relations;
 
-import com.tgac.functional.Consumers;
 import com.tgac.functional.Functions;
 import com.tgac.functional.Numbers;
 import com.tgac.functional.Tuples;
@@ -8,11 +7,8 @@ import com.tgac.logic.Goal;
 import com.tgac.logic.LVal;
 import com.tgac.logic.Unifiable;
 import com.tgac.pldb.Database;
-import com.tgac.pldb.events.DatabaseEventListener;
-import com.tgac.pldb.events.FactChangedEvent;
 import io.vavr.collection.Array;
-import io.vavr.collection.Seq;
-import io.vavr.control.Validation;
+import io.vavr.control.Try;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -25,116 +21,116 @@ import static com.tgac.logic.LVar.lvar;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Relations {
-	public static _0 relation(String name) {
-		return new _0(name, tuple());
+	public static Relations._0 relation(String name) {
+		return new Relations._0(name, tuple());
 	}
-	public static <T0> _1<T0> relation(String name, Property<T0> v0) {
-		return new _1<>(name, tuple(v0));
+	public static <T0> Relations._1<T0> relation(String name, Property<T0> v0) {
+		return new Relations._1<>(name, tuple(v0));
 	}
-	public static <T0, T1> _2<T0, T1> relation(String name, Property<T0> v0, Property<T1> v1) {
-		return new _2<>(name, tuple(v0, v1));
+	public static <T0, T1> Relations._2<T0, T1> relation(String name, Property<T0> v0, Property<T1> v1) {
+		return new Relations._2<>(name, tuple(v0, v1));
 	}
-	public static <T0, T1, T2> _3<T0, T1, T2> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2) {
-		return new _3<>(name, tuple(v0, v1, v2));
+	public static <T0, T1, T2> Relations._3<T0, T1, T2> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2) {
+		return new Relations._3<>(name, tuple(v0, v1, v2));
 	}
-	public static <T0, T1, T2, T3> _4<T0, T1, T2, T3> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3) {
-		return new _4<>(name, tuple(v0, v1, v2, v3));
+	public static <T0, T1, T2, T3> Relations._4<T0, T1, T2, T3> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3) {
+		return new Relations._4<>(name, tuple(v0, v1, v2, v3));
 	}
-	public static <T0, T1, T2, T3, T4> _5<T0, T1, T2, T3, T4> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4) {
-		return new _5<>(name, tuple(v0, v1, v2, v3, v4));
+	public static <T0, T1, T2, T3, T4> Relations._5<T0, T1, T2, T3, T4> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4) {
+		return new Relations._5<>(name, tuple(v0, v1, v2, v3, v4));
 	}
-	public static <T0, T1, T2, T3, T4, T5> _6<T0, T1, T2, T3, T4, T5> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
+	public static <T0, T1, T2, T3, T4, T5> Relations._6<T0, T1, T2, T3, T4, T5> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
 			Property<T5> v5) {
-		return new _6<>(name, tuple(v0, v1, v2, v3, v4, v5));
+		return new Relations._6<>(name, tuple(v0, v1, v2, v3, v4, v5));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6> _7<T0, T1, T2, T3, T4, T5, T6> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
+	public static <T0, T1, T2, T3, T4, T5, T6> Relations._7<T0, T1, T2, T3, T4, T5, T6> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
 			Property<T5> v5, Property<T6> v6) {
-		return new _7<>(name, tuple(v0, v1, v2, v3, v4, v5, v6));
+		return new Relations._7<>(name, tuple(v0, v1, v2, v3, v4, v5, v6));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7> _8<T0, T1, T2, T3, T4, T5, T6, T7> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7> Relations._8<T0, T1, T2, T3, T4, T5, T6, T7> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3,
 			Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7) {
-		return new _8<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7));
+		return new Relations._8<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8> _9<T0, T1, T2, T3, T4, T5, T6, T7, T8> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8> Relations._9<T0, T1, T2, T3, T4, T5, T6, T7, T8> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3,
 			Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8) {
-		return new _9<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8));
+		return new Relations._9<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> _10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> Relations._10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2,
 			Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9) {
-		return new _10<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9));
+		return new Relations._10<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> _11<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Relations._11<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2,
 			Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10) {
-		return new _11<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10));
+		return new Relations._11<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> _12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> relation(String name, Property<T0> v0, Property<T1> v1,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Relations._12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> relation(String name, Property<T0> v0, Property<T1> v1,
 			Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10, Property<T11> v11) {
-		return new _12<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11));
+		return new Relations._12<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> _13<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> relation(String name, Property<T0> v0, Property<T1> v1,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Relations._13<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> relation(String name, Property<T0> v0, Property<T1> v1,
 			Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10, Property<T11> v11,
 			Property<T12> v12) {
-		return new _13<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12));
+		return new Relations._13<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> _14<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> relation(String name, Property<T0> v0,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Relations._14<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> relation(String name, Property<T0> v0,
 			Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10,
 			Property<T11> v11, Property<T12> v12, Property<T13> v13) {
-		return new _14<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13));
+		return new Relations._14<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> _15<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> relation(String name,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Relations._15<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> relation(String name,
 			Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10,
 			Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14) {
-		return new _15<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14));
+		return new Relations._15<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> _16<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> relation(String name,
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Relations._16<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> relation(String name,
 			Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9, Property<T10> v10,
 			Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15) {
-		return new _16<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15));
+		return new Relations._16<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> _17<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> Relations._17<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16) {
-		return new _17<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16));
+		return new Relations._17<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> _18<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> Relations._18<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17) {
-		return new _18<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17));
+		return new Relations._18<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> _19<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> Relations._19<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18) {
-		return new _19<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18));
+		return new Relations._19<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> _20<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> Relations._20<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18,
 			Property<T19> v19) {
-		return new _20<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19));
+		return new Relations._20<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> _21<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> Relations._21<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18,
 			Property<T19> v19, Property<T20> v20) {
-		return new _21<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20));
+		return new Relations._21<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> _22<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> Relations._22<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18,
 			Property<T19> v19, Property<T20> v20, Property<T21> v21) {
-		return new _22<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21));
+		return new Relations._22<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> _23<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> Relations._23<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18,
 			Property<T19> v19, Property<T20> v20, Property<T21> v21, Property<T22> v22) {
-		return new _23<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22));
+		return new Relations._23<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22));
 	}
-	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> _24<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> relation(
+	public static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> Relations._24<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> relation(
 			String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7, Property<T8> v8, Property<T9> v9,
 			Property<T10> v10, Property<T11> v11, Property<T12> v12, Property<T13> v13, Property<T14> v14, Property<T15> v15, Property<T16> v16, Property<T17> v17, Property<T18> v18,
 			Property<T19> v19, Property<T20> v20, Property<T21> v21, Property<T22> v22, Property<T23> v23) {
-		return new _24<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23));
+		return new Relations._24<>(name, tuple(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23));
 	}
 	@Value
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -159,21 +155,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._0 l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept();
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._1<Database, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._1<Database, Goal> goal) {
 			Unifiable<Tuples._0> results = LVal.lval(tuple());
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.apply(this::fact))
 					.collect(Collectors.toList()));
@@ -203,21 +187,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._1<T0> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._2<Database, Unifiable<T0>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._2<Database, Unifiable<T0>, Goal> goal) {
 			Unifiable<Tuples._1<Unifiable<T0>>> results = LVal.lval(tuple(lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.apply(this::fact))
@@ -248,21 +220,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._2<T0, T1> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._3<Database, Unifiable<T0>, Unifiable<T1>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._3<Database, Unifiable<T0>, Unifiable<T1>, Goal> goal) {
 			Unifiable<Tuples._2<Unifiable<T0>, Unifiable<T1>>> results = LVal.lval(tuple(lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -294,21 +254,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._3<T0, T1, T2> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._4<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._4<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal> goal) {
 			Unifiable<Tuples._3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>>> results = LVal.lval(tuple(lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -341,21 +289,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._4<T0, T1, T2, T3> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._5<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._5<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal> goal) {
 			Unifiable<Tuples._4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>>> results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -389,22 +325,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._5<T0, T1, T2, T3, T4> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(Functions._6<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._6<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal> goal) {
 			Unifiable<Tuples._5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>>> results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -439,23 +362,9 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._6<T0, T1, T2, T3, T4, T5> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
-				Functions._7<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal> goal) {
+		public Functions._1<Database, Try<Database>> derived(Functions._7<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal> goal) {
 			Unifiable<Tuples._6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>>> results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -491,24 +400,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._7<T0, T1, T2, T3, T4, T5, T6> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._8<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal> goal) {
 			Unifiable<Tuples._7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>>> results =
 					LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -545,24 +441,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._8<T0, T1, T2, T3, T4, T5, T6, T7> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._9<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal> goal) {
 			Unifiable<Tuples._8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>>> results =
 					LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -601,25 +484,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._9<T0, T1, T2, T3, T4, T5, T6, T7, T8> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._10<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Goal> goal) {
 			Unifiable<Tuples._9<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>>> results =
 					LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -659,25 +528,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._11<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Goal> goal) {
 			Unifiable<Tuples._10<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>>> results =
 					LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -719,25 +574,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._11<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._12<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Goal> goal) {
 			Unifiable<Tuples._11<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -780,25 +621,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._12<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._13<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Goal> goal) {
 			Unifiable<Tuples._12<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -843,26 +670,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._13<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._14<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Goal> goal) {
 			Unifiable<Tuples._13<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -908,26 +720,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._14<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._15<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Goal> goal) {
 			Unifiable<Tuples._14<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -974,26 +771,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._15<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._16<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Goal> goal) {
 			Unifiable<Tuples._15<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1041,26 +823,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._16<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._17<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Goal> goal) {
 			Unifiable<Tuples._16<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1109,27 +876,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._17<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._18<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Goal> goal) {
 			Unifiable<Tuples._17<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1179,27 +930,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._18<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._19<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Goal> goal) {
 			Unifiable<Tuples._18<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1251,27 +986,11 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._19<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._20<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Goal> goal) {
 			Unifiable<Tuples._19<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>>>
 					results = LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1324,28 +1043,12 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._20<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18), (T19) f.getFact().getValues().get(19));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._21<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Goal> goal) {
 			Unifiable<Tuples._20<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>>>
 					results =
 					LVal.lval(tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1399,29 +1102,12 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._21<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18), (T19) f.getFact().getValues().get(19),
-								(T20) f.getFact().getValues().get(20));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._22<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>, Goal> goal) {
 			Unifiable<Tuples._21<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>>>
 					results = LVal.lval(
 					tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1478,30 +1164,13 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._22<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18), (T19) f.getFact().getValues().get(19),
-								(T20) f.getFact().getValues().get(20), (T21) f.getFact().getValues().get(21));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._23<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>, Unifiable<T21>, Goal> goal) {
 			Unifiable<Tuples._22<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>, Unifiable<T21>>>
 					results = LVal.lval(
 					tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(),
 							lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1559,30 +1228,13 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._23<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18), (T19) f.getFact().getValues().get(19),
-								(T20) f.getFact().getValues().get(20), (T21) f.getFact().getValues().get(21), (T22) f.getFact().getValues().get(22));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
-		}
-
-		public Functions._1<Database, Validation<Seq<String>, Database>> derived(
+		public Functions._1<Database, Try<Database>> derived(
 				Functions._24<Database, Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>, Unifiable<T21>, Unifiable<T22>, Goal> goal) {
 			Unifiable<Tuples._23<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Unifiable<T8>, Unifiable<T9>, Unifiable<T10>, Unifiable<T11>, Unifiable<T12>, Unifiable<T13>, Unifiable<T14>, Unifiable<T15>, Unifiable<T16>, Unifiable<T17>, Unifiable<T18>, Unifiable<T19>, Unifiable<T20>, Unifiable<T21>, Unifiable<T22>>>
 					results = LVal.lval(
 					tuple(lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(), lvar(),
 							lvar(), lvar()));
-			return db -> db.facts(Goal.runStream(results, results.get().apply(goal.partial(db)))
+			return db -> db.withFacts(Goal.runStream(results, results.get().apply(goal.partial(db)))
 					.map(Unifiable::get)
 					.map(t -> t.map(Numbers._0(), Unifiable::get))
 					.map(t -> t.map(Numbers._1(), Unifiable::get))
@@ -1639,23 +1291,6 @@ public class Relations {
 		@Override
 		public String toString() {
 			return name + properties;
-		}
-
-		@SuppressWarnings("unchecked")
-		public DatabaseEventListener observer(FactChangedEvent event, Consumers._24<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> l) {
-			return e -> e.asFactsChanged()
-					.filter(f -> f.getFact().getRelation().equals(this))
-					.filter(f -> f.getEvent().equals(event))
-					.map(f -> {
-						l.accept((T0) f.getFact().getValues().get(0), (T1) f.getFact().getValues().get(1), (T2) f.getFact().getValues().get(2), (T3) f.getFact().getValues().get(3),
-								(T4) f.getFact().getValues().get(4), (T5) f.getFact().getValues().get(5), (T6) f.getFact().getValues().get(6), (T7) f.getFact().getValues().get(7),
-								(T8) f.getFact().getValues().get(8), (T9) f.getFact().getValues().get(9), (T10) f.getFact().getValues().get(10), (T11) f.getFact().getValues().get(11),
-								(T12) f.getFact().getValues().get(12), (T13) f.getFact().getValues().get(13), (T14) f.getFact().getValues().get(14), (T15) f.getFact().getValues().get(15),
-								(T16) f.getFact().getValues().get(16), (T17) f.getFact().getValues().get(17), (T18) f.getFact().getValues().get(18), (T19) f.getFact().getValues().get(19),
-								(T20) f.getFact().getValues().get(20), (T21) f.getFact().getValues().get(21), (T22) f.getFact().getValues().get(22), (T23) f.getFact().getValues().get(23));
-						return observer(event, l);
-					})
-					.orElseGet(() -> observer(event, l));
 		}
 
 	}

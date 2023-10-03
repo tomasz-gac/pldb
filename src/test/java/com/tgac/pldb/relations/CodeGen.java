@@ -1,6 +1,6 @@
 package com.tgac.pldb.relations;
 
-import com.tgac.monads.functional.Functions;
+import com.tgac.functional.Functions;
 import io.vavr.Predicates;
 import io.vavr.collection.List;
 import lombok.AccessLevel;

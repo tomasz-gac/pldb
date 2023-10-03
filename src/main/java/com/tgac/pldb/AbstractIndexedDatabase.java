@@ -2,8 +2,6 @@ package com.tgac.pldb;
 import com.tgac.functional.Streams;
 import com.tgac.logic.LVal;
 import com.tgac.logic.Unifiable;
-import com.tgac.pldb.events.DatabaseEvent;
-import com.tgac.pldb.events.FactChangedEvent;
 import com.tgac.pldb.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
@@ -11,11 +9,11 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
-import io.vavr.collection.Seq;
 import io.vavr.control.Option;
-import io.vavr.control.Validation;
+import io.vavr.control.Try;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,13 +23,14 @@ import static com.tgac.functional.exceptions.Exceptions.throwingBiOp;
 
 @Slf4j
 public abstract class AbstractIndexedDatabase implements Database {
+
 	protected abstract Iterable<IndexedSeq<Object>> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices);
 
-	protected abstract AbstractIndexedDatabase fact(Fact fact);
+	protected abstract AbstractIndexedDatabase withFact(Fact fact);
 
-	protected abstract AbstractIndexedDatabase retract(Fact fact);
+	protected abstract AbstractIndexedDatabase withoutFact(Fact fact);
 
-	protected abstract void notify(DatabaseEvent event);
+	protected abstract Stream<Trigger> getTriggers();
 
 	@SuppressWarnings("Convert2MethodRef")
 	private Stream<IndexedSeq<Integer>> indexSelector(IndexedSeq<Integer> indexSeq) {
@@ -45,31 +44,25 @@ public abstract class AbstractIndexedDatabase implements Database {
 	}
 
 	@Override
-	public Validation<Seq<String>, Database> facts(List<Fact> facts) {
-		AbstractIndexedDatabase result = facts.stream()
+	public Try<Database> withFacts(List<Fact> facts) {
+		Database updated = facts.stream()
 				.reduce(this,
-						AbstractIndexedDatabase::fact,
+						AbstractIndexedDatabase::withFact,
 						throwingBiOp(UnsupportedOperationException::new));
 
-		facts.stream()
-				.map(f -> FactsChanged.of(f, FactChangedEvent.FACT_ADDED))
-				.forEach(this::notify);
-
-		return Validation.valid(result);
+		return processTriggers(updated,
+				FactsChanged.of(facts, Collections.emptyList()));
 	}
 
 	@Override
-	public Validation<Seq<String>, Database> retract(List<Fact> facts){
-		AbstractIndexedDatabase result = facts.stream()
+	public Try<Database> withoutFacts(List<Fact> facts) {
+		Database updated = facts.stream()
 				.reduce(this,
-						AbstractIndexedDatabase::retract,
+						AbstractIndexedDatabase::withoutFact,
 						throwingBiOp(UnsupportedOperationException::new));
 
-		facts.stream()
-				.map(f -> FactsChanged.of(f, FactChangedEvent.FACT_REMOVED))
-				.forEach(this::notify);
-
-		return Validation.valid(result);
+		return processTriggers(updated,
+				FactsChanged.of(Collections.emptyList(), facts));
 	}
 
 	@Override
@@ -118,4 +111,10 @@ public abstract class AbstractIndexedDatabase implements Database {
 				.isDefined();
 	}
 
+	private Try<Database> processTriggers(Database updated, FactsChanged event) {
+		return getTriggers()
+				.reduce(Try.success(updated),
+						(db, trigger) -> db.flatMap(v -> trigger.apply(event, v)),
+						throwingBiOp(UnsupportedOperationException::new));
+	}
 }
