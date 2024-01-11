@@ -1,18 +1,20 @@
 package com.tgac.pldb.relations;
 import com.tgac.functional.recursion.Recur;
-import com.tgac.logic.Goal;
-import com.tgac.logic.LVal;
-import com.tgac.logic.MiniKanren;
-import com.tgac.logic.Unifiable;
+import com.tgac.logic.*;
+import com.tgac.logic.unification.LVal;
+import com.tgac.logic.unification.MiniKanren;
+import com.tgac.logic.unification.Package;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import io.vavr.collection.Array;
+import io.vavr.control.Option;
 import lombok.Value;
 
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.tgac.logic.Incomplete.incomplete;
-import static com.tgac.logic.LVal.lval;
+import static com.tgac.logic.unification.LVal.lval;
 
 @Value
 public class RelationN implements Relation {
@@ -38,18 +40,24 @@ public class RelationN implements Relation {
 						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
 	}
 
-	private static Recur<Array<Unifiable<?>>> substituteQueryItems(MiniKanren.Substitutions s, Array<Unifiable<?>> query) {
+	private static Recur<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
 		return query.toJavaStream()
-				.map(u -> MiniKanren.walk(s, u).map(Stream::of))
+				.map(u -> MiniKanren.walk(s, u))
+				.map(Stream::of)
+				.map(Recur::done)
 				.reduce((acc, c) -> Recur.zip(acc, c).map(t -> t.apply(Stream::concat)))
 				.orElseGet(() -> Recur.done(Stream.empty()))
 				.map(q -> q.collect(Array.collector()));
 	}
 
 	private static Goal unifyQueryResults(Database db, Relation rel, Array<Unifiable<?>> query) {
-		return StreamSupport.stream(db.get(rel, query).spliterator(), false)
-				.map(seq -> lval(seq.map(Object.class::cast).map(LVal::lval)).unify(
-						query.map(Unifiable::getObjectUnifiable)))
+		return StreamSupport.stream(db.get(rel, query
+								.map(Unifiable::getObjectUnifiable)
+								.map(Unifiable::asVal)
+								.map(Option::toJavaOptional))
+						.spliterator(), false)
+				.map(fact -> lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
+						.unify(query.map(Unifiable::getObjectUnifiable)))
 				.reduce(Goal::or)
 				.orElseGet(Goal::failure);
 	}

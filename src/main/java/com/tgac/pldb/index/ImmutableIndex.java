@@ -1,6 +1,6 @@
 package com.tgac.pldb.index;
 import com.tgac.functional.Streams;
-import com.tgac.functional.exceptions.Exceptions;
+import com.tgac.functional.Exceptions;
 import com.tgac.functional.recursion.Recur;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;

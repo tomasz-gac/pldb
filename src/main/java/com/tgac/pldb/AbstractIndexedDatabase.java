@@ -1,7 +1,9 @@
 package com.tgac.pldb;
 import com.tgac.functional.Streams;
-import com.tgac.logic.LVal;
-import com.tgac.logic.Unifiable;
+import com.tgac.logic.unification.LVal;
+import com.tgac.logic.unification.LVar;
+import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.events.ChangeType;
 import com.tgac.pldb.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
@@ -13,18 +15,18 @@ import io.vavr.control.Option;
 import io.vavr.control.Try;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.tgac.functional.exceptions.Exceptions.throwingBiOp;
+import static com.tgac.functional.Exceptions.throwingBiOp;
 
 @Slf4j
 public abstract class AbstractIndexedDatabase implements Database {
 
-	protected abstract Iterable<IndexedSeq<Object>> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices);
+	protected abstract Iterable<Fact> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices);
 
 	protected abstract AbstractIndexedDatabase withFact(Fact fact);
 
@@ -51,7 +53,7 @@ public abstract class AbstractIndexedDatabase implements Database {
 						throwingBiOp(UnsupportedOperationException::new));
 
 		return processTriggers(updated,
-				FactsChanged.of(facts, Collections.emptyList()));
+				FactsChanged.of(ChangeType.ADDED, facts));
 	}
 
 	@Override
@@ -62,12 +64,12 @@ public abstract class AbstractIndexedDatabase implements Database {
 						throwingBiOp(UnsupportedOperationException::new));
 
 		return processTriggers(updated,
-				FactsChanged.of(Collections.emptyList(), facts));
+				FactsChanged.of(ChangeType.REMOVED, facts));
 	}
 
 	@Override
-	public Iterable<IndexedSeq<Object>> get(Relation relation, IndexedSeq<Unifiable<?>> query) {
-		Iterable<IndexedSeq<Object>> result = extractDataFromIndex(getIndices(relation, query));
+	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> query) {
+		Iterable<Fact> result = extractDataFromIndex(getIndices(relation, query.map(o -> o.map(LVal::lval).orElseGet(LVar::lvar))));
 		if (log.isDebugEnabled()) {
 			log.debug("{}({}) -> {}", relation,
 					query.toJavaStream()

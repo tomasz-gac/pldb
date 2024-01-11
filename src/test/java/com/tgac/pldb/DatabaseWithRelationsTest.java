@@ -1,17 +1,20 @@
 package com.tgac.pldb;
 import com.tgac.logic.Goal;
 import com.tgac.logic.Goals;
-import com.tgac.logic.LList;
-import com.tgac.logic.Unifiable;
+import com.tgac.logic.unification.LList;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.Predicates;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Stream;
+import io.vavr.control.Try;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -19,8 +22,10 @@ import java.util.stream.StreamSupport;
 
 import static com.tgac.logic.Goal.defer;
 import static com.tgac.logic.Goals.distincto;
-import static com.tgac.logic.LVal.lval;
-import static com.tgac.logic.LVar.lvar;
+import static com.tgac.logic.Goals.llist;
+import static com.tgac.logic.Goals.matche;
+import static com.tgac.logic.unification.LVal.lval;
+import static com.tgac.logic.unification.LVar.lvar;
 import static com.tgac.pldb.relations.Relations.relation;
 import static org.assertj.core.api.Assertions.assertThat;
 public class DatabaseWithRelationsTest {
@@ -91,25 +96,24 @@ public class DatabaseWithRelationsTest {
 				.get();
 	}
 
-	private static final Database idb = loadGeneology(ImmutableDatabase.empty());
-	private static final Database mdb = loadGeneology(new MutableDatabase());
-	private static final Database db = idb;
+	private static final Database db = loadGeneology(ImmutableDatabase.empty());
 
 	@Test
 	public void shouldFindGrandparents() {
 		Unifiable<String> gpName = lvar();
 		Unifiable<String> gpSurname = lvar();
 
-		List<String> result = Goal.runStream(lval(Tuple.of(gpName, gpSurname)),
-						Goals.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
-								person.apply(db, childId, lval("Tomek"), lvar(), lvar())
-										.and(parent.apply(db, parentId, childId))
-										.and(parent.apply(db, gpId, parentId))
-										.and(person.apply(db, gpId, gpName, gpSurname, lvar()))))
-				.map(Unifiable::get)
-				.map(DatabaseWithRelationsTest::concatNameAndSurname)
-				.distinct()
-				.collect(Collectors.toList());
+		List<String> result =
+				Goals.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
+								person.exists(db, childId, lval("Tomek"), lvar(), lvar())
+										.and(parent.exists(db, parentId, childId))
+										.and(parent.exists(db, gpId, parentId))
+										.and(person.exists(db, gpId, gpName, gpSurname, lvar())))
+						.solve(lval(Tuple.of(gpName, gpSurname)))
+						.map(Unifiable::get)
+						.map(DatabaseWithRelationsTest::concatNameAndSurname)
+						.distinct()
+						.collect(Collectors.toList());
 		System.out.println(result);
 		assertThat(result)
 				.containsExactlyInAnyOrder(
@@ -125,13 +129,13 @@ public class DatabaseWithRelationsTest {
 		Unifiable<String> spouseSurname = lvar();
 
 		assertThat(
-				Goal.runStream(lval(Tuple.of(spouseName, spouseSurname)),
-								Goals.<Integer, Integer, Integer> exist(
-										(fatherId, childId, motherId) ->
-												person.apply(db, fatherId, lval("Wiesław"), lvar(), lval(Gender.MALE))
-														.and(parent.apply(db, fatherId, childId),
-																parent.apply(db, motherId, childId),
-																person.apply(db, motherId, spouseName, spouseSurname, lval(Gender.FEMALE)))))
+				Goals.<Integer, Integer, Integer> exist(
+								(fatherId, childId, motherId) ->
+										person.exists(db, fatherId, lval("Wiesław"), lvar(), lval(Gender.MALE))
+												.and(parent.exists(db, fatherId, childId),
+														parent.exists(db, motherId, childId),
+														person.exists(db, motherId, spouseName, spouseSurname, lval(Gender.FEMALE))))
+						.solve(lval(Tuple.of(spouseName, spouseSurname)))
 						.distinct()
 						.map(Unifiable::get)
 						.map(DatabaseWithRelationsTest::concatNameAndSurname))
@@ -148,7 +152,7 @@ public class DatabaseWithRelationsTest {
 
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
 		return Goals.<Integer, LList<Integer>> exist((parentId, rest) ->
-				parent.apply(db, parentId, descendant)
+				parent.exists(db, parentId, descendant)
 						.and(ancestors.unify(LList.of(parentId, rest)))
 						.and(any(defer(() -> ancestors(parentId, rest)),
 								rest.unify(LList.empty()))));
@@ -159,18 +163,18 @@ public class DatabaseWithRelationsTest {
 			Goal> personWithIdNameAndSurname(Database db) {
 		return (id, data) -> Goals.<String, String> exist((name, surname) ->
 				data.unify(Tuple.of(name, surname))
-						.and(person.apply(db, id, name, surname, lvar())));
+						.and(person.exists(db, id, name, surname, lvar())));
 	}
 
 	@Test
 	public void shouldFindAncestors() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> ancestorNames = lvar();
 
-		List<List<String>> result = Goal.runStream(ancestorNames,
-						Goals.<Integer, LList<Integer>> exist((descendantId, l) ->
-								person.apply(db, descendantId, lval("Tomek"), lvar(), lvar())
+		List<List<String>> result = Goals.<Integer, LList<Integer>> exist((descendantId, l) ->
+								person.exists(db, descendantId, lval("Tomek"), lvar(), lvar())
 										.and(ancestors(descendantId, l))
-										.and(LList.map(l, ancestorNames, personWithIdNameAndSurname(db)))))
+										.and(LList.map(l, ancestorNames, personWithIdNameAndSurname(db))))
+				.solve(ancestorNames)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)
 				.collect(Collectors.toList());
@@ -185,23 +189,23 @@ public class DatabaseWithRelationsTest {
 	}
 
 	static Goal line(Unifiable<Integer> ancestor, Unifiable<LList<Integer>> line, Unifiable<Integer> descendant) {
-		return Goals.<Integer, LList<Integer>> exist((lineHead, lineTail) ->
-				line.unify(LList.empty()).and(parent.apply(db, ancestor, descendant))
-						.or(line.unify(LList.of(lineHead, lineTail))
-								.and(parent.apply(db, ancestor, lineHead))
-								.and(defer(() -> line(lineHead, lineTail, descendant)))));
+		return matche(line,
+				llist(() -> parent.exists(db, ancestor, descendant)),
+				llist((head, tail) ->
+						parent.exists(db, ancestor, head)
+								.and(defer(() -> line(head, tail, descendant)))));
 	}
 
 	@Test
 	public void shouldFindLine2() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
-		List<List<String>> result = Goal.runStream(line, Goals.<LList<Integer>, Integer, Integer> exist(
+		List<List<String>> result = Goals.<LList<Integer>, Integer, Integer> exist(
 						(l, descendantId, ancestorId) ->
-								person.apply(db, ancestorId, lval("Aniela"), lvar(), lvar())
-										.and(person.apply(db, descendantId, lval("Tomek"), lvar(), lvar()),
+								person.exists(db, ancestorId, lval("Aniela"), lvar(), lvar())
+										.and(person.exists(db, descendantId, lval("Tomek"), lvar(), lvar()),
 												line(ancestorId, l, descendantId),
-												LList.map(l, line, personWithIdNameAndSurname(db)))
-				))
+												LList.map(l, line, personWithIdNameAndSurname(db))))
+				.solve(line)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)
 				.collect(Collectors.toList());
@@ -214,12 +218,11 @@ public class DatabaseWithRelationsTest {
 			Unifiable<LList<Integer>> line,
 			Unifiable<LList<Integer>> checked) {
 		return distincto(checked)
-				.and(Goals.<Integer, LList<Integer>> exist((lineHead, lineTail) ->
-						line.unify(LList.empty()).and(parent.apply(db, lhs, rhs)
-										.or(parent.apply(db, rhs, lhs)))
-								.or(line.unify(LList.of(lineHead, lineTail))
-										.and(parent.apply(db, lhs, lineHead)
-												.or(parent.apply(db, lineHead, lhs)))
+				.and(matche(line,
+						llist(() -> parent.exists(db, lhs, rhs)),
+						llist((lineHead, lineTail) ->
+								parent.exists(db, lhs, lineHead)
+										.or(parent.exists(db, lineHead, lhs))
 										.and(defer(() -> relativesImpl(lineHead, rhs, lineTail,
 												LList.of(rhs, LList.of(lineHead, checked)))))
 										.and(distincto(line)))));
@@ -232,18 +235,19 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldFindRelatives() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
-		List<List<String>> result = Goal.runStream(line, Goals.<LList<Integer>, Integer, Integer> exist(
+		List<List<String>> result = Goals.<LList<Integer>, Integer, Integer> exist(
 						(l, lhsId, rhsId) ->
 								lhsId.separate(rhsId)
-										.and(person.apply(db, rhsId, lval("Tomek"), lvar(), lvar()))
-										.and(person.apply(db, lhsId, lval("Magda"), lvar(), lvar()),
+										.and(person.exists(db, rhsId, lval("Tomek"), lvar(), lvar()))
+										.and(person.exists(db, lhsId, lval("Magda"), lvar(), lvar()),
 												relatives(rhsId, lhsId, l),
 												Goals.<LList<Integer>> exist(res ->
 														Goals.appendo(LList.of(rhsId, l),
 																		LList.of(lhsId),
 																		res)
 																.and(LList.map(res, line, personWithIdNameAndSurname(db)))))
-										.optimize().get()))
+										.optimize().get())
+				.solve(line)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)
 				.collect(Collectors.toList());
@@ -254,6 +258,36 @@ public class DatabaseWithRelationsTest {
 				.containsExactlyInAnyOrder(
 						Arrays.asList("Tomek Gac", "Arletta Gac", "Magda Gac"),
 						Arrays.asList("Tomek Gac", "Wiesław Gac", "Magda Gac"));
+	}
+
+	@Test
+	public void shouldThrowOnUniqueConstraintViolation() {
+		Try<Database> database = DatabaseWithRelationsTest.db
+				.withConstraint(Constraint.unique(person, id))
+				.withFacts(Collections.singletonList(person.fact(1, "NAME", "SURNAME", Gender.MALE)));
+
+		Assertions.assertThatThrownBy(database::get)
+				.isInstanceOf(RuntimeException.class);
+	}
+
+	@Test
+	public void shouldThrowOnForeignKeyViolationOnAdd() {
+		Try<Database> database = DatabaseWithRelationsTest.db
+				.withConstraint(Constraint.foreignKey(parent, parentId, person, id))
+				.withFacts(Collections.singletonList(parent.fact(-1, 1)));
+
+		Assertions.assertThatThrownBy(database::get)
+				.isInstanceOf(RuntimeException.class);
+	}
+
+	@Test
+	public void shouldThrowOnForeignKeyViolationOnRemove() {
+		Try<Database> database = DatabaseWithRelationsTest.db
+				.withConstraint(Constraint.foreignKey(parent, parentId, person, id))
+				.withoutFacts(Collections.singletonList(person.fact(1, "Michał", "Gac", Gender.MALE)));
+
+		Assertions.assertThatThrownBy(database::get)
+				.isInstanceOf(RuntimeException.class);
 	}
 
 	private static List<String> concatNameAndSurname(Iterable<Tuple2<Unifiable<String>, Unifiable<String>>> ll) {

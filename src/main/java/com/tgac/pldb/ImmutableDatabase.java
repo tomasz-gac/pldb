@@ -1,12 +1,11 @@
 package com.tgac.pldb;
-import com.tgac.logic.LVal;
+import com.tgac.functional.Exceptions;
 import com.tgac.pldb.index.ImmutableIndex;
 import com.tgac.pldb.index.Index;
 import com.tgac.pldb.relations.Fact;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
-import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
 import lombok.AccessLevel;
@@ -15,12 +14,12 @@ import lombok.ToString;
 
 import java.util.stream.Stream;
 
-import static com.tgac.functional.exceptions.Exceptions.throwingBiOp;
+import static com.tgac.functional.Exceptions.throwingBiOp;
 
 @ToString
 @RequiredArgsConstructor(staticName = "of", access = AccessLevel.PRIVATE)
 public class ImmutableDatabase extends AbstractIndexedDatabase {
-	public final ImmutableIndex<Tuple2<Integer, Object>, Set<IndexedSeq<Object>>> index;
+	public final ImmutableIndex<Tuple2<Integer, Object>, Set<Fact>> index;
 	private final List<Trigger> triggers;
 
 	public static ImmutableDatabase empty() {
@@ -40,9 +39,7 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 								.reduce(ImmutableIndex.of(HashSet.empty()),
 										(acc, seq) -> acc.withIndexAt(seq,
 												HashSet::empty,
-												ci -> ci.updateValue(v ->
-														v.add(fact.getValues()
-																.map(Object.class::cast)))),
+												ci -> ci.updateValue(v -> v.add(fact))),
 										throwingBiOp(UnsupportedOperationException::new)),
 						Set::addAll),
 				triggers);
@@ -51,8 +48,12 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 	@Override
 	protected AbstractIndexedDatabase withoutFact(Fact fact) {
 		return ImmutableDatabase.of(
-				index.remove(getIndices(fact.getRelation(), fact.getValues().map(LVal::lval))
-						.collect(Array.collector())),
+				createIndexPaths(fact)
+						.reduce(this.index,
+								(acc, seq) -> acc.withIndexAt(seq,
+										Exceptions.throwingSupplier(UnsupportedOperationException::new),
+										idx -> idx.updateValue(v -> v.remove(fact))),
+								throwingBiOp(UnsupportedOperationException::new)),
 				triggers);
 	}
 	@Override
@@ -61,7 +62,7 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 	}
 
 	@Override
-	protected Iterable<IndexedSeq<Object>> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices) {
+	protected Iterable<Fact> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices) {
 		return index.get(indices.collect(Array.collector()))
 				.map(Index::getValue)
 				.getOrElse(HashSet::empty);

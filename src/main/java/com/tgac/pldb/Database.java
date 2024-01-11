@@ -1,13 +1,13 @@
 package com.tgac.pldb;
-import com.tgac.logic.Unifiable;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.IndexedSeq;
 import io.vavr.control.Try;
 
 import java.util.List;
+import java.util.Optional;
 public interface Database {
-	Iterable<IndexedSeq<Object>> get(Relation relation, IndexedSeq<Unifiable<?>> args);
+	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
 
 	Try<Database> withFacts(List<Fact> facts);
 

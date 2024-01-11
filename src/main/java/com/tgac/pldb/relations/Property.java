@@ -1,9 +1,15 @@
 package com.tgac.pldb.relations;
 
+import com.tgac.functional.reflection.Types;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.collection.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+
+import java.util.Optional;
 
 @Getter
 @EqualsAndHashCode
