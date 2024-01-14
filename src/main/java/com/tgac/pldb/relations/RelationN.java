@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 import com.tgac.functional.recursion.Recur;
+import com.tgac.functional.step.Step;
 import com.tgac.logic.Goal;
-import com.tgac.logic.Incomplete;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Package;
@@ -35,7 +35,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return s -> Incomplete.incomplete(() ->
+		return s -> Step.incomplete(() ->
 				substituteQueryItems(s, Array.of(args))
 						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
 	}

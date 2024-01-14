@@ -1,21 +1,20 @@
 package com.tgac.pldb;
+import com.tgac.functional.step.Step;
 import com.tgac.logic.Goal;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
-import io.vavr.Predicates;
-import io.vavr.collection.Stream;
 import io.vavr.control.Either;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.Logic.firsto;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 public class ImmutableDatabaseTest {
@@ -79,6 +78,17 @@ public class ImmutableDatabaseTest {
 
 	private static final Database db = loadGeneology(ImmutableDatabase.empty());
 
+	public static Goal firsto(Goal... goals) {
+		return Goal.goal(s -> Arrays.stream(goals)
+						.map(g -> g.apply(s))
+						.filter(s1 -> !s1.isEmpty())
+						.findFirst()
+						.orElseGet(Step::empty))
+				.named("firsto(" + Arrays.stream(goals)
+						.map(Objects::toString)
+						.collect(Collectors.joining(", ")) + ")");
+	}
+
 	@Test
 	public void shouldFindGrandparents() {
 		Unifiable<String> grandparent = lvar();
@@ -108,14 +118,6 @@ public class ImmutableDatabaseTest {
 						.distinct()
 						.collect(Collectors.toList()))
 				.containsExactlyInAnyOrder("Arletta", "Henia");
-	}
-
-	static Goal any(Goal... goals) {
-		return s -> Arrays.stream(goals)
-				.map(g -> g.apply(s))
-				.filter(Predicates.not(Stream::isEmpty))
-				.findFirst()
-				.orElseGet(Stream::empty);
 	}
 
 	static Goal ancestors(Unifiable<String> descendant, Unifiable<LList<String>> ancestors) {
