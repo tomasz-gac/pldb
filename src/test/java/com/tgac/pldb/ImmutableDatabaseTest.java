@@ -15,28 +15,25 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.Goals.firsto;
+import static com.tgac.logic.Logic.firsto;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
-import static com.tgac.pldb.relations.Relations.relation;
 public class ImmutableDatabaseTest {
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
-	private static final Relations._1<String> man = relation("man", name);
-	private static final Relations._1<String> woman = relation("woman", name);
-	private static final Relations._2<String, String> parent = relation("parent", name, child);
+	private static final Relations._1<String> man = Relations.relation("man", name);
+	private static final Relations._1<String> woman = Relations.relation("woman", name);
+	private static final Relations._2<String, String> parent = Relations.relation("parent", name, child);
 
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<String> data = Property.of("data");
 
-	private static final	Relations._3<Integer, Integer, String> tree = relation("tree", id, parentId, data);
+	private static final Relations._3<Integer, Integer, String> tree = Relations.relation("tree", id, parentId, data);
 
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
 						tree.fact(0, 0, "1"),
-
-
 
 						man.fact("Michał"),
 						man.fact("Franciszek"),

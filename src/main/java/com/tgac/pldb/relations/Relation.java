@@ -1,6 +1,5 @@
 package com.tgac.pldb.relations;
 
-import com.tgac.functional.reflection.Types;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Stream;

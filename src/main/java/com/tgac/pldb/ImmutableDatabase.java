@@ -14,8 +14,6 @@ import lombok.ToString;
 
 import java.util.stream.Stream;
 
-import static com.tgac.functional.Exceptions.throwingBiOp;
-
 @ToString
 @RequiredArgsConstructor(staticName = "of", access = AccessLevel.PRIVATE)
 public class ImmutableDatabase extends AbstractIndexedDatabase {
@@ -40,7 +38,7 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 										(acc, seq) -> acc.withIndexAt(seq,
 												HashSet::empty,
 												ci -> ci.updateValue(v -> v.add(fact))),
-										throwingBiOp(UnsupportedOperationException::new)),
+										Exceptions.throwingBiOp(UnsupportedOperationException::new)),
 						Set::addAll),
 				triggers);
 	}
@@ -53,7 +51,7 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 								(acc, seq) -> acc.withIndexAt(seq,
 										Exceptions.throwingSupplier(UnsupportedOperationException::new),
 										idx -> idx.updateValue(v -> v.remove(fact))),
-								throwingBiOp(UnsupportedOperationException::new)),
+								Exceptions.throwingBiOp(UnsupportedOperationException::new)),
 				triggers);
 	}
 	@Override

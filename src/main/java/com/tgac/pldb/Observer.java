@@ -16,7 +16,7 @@ public interface Observer extends Consumers._2<FactsChanged, Database> {
 
 	static Observer ofChange(ChangeType changeType, Observer c) {
 		return (fc, db) -> {
-			if(fc.getChange() == changeType){
+			if (fc.getChange() == changeType) {
 				c.accept(fc, db);
 			}
 		};

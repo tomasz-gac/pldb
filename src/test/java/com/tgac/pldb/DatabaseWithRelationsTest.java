@@ -1,6 +1,6 @@
 package com.tgac.pldb;
 import com.tgac.logic.Goal;
-import com.tgac.logic.Goals;
+import com.tgac.logic.Logic;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
@@ -21,12 +21,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.Goals.distincto;
-import static com.tgac.logic.Goals.llist;
-import static com.tgac.logic.Goals.matche;
+import static com.tgac.logic.Matche.llist;
+import static com.tgac.logic.Matche.matche;
+import static com.tgac.logic.separate.NeqGoals.distincto;
+import static com.tgac.logic.separate.NeqGoals.separate;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
-import static com.tgac.pldb.relations.Relations.relation;
 import static org.assertj.core.api.Assertions.assertThat;
 public class DatabaseWithRelationsTest {
 	private enum Gender {
@@ -39,7 +39,7 @@ public class DatabaseWithRelationsTest {
 	private static final Property<Gender> gender = Property.of("gender");
 
 	private static final Relations._4<Integer, String, String, Gender> person =
-			relation("person", id.indexed(), name.indexed(), surname, gender);
+			Relations.relation("person", id.indexed(), name.indexed(), surname, gender);
 
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
@@ -104,7 +104,7 @@ public class DatabaseWithRelationsTest {
 		Unifiable<String> gpSurname = lvar();
 
 		List<String> result =
-				Goals.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
+				Logic.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
 								person.exists(db, childId, lval("Tomek"), lvar(), lvar())
 										.and(parent.exists(db, parentId, childId))
 										.and(parent.exists(db, gpId, parentId))
@@ -129,7 +129,7 @@ public class DatabaseWithRelationsTest {
 		Unifiable<String> spouseSurname = lvar();
 
 		assertThat(
-				Goals.<Integer, Integer, Integer> exist(
+				Logic.<Integer, Integer, Integer> exist(
 								(fatherId, childId, motherId) ->
 										person.exists(db, fatherId, lval("Wiesław"), lvar(), lval(Gender.MALE))
 												.and(parent.exists(db, fatherId, childId),
@@ -151,7 +151,7 @@ public class DatabaseWithRelationsTest {
 	}
 
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
-		return Goals.<Integer, LList<Integer>> exist((parentId, rest) ->
+		return Logic.<Integer, LList<Integer>> exist((parentId, rest) ->
 				parent.exists(db, parentId, descendant)
 						.and(ancestors.unify(LList.of(parentId, rest)))
 						.and(any(defer(() -> ancestors(parentId, rest)),
@@ -161,7 +161,7 @@ public class DatabaseWithRelationsTest {
 	public static BiFunction<Unifiable<Integer>,
 			Unifiable<Tuple2<Unifiable<String>, Unifiable<String>>>,
 			Goal> personWithIdNameAndSurname(Database db) {
-		return (id, data) -> Goals.<String, String> exist((name, surname) ->
+		return (id, data) -> Logic.<String, String> exist((name, surname) ->
 				data.unify(Tuple.of(name, surname))
 						.and(person.exists(db, id, name, surname, lvar())));
 	}
@@ -170,10 +170,10 @@ public class DatabaseWithRelationsTest {
 	public void shouldFindAncestors() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> ancestorNames = lvar();
 
-		List<List<String>> result = Goals.<Integer, LList<Integer>> exist((descendantId, l) ->
-								person.exists(db, descendantId, lval("Tomek"), lvar(), lvar())
-										.and(ancestors(descendantId, l))
-										.and(LList.map(l, ancestorNames, personWithIdNameAndSurname(db))))
+		List<List<String>> result = Logic.<Integer, LList<Integer>> exist((descendantId, l) ->
+						person.exists(db, descendantId, lval("Tomek"), lvar(), lvar())
+								.and(ancestors(descendantId, l))
+								.and(LList.map(l, ancestorNames, personWithIdNameAndSurname(db))))
 				.solve(ancestorNames)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)
@@ -199,7 +199,7 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldFindLine2() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
-		List<List<String>> result = Goals.<LList<Integer>, Integer, Integer> exist(
+		List<List<String>> result = Logic.<LList<Integer>, Integer, Integer> exist(
 						(l, descendantId, ancestorId) ->
 								person.exists(db, ancestorId, lval("Aniela"), lvar(), lvar())
 										.and(person.exists(db, descendantId, lval("Tomek"), lvar(), lvar()),
@@ -235,14 +235,14 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldFindRelatives() {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
-		List<List<String>> result = Goals.<LList<Integer>, Integer, Integer> exist(
+		List<List<String>> result = Logic.<LList<Integer>, Integer, Integer> exist(
 						(l, lhsId, rhsId) ->
-								lhsId.separate(rhsId)
+								separate(lhsId, rhsId)
 										.and(person.exists(db, rhsId, lval("Tomek"), lvar(), lvar()))
 										.and(person.exists(db, lhsId, lval("Magda"), lvar(), lvar()),
 												relatives(rhsId, lhsId, l),
-												Goals.<LList<Integer>> exist(res ->
-														Goals.appendo(LList.of(rhsId, l),
+												Logic.<LList<Integer>> exist(res ->
+														Logic.appendo(LList.of(rhsId, l),
 																		LList.of(lhsId),
 																		res)
 																.and(LList.map(res, line, personWithIdNameAndSurname(db)))))

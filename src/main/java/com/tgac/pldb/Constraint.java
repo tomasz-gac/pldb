@@ -1,6 +1,6 @@
 package com.tgac.pldb;
-import com.tgac.functional.Functions;
 import com.tgac.functional.Exceptions;
+import com.tgac.functional.Functions;
 import com.tgac.pldb.events.ChangeType;
 import com.tgac.pldb.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static java.lang.String.format;
 public interface Constraint extends Functions._2<FactsChanged, Database, Optional<String>> {
 	static Constraint unique(Relation relation, Property<?> property) {
 		Integer propertyIndex = relation.indexOf(property)
@@ -48,7 +46,7 @@ public interface Constraint extends Functions._2<FactsChanged, Database, Optiona
 								fkRelation, fkProperty,
 								pkRelation, pkProperty)
 								.map(j -> j._2.isEmpty() ?
-										Optional.of(format("Foreign key property %s of %s has no matching property %s of %s for fact: %s",
+										Optional.of(String.format("Foreign key property %s of %s has no matching property %s of %s for fact: %s",
 												fkProperty, fkRelation, pkProperty, pkRelation, j._1)) :
 										Optional.<String> empty()) :
 						getJoinResults(db,
@@ -56,7 +54,7 @@ public interface Constraint extends Functions._2<FactsChanged, Database, Optiona
 								pkRelation, pkProperty,
 								fkRelation, fkProperty)
 								.map(j -> !j._2.isEmpty() ?
-										Optional.of(format("Foreign key property %s of %s has no matching property %s of %s for fact: %s",
+										Optional.of(String.format("Foreign key property %s of %s has no matching property %s of %s for fact: %s",
 												fkProperty, fkRelation, pkProperty, pkRelation, j._1)) :
 										Optional.<String> empty()))
 						.filter(Optional::isPresent)

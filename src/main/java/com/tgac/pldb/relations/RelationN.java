@@ -1,6 +1,7 @@
 package com.tgac.pldb.relations;
 import com.tgac.functional.recursion.Recur;
-import com.tgac.logic.*;
+import com.tgac.logic.Goal;
+import com.tgac.logic.Incomplete;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Package;
@@ -13,7 +14,6 @@ import lombok.Value;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.tgac.logic.Incomplete.incomplete;
 import static com.tgac.logic.unification.LVal.lval;
 
 @Value
@@ -35,7 +35,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return s -> incomplete(() ->
+		return s -> Incomplete.incomplete(() ->
 				substituteQueryItems(s, Array.of(args))
 						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
 	}

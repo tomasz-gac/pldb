@@ -1,9 +1,7 @@
 package com.tgac.pldb.relations;
 
-import com.tgac.functional.reflection.Types;
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
-import io.vavr.match.annotation.Unapply;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
