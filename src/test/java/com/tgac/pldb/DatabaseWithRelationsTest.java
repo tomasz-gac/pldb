@@ -1,4 +1,5 @@
 package com.tgac.pldb;
+import com.tgac.functional.step.Step;
 import com.tgac.logic.Goal;
 import com.tgac.logic.Logic;
 import com.tgac.logic.unification.LList;
@@ -145,9 +146,9 @@ public class DatabaseWithRelationsTest {
 	static Goal any(Goal... goals) {
 		return s -> Arrays.stream(goals)
 				.map(g -> g.apply(s))
-				.filter(Predicates.not(Stream::isEmpty))
+				.filter(Predicates.not(Step::isEmpty))
 				.findFirst()
-				.orElseGet(Stream::empty);
+				.orElseGet(Step::empty);
 	}
 
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
