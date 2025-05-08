@@ -1,4 +1,5 @@
 package com.tgac.pldb.relations;
+import com.tgac.functional.monad.Cont;
 import com.tgac.functional.recursion.Recur;
 import com.tgac.functional.step.Step;
 import com.tgac.logic.Goal;
@@ -35,7 +36,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return s -> Step.incomplete(() ->
+		return s -> Cont.defer(() ->
 				substituteQueryItems(s, Array.of(args))
 						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
 	}

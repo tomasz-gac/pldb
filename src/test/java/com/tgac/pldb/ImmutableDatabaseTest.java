@@ -1,22 +1,30 @@
 package com.tgac.pldb;
-import com.tgac.functional.step.Step;
+
+import static com.tgac.logic.Goal.conde;
+import static com.tgac.logic.Goal.condu;
+import static com.tgac.logic.Goal.defer;
+import static com.tgac.logic.unification.LVal.lval;
+import static com.tgac.logic.unification.LVar.lvar;
+
+import com.tgac.functional.Exceptions;
+import com.tgac.functional.category.Nothing;
+import com.tgac.functional.monad.Cont;
+import com.tgac.functional.recursion.Recur;
 import com.tgac.logic.Goal;
 import com.tgac.logic.unification.LList;
+import com.tgac.logic.unification.Package;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.control.Either;
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
 
-import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.unification.LVal.lval;
-import static com.tgac.logic.unification.LVar.lvar;
 public class ImmutableDatabaseTest {
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
@@ -78,17 +86,6 @@ public class ImmutableDatabaseTest {
 
 	private static final Database db = loadGeneology(ImmutableDatabase.empty());
 
-	public static Goal firsto(Goal... goals) {
-		return Goal.goal(s -> Arrays.stream(goals)
-						.map(g -> g.apply(s))
-						.filter(s1 -> !s1.isEmpty())
-						.findFirst()
-						.orElseGet(Step::empty))
-				.named("firsto(" + Arrays.stream(goals)
-						.map(Objects::toString)
-						.collect(Collectors.joining(", ")) + ")");
-	}
-
 	@Test
 	public void shouldFindGrandparents() {
 		Unifiable<String> grandparent = lvar();
@@ -125,7 +122,7 @@ public class ImmutableDatabaseTest {
 		Unifiable<LList<String>> rest = lvar();
 		return parent.exists(db, p, descendant)
 				.and(ancestors.unify(LList.of(p, rest)))
-				.and(firsto(defer(() -> ancestors(p, rest)),
+				.and(condu(defer(() -> ancestors(p, rest)),
 						rest.unify(LList.empty())));
 	}
 

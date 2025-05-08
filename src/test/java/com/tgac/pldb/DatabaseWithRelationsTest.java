@@ -20,6 +20,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.tgac.logic.Goal.conde;
+import static com.tgac.logic.Goal.condu;
 import static com.tgac.logic.Goal.defer;
 import static com.tgac.logic.Matche.llist;
 import static com.tgac.logic.Matche.matche;
@@ -142,19 +144,11 @@ public class DatabaseWithRelationsTest {
 				.containsExactlyInAnyOrder("Arletta Gac", "Henryka Gac");
 	}
 
-	static Goal any(Goal... goals) {
-		return s -> Arrays.stream(goals)
-				.map(g -> g.apply(s))
-				.filter(Predicates.not(Stream::isEmpty))
-				.findFirst()
-				.orElseGet(Stream::empty);
-	}
-
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
 		return Logic.<Integer, LList<Integer>> exist((parentId, rest) ->
 				parent.exists(db, parentId, descendant)
 						.and(ancestors.unify(LList.of(parentId, rest)))
-						.and(any(defer(() -> ancestors(parentId, rest)),
+						.and(condu(defer(() -> ancestors(parentId, rest)),
 								rest.unify(LList.empty()))));
 	}
 
