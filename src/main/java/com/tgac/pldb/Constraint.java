@@ -1,4 +1,5 @@
 package com.tgac.pldb;
+
 import com.tgac.functional.Exceptions;
 import com.tgac.functional.Functions;
 import com.tgac.pldb.events.ChangeType;
@@ -9,18 +10,27 @@ import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-
+import io.vavr.collection.IndexedSeq;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 public interface Constraint extends Functions._2<FactsChanged, Database, Optional<String>> {
+
 	static Constraint unique(Relation relation, Property<?> property) {
-		Integer propertyIndex = relation.indexOf(property)
-				.orElseThrow(Exceptions.format(IllegalArgumentException::new,
-						"No such property %s in relation %s", relation, property));
+		return unique(relation, Collections.singletonList(property));
+	}
+
+	static Constraint unique(Relation relation, List<Property<?>> properties) {
+		IndexedSeq<Integer> propertyIndex = properties.stream()
+				.map(p -> relation.indexOf(p)
+						.orElseThrow(Exceptions.format(IllegalArgumentException::new,
+								"No such property %s in relation %s", relation, p)))
+				.collect(Array.collector());
 
 		return (fc, db) ->
 				Optional.of(fc.getFacts().stream())
@@ -29,11 +39,13 @@ public interface Constraint extends Functions._2<FactsChanged, Database, Optiona
 								.filter(f -> relation.equals(f.getRelation()))
 								.findFirst()
 								.map(i -> StreamSupport.stream(db.get(relation, Array.empty()).spliterator(), false)
-										.map(s -> s.getValues().get(propertyIndex))
+										.map(fact -> propertyIndex.toJavaStream()
+												.map(fact.getValues()::get)
+												.collect(Collectors.toList()))
 										.collect(Collectors.toList()))
 								.map(l -> Tuple.of(l, new HashSet<>(l)))
 								.filter(l -> l._1.size() != l._2.size())
-								.map(l -> "Unique ids required for relation person."));
+								.map(l -> "Unique ids required for relation " + relation.getName() + ": " + properties));
 	}
 
 	static <T> Constraint foreignKey(

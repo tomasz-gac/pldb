@@ -1,22 +1,22 @@
 package com.tgac.pldb;
-import com.tgac.functional.step.Step;
-import com.tgac.logic.Goal;
+
+import static com.tgac.logic.goals.Goal.condu;
+import static com.tgac.logic.goals.Goal.defer;
+import static com.tgac.logic.unification.LVal.lval;
+import static com.tgac.logic.unification.LVar.lvar;
+
+import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.control.Either;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.unification.LVal.lval;
-import static com.tgac.logic.unification.LVar.lvar;
 public class ImmutableDatabaseTest {
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
@@ -78,17 +78,6 @@ public class ImmutableDatabaseTest {
 
 	private static final Database db = loadGeneology(ImmutableDatabase.empty());
 
-	public static Goal firsto(Goal... goals) {
-		return Goal.goal(s -> Arrays.stream(goals)
-						.map(g -> g.apply(s))
-						.filter(s1 -> !s1.isEmpty())
-						.findFirst()
-						.orElseGet(Step::empty))
-				.named("firsto(" + Arrays.stream(goals)
-						.map(Objects::toString)
-						.collect(Collectors.joining(", ")) + ")");
-	}
-
 	@Test
 	public void shouldFindGrandparents() {
 		Unifiable<String> grandparent = lvar();
@@ -124,9 +113,9 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> p = lvar();
 		Unifiable<LList<String>> rest = lvar();
 		return parent.exists(db, p, descendant)
-				.and(ancestors.unify(LList.of(p, rest)))
-				.and(firsto(defer(() -> ancestors(p, rest)),
-						rest.unify(LList.empty())));
+				.and(ancestors.unifies(LList.of(p, rest)))
+				.and(condu(defer(() -> ancestors(p, rest)),
+						rest.unifies(LList.empty())));
 	}
 
 	@Test
@@ -151,9 +140,9 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> vh = lvar();
 		Unifiable<LList<String>> vd = lvar();
 
-		return line.unify(LList.empty()).and(parent.exists(db, ancestor, descendant))
+		return line.unifies(LList.empty()).and(parent.exists(db, ancestor, descendant))
 				.or(parent.exists(db, ancestor, vh)
-						.and(line.unify(LList.of(vh, vd)))
+						.and(line.unifies(LList.of(vh, vd)))
 						.and(defer(() -> line(vh, vd, descendant))));
 	}
 

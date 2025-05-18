@@ -4,7 +4,7 @@ import com.tgac.functional.Consumers;
 import com.tgac.functional.Functions;
 import com.tgac.functional.Numbers;
 import com.tgac.functional.Tuples;
-import com.tgac.logic.Goal;
+import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
