@@ -1,8 +1,10 @@
 package com.tgac.pldb.relations;
+
+import static com.tgac.logic.unification.LVal.lval;
+
 import com.tgac.functional.monad.Cont;
 import com.tgac.functional.recursion.Recur;
-import com.tgac.functional.step.Step;
-import com.tgac.logic.Goal;
+import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Package;
@@ -10,12 +12,9 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import io.vavr.collection.Array;
 import io.vavr.control.Option;
-import lombok.Value;
-
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.tgac.logic.unification.LVal.lval;
+import lombok.Value;
 
 @Value
 public class RelationN implements Relation {
@@ -58,7 +57,7 @@ public class RelationN implements Relation {
 								.map(Option::toJavaOptional))
 						.spliterator(), false)
 				.map(fact -> lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
-						.unify(query.map(Unifiable::getObjectUnifiable)))
+						.unifies(query.map(Unifiable::getObjectUnifiable)))
 				.reduce(Goal::or)
 				.orElseGet(Goal::failure);
 	}

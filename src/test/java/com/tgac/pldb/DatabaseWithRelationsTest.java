@@ -1,35 +1,33 @@
 package com.tgac.pldb;
-import com.tgac.logic.Goal;
-import com.tgac.logic.Logic;
+
+import static com.tgac.logic.goals.Goal.condu;
+import static com.tgac.logic.goals.Goal.defer;
+import static com.tgac.logic.goals.Matche.llist;
+import static com.tgac.logic.goals.Matche.matche;
+import static com.tgac.logic.separate.Disequality.distincto;
+import static com.tgac.logic.separate.Disequality.separate;
+import static com.tgac.logic.unification.LVal.lval;
+import static com.tgac.logic.unification.LVar.lvar;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.tgac.logic.goals.Goal;
+import com.tgac.logic.goals.Logic;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
-import io.vavr.Predicates;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.collection.Stream;
 import io.vavr.control.Try;
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
 
-import static com.tgac.logic.Goal.conde;
-import static com.tgac.logic.Goal.condu;
-import static com.tgac.logic.Goal.defer;
-import static com.tgac.logic.Matche.llist;
-import static com.tgac.logic.Matche.matche;
-import static com.tgac.logic.separate.Disequality.distincto;
-import static com.tgac.logic.separate.Disequality.separate;
-import static com.tgac.logic.unification.LVal.lval;
-import static com.tgac.logic.unification.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 public class DatabaseWithRelationsTest {
 	private enum Gender {
 		MALE, FEMALE
@@ -147,16 +145,16 @@ public class DatabaseWithRelationsTest {
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
 		return Logic.<Integer, LList<Integer>> exist((parentId, rest) ->
 				parent.exists(db, parentId, descendant)
-						.and(ancestors.unify(LList.of(parentId, rest)))
+						.and(ancestors.unifies(LList.of(parentId, rest)))
 						.and(condu(defer(() -> ancestors(parentId, rest)),
-								rest.unify(LList.empty()))));
+								rest.unifies(LList.empty()))));
 	}
 
 	public static BiFunction<Unifiable<Integer>,
 			Unifiable<Tuple2<Unifiable<String>, Unifiable<String>>>,
 			Goal> personWithIdNameAndSurname(Database db) {
 		return (id, data) -> Logic.<String, String> exist((name, surname) ->
-				data.unify(Tuple.of(name, surname))
+				data.unifies(Tuple.of(name, surname))
 						.and(person.exists(db, id, name, surname, lvar())));
 	}
 
