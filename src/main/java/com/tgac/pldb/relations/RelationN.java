@@ -4,12 +4,14 @@ import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.functional.recursion.Recur;
+import com.tgac.logic.ckanren.StoreSupport;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Package;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
+import com.tgac.pldb.PldbConstraintStore;
 import io.vavr.collection.Array;
 import io.vavr.control.Option;
 import java.util.stream.Stream;
@@ -35,12 +37,22 @@ public class RelationN implements Relation {
 	}
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return s -> Cont.defer(() ->
-				substituteQueryItems(s, Array.of(args))
-						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
+		return RelationN.rel(db, rel, args);
 	}
 
-	private static Recur<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
+	public static Goal rel(Database db, Relation rel, Unifiable<?>... args) {
+		return s -> Cont.defer(() ->
+				RelationN.substituteQueryItems(s, Array.of(args))
+						.map(q -> RelationN.unifyQueryResults(db, rel, q).apply(s)));
+	}
+
+	public static Goal relation2(Database db, Relation rel, Unifiable<?>... args) {
+		return PldbConstraintStore.pldbConstraint()
+				.and(s -> Cont.just(StoreSupport.withConstraint(s,
+						new PldbConstraintStore.StoredRelation(db, rel, Array.of(args)))));
+	}
+
+	public static Recur<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
 		return query.toJavaStream()
 				.map(u -> MiniKanren.walk(s, u))
 				.map(Stream::of)
@@ -50,7 +62,7 @@ public class RelationN implements Relation {
 				.map(q -> q.collect(Array.collector()));
 	}
 
-	private static Goal unifyQueryResults(Database db, Relation rel, Array<Unifiable<?>> query) {
+	public static Goal unifyQueryResults(Database db, Relation rel, Array<Unifiable<?>> query) {
 		return StreamSupport.stream(db.get(rel, query
 								.map(Unifiable::getObjectUnifiable)
 								.map(Unifiable::asVal)
