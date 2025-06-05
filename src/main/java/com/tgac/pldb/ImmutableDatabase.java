@@ -65,4 +65,12 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 				.map(Index::getValue)
 				.getOrElse(HashSet::empty);
 	}
+
+	@Override
+	protected int count(Stream<Tuple2<Integer, Object>> indices) {
+		return index.get(indices.collect(Array.collector()))
+				.map(Index::getValue)
+				.map(Set::length)
+				.getOrElse(0);
+	}
 }

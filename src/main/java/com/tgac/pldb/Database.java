@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface Database {
 	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
 
+	int count(Relation relation, IndexedSeq<Optional<Object>> args);
+
 	Try<Database> withFacts(List<Fact> facts);
 
 	Try<Database> withoutFacts(List<Fact> facts);

@@ -102,13 +102,16 @@ public class DatabaseWithRelationsTest {
 	public void shouldFindGrandparents() {
 		Unifiable<String> gpName = lvar();
 		Unifiable<String> gpSurname = lvar();
+		Unifiable<String> tomek = lvar();
 
 		List<String> result =
 				Logic.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
-								person.exists(db, childId, lval("Tomek"), lvar(), lvar())
+								Goal.success()
 										.and(parent.exists(db, parentId, childId))
 										.and(parent.exists(db, gpId, parentId))
+										.and(person.exists(db, childId, tomek, lvar(), lvar()))
 										.and(person.exists(db, gpId, gpName, gpSurname, lvar())))
+						.and(tomek.unifies("Tomek"))
 						.solve(lval(Tuple.of(gpName, gpSurname)))
 						.map(Unifiable::get)
 						.map(DatabaseWithRelationsTest::concatNameAndSurname)

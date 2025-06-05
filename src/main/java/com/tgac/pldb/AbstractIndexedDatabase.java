@@ -27,6 +27,7 @@ import static com.tgac.functional.Exceptions.throwingBiOp;
 public abstract class AbstractIndexedDatabase implements Database {
 
 	protected abstract Iterable<Fact> extractDataFromIndex(Stream<Tuple2<Integer, Object>> indices);
+	protected abstract int count(Stream<Tuple2<Integer, Object>> indices);
 
 	protected abstract AbstractIndexedDatabase withFact(Fact fact);
 
@@ -77,6 +78,18 @@ public abstract class AbstractIndexedDatabase implements Database {
 							.collect(Collectors.joining(", ")), result);
 		}
 		return result;
+	}
+
+	@Override
+	public int count(Relation relation, IndexedSeq<Optional<Object>> query) {
+		int count = count(getIndices(relation, query.map(o -> o.map(LVal::lval).orElseGet(LVar::lvar))));
+		if (log.isDebugEnabled()) {
+			log.debug("count({}({})) = {}", relation,
+					query.toJavaStream()
+							.map(Object::toString)
+							.collect(Collectors.joining(", ")), count);
+		}
+		return count;
 	}
 
 	protected Stream<Array<Tuple2<Integer, Object>>> createIndexPaths(Fact fact) {
