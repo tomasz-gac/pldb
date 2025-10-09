@@ -16,7 +16,7 @@ public class RelationCodeGenTest {
 
 	@Test
 	public void shouldGenerateRelations() {
-		int n = 25;
+		int n = 10;
 		String code = Cont.<List<String>> builder()
 				.just(List.of(
 						"",
@@ -123,8 +123,6 @@ public class RelationCodeGenTest {
 						.appendAll(codeBlock("return name + properties;"))
 						.append(""))
 				.map(l -> generateApply(n, l))
-				.map(l -> generateObserver(n, l).append(""))
-				.map(l -> n < maxN - 1 ? generateDerivedRelationBuilder(n, l) : l)
 				.apply(Function.identity());
 	}
 	private static List<String> generateApply(int n, List<String> l) {
@@ -153,40 +151,5 @@ public class RelationCodeGenTest {
 										List.of("db", "this")
 												.appendAll(genericNames("vars._", n))
 												.collect(Collectors.joining(", "))))));
-	}
-
-	//	public Goal apply(Database db, Functions._2<Unifiable<T0>, Unifiable<T1>, Goal> f){
-	//		Tuples._2<Unifiable<T0>, Unifiable<T1>> vars = tuple(LVar.lvar(), LVar.lvar());
-	//		return vars.apply(f).and(apply(db, vars._0, vars._1));
-	//	}
-
-	private static List<String> generateObserver(int n, List<String> l) {
-		return l.append("@SuppressWarnings(\"unchecked\")")
-				.append(format("public Observer observer(Consumers._%s%s consumer)",
-						n, genericsList(genericNames("T", n))))
-				.appendAll(codeBlock(List.of(
-						"return (fc, db) -> fc.getFacts()",
-						"\t\t.forEach(f -> exists(f, consumer.asFunction()));")));
-	}
-
-	private static List<String> generateDerivedRelationBuilder(int n, List<String> l) {
-		return l.append(format(
-						"public Functions._1<Database, Try<Database>> derived(Functions._%s%s goal)",
-						n + 1, genericsList(List.of("Database")
-								.appendAll(genericNames("T", n)
-										.map(v -> "Unifiable<" + v + ">"))
-								.append("Goal"))))
-				.appendAll(codeBlock(List.of(
-								format("Unifiable<Tuples._%s%s> results = LVal.lval(tuple(%s));",
-										n, genericsList(genericNames("T", n)
-												.map(v -> "Unifiable<" + v + ">")),
-										range(0, n).map(i -> "lvar()").collect(Collectors.joining(", "))))
-						.append(format("return db -> db.withFacts(%s);",
-								List.of("results.get().apply(goal.partial(db)).solve(results)",
-												".map(Unifiable::get)")
-										.appendAll(range(0, n).map(i -> format(".map(t -> t.map(Numbers._%s(), Unifiable::get))", i)))
-										.append(".map(t -> t.apply(this::fact))")
-										.append(".collect(Collectors.toList())")
-										.collect(Collectors.joining("\n"))))));
 	}
 }
