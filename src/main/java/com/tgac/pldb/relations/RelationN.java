@@ -3,7 +3,7 @@ package com.tgac.pldb.relations;
 import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.monad.Cont;
-import com.tgac.functional.recursion.Recur;
+import com.tgac.functional.fibers.Recur;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;

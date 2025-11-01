@@ -1,7 +1,7 @@
 package com.tgac.pldb.index;
 import com.tgac.functional.Streams;
 import com.tgac.functional.Exceptions;
-import com.tgac.functional.recursion.Recur;
+import com.tgac.functional.fibers.Recur;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -16,8 +16,8 @@ import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static com.tgac.functional.recursion.Recur.done;
-import static com.tgac.functional.recursion.Recur.recur;
+import static com.tgac.functional.fibers.Recur.done;
+import static com.tgac.functional.fibers.Recur.recur;
 @Value
 @RequiredArgsConstructor(staticName = "of")
 public class ImmutableIndex<K, V> implements Index<K, V> {
