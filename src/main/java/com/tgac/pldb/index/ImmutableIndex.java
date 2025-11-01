@@ -1,7 +1,11 @@
 package com.tgac.pldb.index;
-import com.tgac.functional.Streams;
+
+import static com.tgac.functional.fibers.Fiber.defer;
+import static com.tgac.functional.fibers.Fiber.done;
+
 import com.tgac.functional.Exceptions;
-import com.tgac.functional.fibers.Recur;
+import com.tgac.functional.Streams;
+import com.tgac.functional.fibers.Fiber;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -9,15 +13,12 @@ import io.vavr.collection.HashMap;
 import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.Stream;
 import io.vavr.control.Option;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-import static com.tgac.functional.fibers.Recur.done;
-import static com.tgac.functional.fibers.Recur.recur;
 @Value
 @RequiredArgsConstructor(staticName = "of")
 public class ImmutableIndex<K, V> implements Index<K, V> {
@@ -64,7 +65,7 @@ public class ImmutableIndex<K, V> implements Index<K, V> {
 				sum(lookup, other.lookup, valueMerger).get());
 	}
 
-	private static <K, V> Recur<HashMap<K, ImmutableIndex<K, V>>> sum(
+	private static <K, V> Fiber<HashMap<K, ImmutableIndex<K, V>>> sum(
 			HashMap<K, ImmutableIndex<K, V>> lhs,
 			HashMap<K, ImmutableIndex<K, V>> rhs,
 			BinaryOperator<V> valueMerger) {
@@ -79,7 +80,7 @@ public class ImmutableIndex<K, V> implements Index<K, V> {
 						K rhsKey = entry._1;
 						ImmutableIndex<K, V> rhsValue = entry._2;
 						return result.flatMap(r -> r.get(rhsKey)
-								.map(resultValue -> recur(() ->
+								.map(resultValue -> defer(() ->
 										sum(resultValue.lookup, rhsValue.lookup, valueMerger))
 										.map(v -> r.put(rhsKey,
 												ImmutableIndex.of(

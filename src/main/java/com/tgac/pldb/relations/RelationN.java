@@ -3,7 +3,7 @@ package com.tgac.pldb.relations;
 import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.monad.Cont;
-import com.tgac.functional.fibers.Recur;
+import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
@@ -40,13 +40,13 @@ public class RelationN implements Relation {
 						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
 	}
 
-	private static Recur<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
+	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
 		return query.toJavaStream()
 				.map(u -> MiniKanren.walk(s, u))
 				.map(Stream::of)
-				.map(Recur::done)
-				.reduce((acc, c) -> Recur.zip(acc, c).map(t -> t.apply(Stream::concat)))
-				.orElseGet(() -> Recur.done(Stream.empty()))
+				.map(Fiber::done)
+				.reduce((acc, c) -> Fiber.zip(acc, c).map(t -> t.apply(Stream::concat)))
+				.orElseGet(() -> Fiber.done(Stream.empty()))
 				.map(q -> q.collect(Array.collector()));
 	}
 
