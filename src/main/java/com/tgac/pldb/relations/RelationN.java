@@ -42,7 +42,7 @@ public class RelationN implements Relation {
 
 	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
 		return query.toJavaStream()
-				.map(u -> MiniKanren.walk(s, u))
+				.map(u -> (Unifiable<?>) MiniKanren.walk(s, u))
 				.map(Stream::of)
 				.map(Fiber::done)
 				.reduce((acc, c) -> Fiber.zip(acc, c).map(t -> t.apply(Stream::concat)))

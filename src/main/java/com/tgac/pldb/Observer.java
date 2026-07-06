@@ -1,11 +1,11 @@
 package com.tgac.pldb;
-import com.tgac.functional.Consumers;
+import java.util.function.BiConsumer;
 import com.tgac.pldb.events.ChangeType;
 import com.tgac.pldb.events.FactsChanged;
 import com.tgac.pldb.relations.Relation;
 
 import java.util.stream.Collectors;
-public interface Observer extends Consumers._2<FactsChanged, Database> {
+public interface Observer extends BiConsumer<FactsChanged, Database> {
 	static Observer ofRelation(Relation rel, Observer c) {
 		return (fc, db) -> c.accept(
 				FactsChanged.of(fc.getChange(), fc.getFacts().stream()

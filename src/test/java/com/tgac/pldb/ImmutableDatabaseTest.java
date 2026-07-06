@@ -7,6 +7,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LList;
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -174,10 +175,10 @@ public class ImmutableDatabaseTest {
 						Arrays.asList("Arletta", "Honorata", "Aniela"));
 	}
 
-	private static <T> List<T> unwrap(Unifiable<LList<T>> ll) {
+	private static <T> List<T> unwrap(Term<LList<T>> ll) {
 		return ll.get().stream()
 				.map(Either::get)
-				.map(Unifiable::get)
+				.map(Term::get)
 				.collect(Collectors.toList());
 	}
 }

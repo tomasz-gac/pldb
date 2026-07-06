@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Logic;
 import com.tgac.logic.unification.LList;
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -110,7 +111,7 @@ public class DatabaseWithRelationsTest {
 										.and(parent.exists(db, gpId, parentId))
 										.and(person.exists(db, gpId, gpName, gpSurname, lvar())))
 						.solve(lval(Tuple.of(gpName, gpSurname)))
-						.map(Unifiable::get)
+						.map(Term::get)
 						.map(DatabaseWithRelationsTest::concatNameAndSurname)
 						.distinct()
 						.collect(Collectors.toList());
@@ -137,7 +138,7 @@ public class DatabaseWithRelationsTest {
 														person.exists(db, motherId, spouseName, spouseSurname, lval(Gender.FEMALE))))
 						.solve(lval(Tuple.of(spouseName, spouseSurname)))
 						.distinct()
-						.map(Unifiable::get)
+						.map(Term::get)
 						.map(DatabaseWithRelationsTest::concatNameAndSurname))
 				.containsExactlyInAnyOrder("Arletta Gac", "Henryka Gac");
 	}
@@ -289,12 +290,12 @@ public class DatabaseWithRelationsTest {
 	}
 
 	private static String concatNameAndSurname(Tuple2<Unifiable<String>, Unifiable<String>> t) {
-		return t.map(Unifiable::get, Unifiable::get)
+		return t.map(Term::get, Term::get)
 				.map2(" "::concat)
 				.apply(String::concat);
 	}
 
-	private static <T> List<T> unwrap(Unifiable<LList<T>> ll) {
+	private static <T> List<T> unwrap(Term<LList<T>> ll) {
 		return ll.get()
 				.toValueStream()
 				.collect(Collectors.toList());

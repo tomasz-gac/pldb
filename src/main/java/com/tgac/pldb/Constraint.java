@@ -1,7 +1,7 @@
 package com.tgac.pldb;
 
 import com.tgac.functional.Exceptions;
-import com.tgac.functional.Functions;
+import io.vavr.Function2;
 import com.tgac.pldb.events.ChangeType;
 import com.tgac.pldb.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public interface Constraint extends Functions._2<FactsChanged, Database, Optional<String>> {
+public interface Constraint extends Function2<FactsChanged, Database, Optional<String>> {
 
 	static Constraint unique(Relation relation, Property<?> property) {
 		return unique(relation, Collections.singletonList(property));

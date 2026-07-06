@@ -1,6 +1,6 @@
 package com.tgac.pldb;
-import com.tgac.functional.Functions;
+import io.vavr.Function2;
 import com.tgac.pldb.events.FactsChanged;
 import io.vavr.control.Try;
-public interface Trigger extends Functions._2<FactsChanged, Database, Try<Database>> {
+public interface Trigger extends Function2<FactsChanged, Database, Try<Database>> {
 }
