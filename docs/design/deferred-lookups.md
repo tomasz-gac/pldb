@@ -1,11 +1,13 @@
 # Deferred lookups — run database probes at the last possible moment
 
 > **Re-read through the Suspension lens:** `logic/docs/design/suspensions.md`
-> (written after this doc) names the concept this design needs. A parked lookup
-> ENUMERATES facts — it branches — so it is a Suspension, not a propagator/
-> Constraint as sketched below; its reify-time flush is `Suspension.force`. When
-> implementing, target the Suspension API (deferred lookups are its designated
-> second customer, the trigger for extracting it from `Verdict.run`).
+> names the concept this design needs — and the feature now EXISTS as
+> `Verdict.run` (a parked lookup enumerates facts — it branches — so it resumes
+> via run, not narrowed). Implement as: a `DeferredLookups` ConstraintStore
+> hosting `Propagator.of(DeferredLookups.class, queryArgs, state ->
+> probeIsCheap(state) ? Verdict.run(enumerate(state)) : Verdict.keep())`, with
+> the store's `enforceConstraints` as the reify-time flush. No extraction or new
+> API is needed.
 
 **Status:** design sketch, NOT implemented, and **BLOCKED on a prerequisite**: this adds a
 new `ConstraintStore`, which lands on the constraint-composition limitation documented in
