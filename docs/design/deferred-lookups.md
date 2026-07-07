@@ -1,5 +1,12 @@
 # Deferred lookups — run database probes at the last possible moment
 
+> **Re-read through the Suspension lens:** `logic/docs/design/suspensions.md`
+> (written after this doc) names the concept this design needs. A parked lookup
+> ENUMERATES facts — it branches — so it is a Suspension, not a propagator/
+> Constraint as sketched below; its reify-time flush is `Suspension.force`. When
+> implementing, target the Suspension API (deferred lookups are its designated
+> second customer, the trigger for extracting it from `Verdict.run`).
+
 **Status:** design sketch, NOT implemented, and **BLOCKED on a prerequisite**: this adds a
 new `ConstraintStore`, which lands on the constraint-composition limitation documented in
 `logic/docs/design/constraint-propagation.md` and `StoreSupport#processPrefix`'s javadoc.
