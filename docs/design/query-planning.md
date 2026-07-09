@@ -1,8 +1,9 @@
 # Query planning — goal reordering for faster lookups
 
-**Status:** design sketch, NOT implemented. Self-contained (no dependency on other
-redesigns). Prototype this BEFORE deferred-lookups.md — a greedy planner captures most of
-the same benefit with far less machinery.
+**Status:** designed (July 2026, with the human — supersedes the earlier sketch),
+NOT implemented. The infrastructure half lives in `logic` (the Optimizer seam),
+the planner half here. Build order: logic seam (pins first) → `LookupGoal` +
+`estimate()` + static planner → benchmark → only then the dynamic tier.
 
 ---
 
@@ -15,88 +16,196 @@ parent.exists(gp, p).and(parent.exists(p, lval("Tomek")))   // slow: enumerate A
 parent.exists(p, lval("Tomek")).and(parent.exists(gp, p))   // fast: probe, then probe
 ```
 
-The first form enumerates every `parent` fact (n choice points) and filters; the second
-probes the index with the bound value, binds `p`, and the next lookup probes again. Same
-answers, wildly different cost. A planner reorders pure conjunctions of relation lookups so
-the most selective goal runs first and each goal's bindings feed the next (Datalog's
-"sideways information passing").
+Same answers, wildly different cost. A planner reorders pure conjunctions of
+relation lookups so the most selective goal runs first and each goal's bindings
+feed the next (Datalog's sideways information passing).
 
-## 2. Why it is SAFE here (and only here)
+## 2. Barriers are a CORRECTNESS rule, not conservatism
 
-Reordering conjuncts is sound only for **pure** goals. The logic engine has impure ones
-(`conda`/`condu` commit, `project` inspects bindings) — reordering those changes meaning.
-But a conjunction of pldb relation lookups is a pure conjunctive query: reordering changes
-only enumeration order (which the scheduler re-fairs), never the answer set. Therefore:
+The planner whitelists goals it owns (`LookupGoal`) and treats everything it
+does not recognise as an immovable barrier. Two independent reasons, and the
+second is the one that must never be weakened:
 
-- **the planner lives in pldb and applies ONLY to relation-lookup goals it can identify** —
-  never reorder arbitrary `Goal`s;
-- any non-relation goal in the conjunction acts as a barrier (plan the runs of adjacent
-  relation lookups between barriers).
+1. **Impurity.** `conda`/`condu` commit, `project` inspects bindings —
+   reordering changes meaning.
+2. **Tabling.** A table entry is keyed on the reified call arguments — its
+   boundness pattern. Moving a binder ahead of a tabled call turns one general
+   entry (`p(_.0, _.1)`: one master, N slaves sharing its answers) into one
+   entry **per binding value** (`p(_.0, alice)`, `p(_.0, bob)`, …): duplicated
+   fixpoint computations, and an unbounded table when the binder upstream
+   enumerates unboundedly. Variant tabling makes the call pattern semantically
+   load-bearing. The optimizer contract, stated once: **a rewrite pass must
+   preserve the binding environment at every goal it does not itself own.**
+   Barrier partitioning guarantees this — all conjuncts before a barrier
+   complete before it runs, whatever their order.
 
-## 3. The seams that already exist
+(The sound way to get bindings *into* a recursion is magic sets — reify the
+relevant-values set as a derived relation joined inside the body; values land
+in answer rows, table keys stay per-mode and bounded by program text. It needs
+rules-as-data, which runtime goal trees don't have: a `defer` points at code,
+not at a rewritable definition. Out of scope unless pldb ever makes rules
+first-class. The degenerate case — the bound arg is invariant through the
+recursion — is just "write the filter inside the tabled body by hand",
+available today; see also §7.)
 
-- **`Goal.optimize()`** — `default Fiber<Goal> optimize()` on `Goal`, currently identity;
-  `Conde`/`Conjunction` already use it to flatten clauses. The planner is a
-  `optimize()` implementation on a pldb conjunction wrapper (or a rewrite pass applied to a
-  `Conjunction` whose elements are recognisable relation goals).
-- **Free statistics.** The index tries already know their bucket sizes — cardinality
-  estimates cost nothing. Expose from `ImmutableDatabase`:
-  `long estimate(Relation rel, IndexedSeq<Optional<Object>> boundArgs)` = size of the
-  bucket the probe would hit (or relation size when nothing indexed is bound).
+## 3. The seam in `logic`: Optimizer / Optimized / Guard
 
-To make relation goals plannable, `RelationN.relation(...)` should return a named subtype
-(e.g. `class LookupGoal implements Goal { Relation rel; Array<Unifiable<?>> args; ... }`)
-instead of an anonymous lambda, so the planner can see the relation and the args.
+- **`Optimizer`** — a visitor over the goal combinators: overloads for
+  `Conjunction`, `Conde`, `Conda`, `Condu`, `NamedGoal`, plus a generic
+  `visit(Goal)` fallback that is the extension hook (pldb's planner does its
+  `instanceof LookupGoal` there). Dispatch by
+  `default Goal accept(Optimizer o) { return o.visit(this); }` on `Goal`, so
+  opaque lambdas land in the fallback — untouched by construction.
+- **`CascadingOptimizer`** — base class carrying structural recursion +
+  normalization. It absorbs the flatten logic currently dead in the
+  parameterless `Goal.optimize()` / `Conjunction.optimize()` /
+  `Conde.optimize()` (nothing in the solve path calls them — a dangling seam;
+  it dies once absorbed). Pin the flattening behavior BEFORE moving it.
+- **`Goal.optimize(Optimizer)`** → returns **`Optimized implements Goal`**: a
+  wrapper that runs the optimizer at apply time and **re-wraps deferred /
+  unrecognized subgoals inward**, so each layer of a recursive unfolding gets
+  optimized as it materializes. Apply-time is the only time recursion is
+  optimizable at all — construction time sees a `defer` wall.
+- **`NamedGoal` is transparent** (recurse inside, preserve the label):
+  otherwise turning on tracing would silently turn off planning.
+- **`Guard`** — a `@Value` leaf wrapper the visitor never enters. Because
+  NamedGoal is transparent, wrapping no longer protects; Guard is the explicit
+  opt-out ("I ordered these deliberately") and makes the barrier contract
+  testable.
+- **Composition**: optimizers compose as an ordered pipeline of passes
+  (`Goal → Goal` endofunctions), never by merging visitors.
 
-## 4. Static planner (Phase 1)
+## 4. The pipeline shape — fixpoint ONLY where a lattice exists
 
-Greedy selectivity ordering at optimize/solve time:
+```
+normalize*  →  unroll(k)  →  normalize*  →  plan
+```
+
+- **normalize\*** (flatten nested and/or, prune trivial branches) runs to a
+  genuine fixpoint: it is contracting (tree size decreases — Noetherian) and
+  confluent → a canonical normal form. This is the only fragment that earns a
+  drain.
+- **unroll(k)** GROWS the tree — no natural fixpoint; fuel is the admission.
+- **plan** is a permutation — contracts nothing, but is deterministic given
+  tree + stats, hence idempotent: run once.
+- Do NOT run the full set to fixpoint: factoring and distribution (§8) are
+  mutual inverses — cost-directed, not lattice-ordered — a naive drain
+  oscillates. Optimization is argmin over an equivalence class, not a fixpoint
+  of a rewrite relation (same lesson as logic's `fixpoint-machine.md` §9: not
+  everything that iterates is the same fixpoint).
+
+## 5. Static planner (Phase 1)
+
+pldb side:
+
+- **`LookupGoal`** (`@Value`: `Database db, Relation rel, Array<Unifiable<?>> args`)
+  replaces the anonymous lambda in `RelationN.relation` — planner-visible, and
+  a real `toString` for traces. Each lookup captures its own db, so cost
+  estimates need no context threading.
+- **`estimate(Relation, boundArgs)`** on `ImmutableDatabase` — the index tries
+  already know their bucket sizes; this is exposure, not computation.
+- **`PlanningOptimizer extends CascadingOptimizer`**: within each
+  barrier-delimited segment of a flattened conjunction, greedy selectivity
+  ordering with the simulated bound-set:
 
 ```
 plan(lookups, boundVars):
-    result = []
     while lookups not empty:
-        pick g in lookups minimising cost(g, boundVars)
-        result += g
-        boundVars += vars(g)          // after g runs, its vars are bound
-        lookups -= g
-    return result
-
-cost(g, boundVars):
-    boundArgs = args of g that are ground OR in boundVars
-    if any boundArg is indexed:  estimate(rel, boundArgs)     // index bucket size
-    else:                        size(rel)                    // full enumeration
+        pick g minimising cost(g, boundVars)   // index bucket size, else relation size
+        emit g; boundVars += vars(g)
+    // ties: fewer free vars, then smaller relation
 ```
 
-Notes:
-- "bound" at plan time = ground at construction or bound by an earlier lookup in the plan.
-  A var bound by unification *outside* the conjunction is invisible statically — that gap is
-  what the dynamic planner (Phase 3) or deferred lookups close.
-- Ties: prefer fewer free vars, then smaller relation.
-- The plan is computed once per solve (the db is fixed during a solve; statistics don't
-  drift mid-query).
+Recurse into `Conde` branches independently (each disjunct is its own
+conjunctive context). "Bound" here = ground at construction or bound by an
+earlier lookup in the plan — bindings from OUTSIDE the conjunction are
+invisible statically; that gap is the dynamic tier's (§6) and it is the common
+case for rules called with bound args.
 
-## 5. Dynamic planner (Phase 3, optional)
+## 6. Dynamic tier (Phase 3 — benchmark-gated, and a fork)
 
-Instead of fixing the order up front, choose at runtime: the conjunction goal, when applied
-to a `Package`, walks each remaining lookup's args against the *current* substitutions and
-runs the cheapest. Strictly better (sees bindings from outside the conjunction), more
-machinery (the conjunction becomes a small interpreter). Only build if Phase 1 measurably
-under-plans real queries.
+Facts that shape it:
 
-## 6. Phases and acceptance
+- A wrong plan is never unsound (pure reordering changes cost only) → caching
+  needs no invalidation story.
+- The plan depends on the substitution only through the **boundness pattern**
+  (adornment) — few distinct patterns per conjunction → **memoize plans per
+  adornment**; the per-application cost is only the arg walk, which
+  `substituteQueryItems` already pays at execution.
+- The arg-walk itself can amortize: "walks to ground" is an **upward-closed**
+  fact (substitutions only grow — same monotonicity that makes suspension
+  ripeness fire-once). Cache positive results only, branch-scoped by riding
+  the `Package` as a plain store (Table/DebugStore pattern). Negative results
+  are not stable — never cache "unbound".
+- **Tabled bodies self-optimize for free**: the tabling combinator wraps its
+  own body in `Optimized` (the barrier binds outsiders, not the owner). The
+  master applies the body once per variant, so the plan is computed once per
+  table entry, specialized to that variant's boundness — variants ARE
+  adornments, and the table is already the memo.
+- **Dynamic planning and deferred lookups are SUBSTITUTES** — both exploit
+  runtime bindings; build at most one. Deferral has strictly more reach (parks
+  across the whole continuation; wakes on bindings from anywhere) and moves
+  consumers LATER across barriers — the tabling-safe direction (calls get more
+  general, never more specific). The planner covers the intra-segment side;
+  choose after the Phase 2 benchmark shows what static misses. `LookupGoal`
+  and `estimate()` are shared vocabulary either way (a parked lookup = a
+  LookupGoal; "cheap enough to wake" = the same estimate).
 
-1. `LookupGoal` type + `estimate()` on the database + greedy static planner behind
-   `optimize()`. **Tests:** every existing pldb test passes with planning on; answer sets
-   are identical planned vs unplanned (property: same `solve` results as a set) on the
-   genealogy fixtures.
-2. A cost benchmark: a deliberately mis-ordered query (unbound-first) over a few thousand
-   facts; assert the planner reduces enumerated facts by an order of magnitude (count facts
-   yielded by index probes, not wall-clock).
-3. (Optional) dynamic planner.
+## 7. The table-boundary rewrite (MANUAL pattern, not a pass)
 
-## 7. Non-goals
+`tabled(g).and(g2)` ≡ `tabled(g.and(g2))` as answer sets, ONLY when:
 
-- Reordering anything but pldb relation lookups (impure goals make it unsound).
-- Join algorithms beyond nested-loop-with-index (no hash joins etc. — YAGNI at this scale).
-- Cross-solve statistics or cost-model tuning.
+- `g2` is pure;
+- **free vars of `g2` ⊆ the tabled call's args** — answers are recorded as
+  bindings of the call args and everything else is projected away; push a
+  goal mentioning an outer non-arg var inside and its bindings are silently
+  lost;
+- set semantics suffice — the two sides differ in answer **multiplicity**
+  (the table dedups per args-binding), so the rewrite is NOT
+  equivalence-preserving under the planned semiring-weighted engine.
+
+Even when sound it is a **cache-granularity trade** (one general reusable
+entry vs a lean specialized one nobody else reuses) and it does NOT reach the
+recursion levels (recursive calls inside `g` still point at the original
+predicate). A global trade the local cost model cannot see → human decision,
+documented checklist, never automatic.
+
+## 8. Unrolling (a separate pass) and deeper rewrites
+
+- **`UnrollingOptimizer(k)`**: force bare `defer` suppliers up to depth k,
+  splice bodies in — the planner's window then spans layers, and the bound-set
+  simulation handles cross-layer dependencies automatically. The layer-k+1
+  defer stays a leaf where `Optimized`'s inward wrapping resumes per-layer
+  planning (sliding window). Constraints: fuel (unbounded unrolling diverges
+  at plan time), forced construction must be pure, and **never unroll through
+  a tabled call** — the call node carries variant lookup, reuse and the
+  termination argument; tabling IS the commitment not to unfold.
+- **Factoring** `(g∧a)∨(g∧b) → g∧(a∨b)` and **distribution** (its inverse):
+  sound for pure goals, inspectable via `Conde`, genuinely useful — but they
+  are the non-confluent pair of §4; later passes, chosen by cost, never
+  drained.
+
+## 9. Phases and acceptance
+
+1. **logic seam**: pin current flatten behavior; `Optimizer` +
+   `CascadingOptimizer` (absorbing flatten; parameterless `optimize()` dies) +
+   `Goal.optimize(Optimizer)`/`Optimized` + `Guard`. Pins: flatten unchanged;
+   optimizer never reorders across a Guard / unrecognized goal; NamedGoal
+   transparency.
+2. **pldb static planner**: `LookupGoal`, `estimate()`, `PlanningOptimizer`.
+   Tests: all existing tests pass with planning on; answer sets identical
+   planned vs unplanned on the genealogy fixtures.
+3. **Benchmark**: deliberately mis-ordered query over a few thousand facts;
+   assert order-of-magnitude reduction in enumerated facts (count probe
+   yields, not wall-clock).
+4. **Fork** (data-driven): adornment-memoized dynamic planning XOR deferred
+   lookups (`deferred-lookups.md`, whose own doc needs re-pointing at the
+   shipped kernel: suspend/enforce, not Verdict.run).
+
+## 10. Non-goals
+
+- Reordering anything but recognised pldb lookups (barriers are correctness —
+  §2).
+- Magic sets / unfold-fold program transformation (needs rules-as-data).
+- Running the pass set to a global fixpoint (§4).
+- Join algorithms beyond nested-loop-with-index; cross-solve statistics.
