@@ -75,24 +75,26 @@ available today; see also §7.)
 - **Composition**: optimizers compose as an ordered pipeline of passes
   (`Goal → Goal` endofunctions), never by merging visitors.
 
-## 4. The pipeline shape — fixpoint ONLY where a lattice exists
+## 4. The pipeline shape — four single passes, NO fixpoint anywhere
 
 ```
-normalize*  →  unroll(k)  →  normalize*  →  plan
+normalize  →  unroll(k)  →  normalize  →  plan
 ```
 
-- **normalize\*** (flatten nested and/or, prune trivial branches) runs to a
-  genuine fixpoint: it is contracting (tree size decreases — Noetherian) and
-  confluent → a canonical normal form. This is the only fragment that earns a
-  drain.
-- **unroll(k)** GROWS the tree — no natural fixpoint; fuel is the admission.
-- **plan** is a permutation — contracts nothing, but is deterministic given
-  tree + stats, hence idempotent: run once.
-- Do NOT run the full set to fixpoint: factoring and distribution (§8) are
-  mutual inverses — cost-directed, not lattice-ordered — a naive drain
-  oscillates. Optimization is argmin over an equivalence class, not a fixpoint
-  of a rewrite relation (same lesson as logic's `fixpoint-machine.md` §9: not
-  everything that iterates is the same fixpoint).
+- **normalize** (flatten nested and/or, prune trivial branches) is one
+  bottom-up structural recursion: children normalize first, the parent
+  splices — nothing nested survives a single traversal. The recursion IS the
+  termination argument; no iterate-until-stable loop. The second normalize is
+  an ordinary re-application after unroll splices bodies in, not a drain.
+- **unroll(k)** GROWS the tree — fuel-bounded by construction.
+- **plan** is a permutation — deterministic given tree + stats, hence
+  idempotent: run once.
+- Do NOT run the pass set to fixpoint: pass-level iteration is only needed
+  when a rewrite creates redexes it cannot see in its own traversal — flatten
+  cannot, and the pair that can (factoring/distribution, §8) are mutual
+  inverses: cost-directed, not lattice-ordered — a naive drain oscillates.
+  Optimization is argmin over an equivalence class, not a fixpoint of a
+  rewrite relation (same lesson as logic's `fixpoint-machine.md` §9).
 
 ## 5. Static planner (Phase 1)
 
