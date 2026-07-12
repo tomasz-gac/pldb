@@ -9,6 +9,23 @@ import java.util.Optional;
 public interface Database {
 	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
 
+	/**
+	 * Upper bound on the facts {@link #get} would yield — the planner's order
+	 * function (logic's optimizer.md §3). Exposure, not computation: the
+	 * default counts, backends with sized buckets should override.
+	 */
+	default long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+		Iterable<Fact> bucket = get(relation, args);
+		if (bucket instanceof java.util.Collection) {
+			return ((java.util.Collection<?>) bucket).size();
+		}
+		long n = 0;
+		for (@SuppressWarnings("unused") Fact f : bucket) {
+			n++;
+		}
+		return n;
+	}
+
 	Try<Database> withFacts(List<Fact> facts);
 
 	Try<Database> withoutFacts(List<Fact> facts);

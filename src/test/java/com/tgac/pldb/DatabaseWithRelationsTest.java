@@ -1,5 +1,6 @@
 package com.tgac.pldb;
 
+import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import static com.tgac.logic.goals.Goal.condu;
 import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.goals.Matche.llist;
@@ -239,7 +240,7 @@ public class DatabaseWithRelationsTest {
 																		LList.of(lhsId),
 																		res)
 																.and(LList.map(res, line, personWithIdNameAndSurname(db)))))
-										.optimize().get())
+										.accept(new CascadingOptimizer()).get())
 				.solve(line)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)

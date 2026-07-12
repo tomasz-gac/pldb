@@ -1,19 +1,10 @@
 package com.tgac.pldb.relations;
 
-import static com.tgac.logic.unification.LVal.lval;
 
-import com.tgac.functional.monad.Cont;
-import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.goals.Goal;
-import com.tgac.logic.unification.LVal;
-import com.tgac.logic.unification.MiniKanren;
-import com.tgac.logic.unification.Package;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import io.vavr.collection.Array;
-import io.vavr.control.Option;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import lombok.Value;
 
 @Value
@@ -35,31 +26,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return s -> Cont.defer(() ->
-				substituteQueryItems(s, Array.of(args))
-						.map(q -> unifyQueryResults(db, rel, q).apply(s)));
-	}
-
-	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Package s, Array<Unifiable<?>> query) {
-		return query.toJavaStream()
-				.map(u -> (Unifiable<?>) MiniKanren.walk(s, u))
-				.map(Stream::of)
-				.map(Fiber::done)
-				.reduce((acc, c) -> Fiber.zip(acc, c).map(t -> t.apply(Stream::concat)))
-				.orElseGet(() -> Fiber.done(Stream.empty()))
-				.map(q -> q.collect(Array.collector()));
-	}
-
-	private static Goal unifyQueryResults(Database db, Relation rel, Array<Unifiable<?>> query) {
-		return StreamSupport.stream(db.get(rel, query
-								.map(Unifiable::getObjectUnifiable)
-								.map(Unifiable::asVal)
-								.map(Option::toJavaOptional))
-						.spliterator(), false)
-				.map(fact -> lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
-						.unifies(query.map(Unifiable::getObjectUnifiable)))
-				.reduce(Goal::or)
-				.orElseGet(Goal::failure);
+		return LookupGoal.of(db, rel, Array.of(args));
 	}
 
 	public Fact apply(Object... vs) {
