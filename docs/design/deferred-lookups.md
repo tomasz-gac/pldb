@@ -1,5 +1,13 @@
 # Deferred lookups — run database probes at the last possible moment
 
+> **Superseded target — read `table-constraints.md` first.** This doc DEFERS a
+> lookup then BRANCHES (enumerate on wake); `table-constraints.md` is the
+> stronger form — a NARROWING store where the candidate rows are a domain that
+> prunes and collapses, branching only at labelling. That subsumes this doc's
+> win. Also: the blocker below (logic's constraint-propagation redesign) is now
+> CLEARED (done July 2026). Keep this as the description of the cheaper
+> defer-only slice.
+
 > **Re-read through the Suspension lens:** `logic/docs/design/suspensions.md`
 > names the concept this design needs — and the feature now EXISTS as
 > `Verdict.run` (a parked lookup enumerates facts — it branches — so it resumes
