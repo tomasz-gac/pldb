@@ -47,5 +47,20 @@ Auto-loaded every session — read before changing code.
   constraint): candidates are a domain, singleton→collapse, joins prune, branch
   only at `labelo`. The stronger "minimize branching" answer; supersedes
   deferred-lookups as the target. Start here for the constraint-store direction.
+- `external-relations.md` — the backend contract that unifies the above: the read
+  side is TWO operations (enumerate + count) over a bound pattern, in-memory as
+  one implementation; SQL/REST/user backends as others; pull-vs-materialize,
+  the per-query consistency model, and REST endpoint GENERATION (no new protocol —
+  the outbound dual of the same mode signature). deferred-lookups and
+  table-constraints are two phases of this one contract. The SUBSTRATE — read for
+  the whole external-data picture.
+- `relational-structs.md` — the AUTHORING layer. TWO separable problems: query
+  ergonomics (a `query().bind(Property, val)` builder — no codegen) and schema
+  declaration (`@Relational` on a domain `@Value` makes the struct the SINGLE
+  SOURCE — fields+annotations generate the Property constants, Row, constraints,
+  indexes, AND the Relation, so there's no separate relation declaration). Base =
+  schema annotations, derived = a `rule` body; both generate a uniform Relation
+  the server can't tell apart. Codegen is justified as schema-as-a-type, NOT as
+  arg-naming (the builder does that). Read for how relations are written.
 - `further-directions.md` — weighted facts (semiring tie-in), materialized views,
   subscriptions, time-travel. Captured, not designed.
