@@ -1,7 +1,7 @@
 package com.tgac.pldb;
 import com.tgac.functional.Exceptions;
-import com.tgac.pldb.index.ImmutableIndex;
-import com.tgac.pldb.index.Index;
+import com.tgac.functional.index.ImmutableIndex;
+import com.tgac.functional.index.Index;
 import com.tgac.pldb.relations.Fact;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
