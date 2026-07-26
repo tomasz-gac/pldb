@@ -147,7 +147,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 			}
 			TableBody narrowest = null;
 			Array<? extends Term<?>> watched = null;
-			int fewest = Integer.MAX_VALUE;
+			long fewest = Long.MAX_VALUE;
 			for (Propagator p : live.propagators) {
 				if (!(p.body() instanceof TableBody)) {
 					continue;
@@ -156,7 +156,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 				if (walked.forAll(w -> w.asVal().isDefined())) {
 					continue;
 				}
-				int count = ((TableBody) p.body()).candidates(live, walked).size();
+				long count = ((TableBody) p.body()).estimate(walked);
 				if (count < fewest) {
 					fewest = count;
 					narrowest = (TableBody) p.body();

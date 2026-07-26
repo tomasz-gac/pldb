@@ -89,12 +89,19 @@ final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, V
 		return ((LVar<Object>) w.asVar().get()).unifies(value);
 	}
 
+	/**
+	 * The record's rank for fail-first ordering: the index bucket size under
+	 * the current bindings. An upper bound (support filtering not applied) —
+	 * a heuristic owes a rank, not exactness, and it costs a bucket lookup
+	 * instead of a materialization.
+	 */
+	long estimate(Array<Term<?>> walked) {
+		return db.estimate(rel, probe(walked));
+	}
+
 	/** The index probe under the current bindings, filtered by live supports. */
-	List<Fact> candidates(TableConstraints store, Array<Term<?>> walked) {
-		IndexedSeq<Optional<Object>> probe = walked
-				.map(w -> w.asVal()
-						.map(v -> (Object) v)
-						.toJavaOptional());
+	private List<Fact> candidates(TableConstraints store, Array<Term<?>> walked) {
+		IndexedSeq<Optional<Object>> probe = probe(walked);
 		List<Fact> candidates = new ArrayList<>();
 		for (Fact fact : db.get(rel, probe)) {
 			if (admitted(store, walked, fact)) {
@@ -102,6 +109,12 @@ final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, V
 			}
 		}
 		return candidates;
+	}
+
+	private static IndexedSeq<Optional<Object>> probe(Array<Term<?>> walked) {
+		return walked.map(w -> w.asVal()
+				.map(v -> (Object) v)
+				.toJavaOptional());
 	}
 
 	/** Does the row survive every free column's live support? */
