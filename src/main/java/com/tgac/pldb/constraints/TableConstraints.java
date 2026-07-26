@@ -90,7 +90,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	 */
 	public static Goal labelo(Unifiable<?>... xs) {
 		return Arrays.stream(xs)
-				.map(x -> label(x))
+				.map(TableConstraints::label)
 				.reduce(Goal::and)
 				.orElseGet(Goal::success);
 	}
@@ -99,7 +99,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	@Override
 	public <T> Goal enforce(Term<T> x) {
 		return values.keySet()
-				.map(k -> label(k))
+				.map(TableConstraints::label)
 				.foldLeft(Goal.success(), Goal::and);
 	}
 
@@ -184,7 +184,6 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	}
 
 	/** One candidate left: bind every free column — the FD-collapse move on tuples. */
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static Update collapse(Package state, TableConstraints factor, Array<Term<?>> walked, Fact row) {
 		Update.Applied result = Update.applied(factor);
 		boolean bound = false;
@@ -193,9 +192,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 			if (w.asVal().isDefined()) {
 				continue;
 			}
-			Prefix prefix = Prefix.binding(state.substitution(),
-							(LVar) w.asVar().get(), lval(row.getValues().get(i)))
-					.getOrNull();
+			Prefix prefix = bindingOf(state, w, row.getValues().get(i));
 			if (prefix != null) {
 				result = result.withInferred(prefix);
 				bound = true;
@@ -204,7 +201,38 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 		return bound ? result : Update.unchanged();
 	}
 
-	/** Narrow each free column's support to its projection over the candidates. */
+	private static Prefix bindingOf(Package state, Term<?> w, Object value) {
+		return Prefix.binding(state.substitution(), w.asVar().get(), lval(value))
+				.getOrNull();
+	}
+
+	/**
+	 * Is the column a JOIN column right now? Someone already stored a support
+	 * for it, or a second propagator watches it — sharedness is checked per
+	 * wake, not per post, because it arrives late (a later posting, or an
+	 * alias welding two columns).
+	 */
+	private static boolean shared(TableConstraints store, Package state, Term<?> w) {
+		if (store.getValue(w).isDefined()) {
+			return true;
+		}
+		int watchers = 0;
+		for (Propagator p : store.propagators) {
+			if (p.watches(state, w) && ++watchers >= 2) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Narrow each free column against its projection over the candidates.
+	 * Projections are TRANSIENT: a singleton binds its column right here
+	 * (every candidate agrees, and some candidate must hold), and a wider
+	 * projection is STORED only when the column is shared — an unshared
+	 * support has no reader, so the shadow's cost is the join width, not
+	 * every posted column.
+	 */
 	private static Update narrow(Package state, TableConstraints factor,
 			Array<Term<?>> walked, List<Fact> candidates) {
 		TableConstraints current = factor;
@@ -219,6 +247,16 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 			Support projection = Support.ofAll(candidates.stream()
 					.map(f -> f.getValues().get(column))
 					.collect(Collectors.toSet()));
+			if (projection.asPoint().isDefined()) {
+				Prefix prefix = bindingOf(state, w, projection.asPoint().get());
+				if (prefix != null) {
+					inferred.add(prefix);
+				}
+				continue;
+			}
+			if (!shared(current, state, w)) {
+				continue;
+			}
 			Update step = current.update(state, w, projection);
 			TableConstraints before = current;
 			current = step.match(

@@ -6,6 +6,7 @@ package com.tgac.pldb;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.goals.Goal;
@@ -41,6 +42,8 @@ public class TableConstraintsTest {
 			Relations.relation("r", item.indexed(), tag.indexed());
 	private static final Relations._2<String, Integer> s =
 			Relations.relation("s", label.indexed(), price.indexed());
+	private static final Relations._2<Integer, String> t =
+			Relations.relation("t", item.indexed(), tag.indexed());
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -49,7 +52,9 @@ public class TableConstraintsTest {
 					r.fact(3, "c"),
 					s.fact("a", 10),
 					s.fact("b", 20),
-					s.fact("d", 40)))
+					s.fact("d", 40),
+					t.fact(7, "u"),
+					t.fact(7, "v")))
 			.get();
 
 	/** A goal that runs assertions against the live package and succeeds. */
@@ -70,14 +75,14 @@ public class TableConstraintsTest {
 				.and(s.posted(db, y, z))
 				.and(probe(p -> {
 					TableConstraints store = p.getStore(TableConstraints.class);
-					// y is r's tags met with s's labels: {a,b,c} ∧ {a,b,d} = {a,b}
+					// y is the SHARED column: r's tags met with s's labels,
+					// {a,b,c} ∧ {a,b,d} = {a,b} — the only support materialized
 					assertThat(store.getValue(p.walk(y)).get())
 							.isEqualTo(Support.of("a", "b"));
-					// r's candidates filtered by y's support: rows 1,2 — x ∈ {1,2}
-					assertThat(store.getValue(p.walk(x)).get())
-							.isEqualTo(Support.of(1, 2));
-					assertThat(store.getValue(p.walk(z)).get())
-							.isEqualTo(Support.of(10, 20));
+					// x and z are lone columns: their projections are transient,
+					// nobody reads them, nothing is stored
+					assertThat(store.getValue(p.walk(x)).isDefined()).isFalse();
+					assertThat(store.getValue(p.walk(z)).isDefined()).isFalse();
 				}))
 				.solve(lval(Tuple.of(x, y, z)))
 				.map(Term::get)
@@ -131,13 +136,91 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
+		// labelling the SHARED column: each y branch collapses both records
 		List<Integer> items = r.posted(db, x, y)
 				.and(s.posted(db, y, lvar()))
-				.and(TableConstraints.labelo(x))
+				.and(TableConstraints.labelo(y))
 				.solve(x)
 				.map(Term::get)
 				.collect(Collectors.toList());
 		assertThat(items).containsExactlyInAnyOrder(1, 2);
+	}
+
+	@Test
+	public void aLoneTableStoresNoSupports() {
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+
+		long count = r.posted(db, x, y)
+				.and(probe(p -> {
+					TableConstraints store = p.getStore(TableConstraints.class);
+					assertThat(store.getValue(p.walk(x)).isDefined()).isFalse();
+					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
+				}))
+				.and(x.unifies(1))
+				.and(y.unifies("a"))
+				.solve(y)
+				.count();
+		assertThat(count).isEqualTo(1);
+	}
+
+	@Test
+	public void anUnresolvedLoneRecordRefusesAtReify() {
+		// a lone record's projections are transient, so nothing can ground it
+		// at reify — refuse loudly; the row-labeller is exists on the same args
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+
+		assertThatThrownBy(() ->
+						r.posted(db, x, y).solve(y).count())
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("without domain");
+	}
+
+	@Test
+	public void aLoneColumnCollapseStillBindsTransiently() {
+		// both rows of t agree on item — the singleton projection binds x
+		// without ever storing a support
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+
+		long count = t.posted(db, x, y)
+				.and(probe(p -> {
+					assertThat(p.walk(x).get()).isEqualTo(7);
+					TableConstraints store = p.getStore(TableConstraints.class);
+					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
+				}))
+				.and(y.unifies("u"))
+				.solve(y)
+				.count();
+		assertThat(count).isEqualTo(1);
+	}
+
+	@Test
+	public void lateAliasingMaterializesTheSharedColumn() {
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+		Unifiable<String> l = lvar();
+		Unifiable<Integer> z = lvar();
+
+		// posted apart: no sharing, nothing stored; the alias welds y~l and
+		// both records materialize the column and meet
+		long count = r.posted(db, x, y)
+				.and(s.posted(db, l, z))
+				.and(probe(p -> {
+					TableConstraints store = p.getStore(TableConstraints.class);
+					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
+					assertThat(store.getValue(p.walk(l)).isDefined()).isFalse();
+				}))
+				.and(y.unifies(l))
+				.and(probe(p -> {
+					TableConstraints store = p.getStore(TableConstraints.class);
+					assertThat(store.getValue(p.walk(y)).get())
+							.isEqualTo(Support.of("a", "b"));
+				}))
+				.solve(lval(Tuple.of(x, y, z)))
+				.count();
+		assertThat(count).isEqualTo(2);
 	}
 
 	@Test
