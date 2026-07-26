@@ -4,6 +4,7 @@ package com.tgac.pldb.relations;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
+import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.collection.Array;
 import lombok.Value;
 
@@ -27,6 +28,14 @@ public class RelationN implements Relation {
 
 	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
 		return LookupGoal.of(db, rel, Array.of(args));
+	}
+
+	public Goal posted(Database db, Unifiable<?>... args) {
+		return posted(db, this, args);
+	}
+
+	public static Goal posted(Database db, Relation rel, Unifiable<?>... args) {
+		return TableConstraints.posted(db, rel, Array.of(args));
 	}
 
 	public Fact apply(Object... vs) {

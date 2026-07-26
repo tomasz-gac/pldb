@@ -85,6 +85,10 @@ public class Relations {
 			return RelationN.relation(db, this);
 		}
 
+		public Goal posted(Database db) {
+			return RelationN.posted(db, this);
+		}
+
 		public Fact fact() {
 			return Fact.of(this, Array.of());
 		}
@@ -115,6 +119,10 @@ public class Relations {
 
 		public Goal exists(Database db, Unifiable<T0> v0) {
 			return RelationN.relation(db, this, v0);
+		}
+
+		public Goal posted(Database db, Unifiable<T0> v0) {
+			return RelationN.posted(db, this, v0);
 		}
 
 		public Fact fact(T0 v0) {
@@ -149,6 +157,10 @@ public class Relations {
 			return RelationN.relation(db, this, v0, v1);
 		}
 
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1) {
+			return RelationN.posted(db, this, v0, v1);
+		}
+
 		public Fact fact(T0 v0, T1 v1) {
 			return Fact.of(this, Array.of(v0, v1));
 		}
@@ -179,6 +191,10 @@ public class Relations {
 
 		public Goal exists(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.relation(db, this, v0, v1, v2);
+		}
+
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+			return RelationN.posted(db, this, v0, v1, v2);
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2) {
@@ -213,6 +229,10 @@ public class Relations {
 			return RelationN.relation(db, this, v0, v1, v2, v3);
 		}
 
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+			return RelationN.posted(db, this, v0, v1, v2, v3);
+		}
+
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3));
 		}
@@ -245,6 +265,10 @@ public class Relations {
 			return RelationN.relation(db, this, v0, v1, v2, v3, v4);
 		}
 
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+			return RelationN.posted(db, this, v0, v1, v2, v3, v4);
+		}
+
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3, v4));
 		}
@@ -275,6 +299,10 @@ public class Relations {
 
 		public Goal exists(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.relation(db, this, v0, v1, v2, v3, v4, v5);
+		}
+
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+			return RelationN.posted(db, this, v0, v1, v2, v3, v4, v5);
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5) {
@@ -310,6 +338,10 @@ public class Relations {
 			return RelationN.relation(db, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+			return RelationN.posted(db, this, v0, v1, v2, v3, v4, v5, v6);
+		}
+
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5, T6 v6) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3, v4, v5, v6));
 		}
@@ -341,6 +373,10 @@ public class Relations {
 
 		public Goal exists(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.relation(db, this, v0, v1, v2, v3, v4, v5, v6, v7);
+		}
+
+		public Goal posted(Database db, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+			return RelationN.posted(db, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5, T6 v6, T7 v7) {
