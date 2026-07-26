@@ -90,7 +90,7 @@ final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, V
 	}
 
 	/** The index probe under the current bindings, filtered by live supports. */
-	private List<Fact> candidates(TableConstraints store, Array<Term<?>> walked) {
+	List<Fact> candidates(TableConstraints store, Array<Term<?>> walked) {
 		IndexedSeq<Optional<Object>> probe = walked
 				.map(w -> w.asVal()
 						.map(v -> (Object) v)

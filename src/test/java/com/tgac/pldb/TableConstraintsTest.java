@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
+import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.constraints.Support;
@@ -196,6 +197,58 @@ public class TableConstraintsTest {
 				.solve(y)
 				.count();
 		assertThat(count).isEqualTo(1);
+	}
+
+	@Test
+	public void aPostedGoalPricesZeroWhenDeadAndOneOtherwise() {
+		Unifiable<String> y = lvar();
+		// bound arg with an empty bucket: no candidate can ever appear
+		assertThat(((Bounded) r.posted(db, lval(99), y)).answers(Package.empty()))
+				.isZero();
+		// a live post is a constraint statement: one success, ever
+		assertThat(((Bounded) r.posted(db, lval(1), y)).answers(Package.empty()))
+				.isEqualTo(1);
+		Unifiable<Integer> x = lvar();
+		assertThat(((Bounded) r.posted(db, x, y)).answers(Package.empty()))
+				.isEqualTo(1);
+	}
+
+	@Test
+	public void labeloPricesAtTheLiveSupportSize() {
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+		Unifiable<Integer> z = lvar();
+		Package[] captured = new Package[1];
+
+		long answers = r.posted(db, x, y)
+				.and(s.posted(db, y, z))
+				.and(probe(p -> captured[0] = p))
+				.solve(lval(Tuple.of(x, y, z)))
+				.count();
+		assertThat(answers).isEqualTo(2);
+
+		// y's live support after the join narrowing is {a,b}
+		assertThat(((Bounded) TableConstraints.labelo(y)).answers(captured[0]))
+				.isEqualTo(2);
+		// an unsupported or bound variable labels as a pass-through
+		assertThat(((Bounded) TableConstraints.labelo(x)).answers(captured[0]))
+				.isEqualTo(1);
+	}
+
+	@Test
+	public void enforceGroundsIndependentRecordsCompletely() {
+		// two unrelated lone records: enforce grounds both, fewest rows first,
+		// yielding the full cartesian of their candidate rows
+		Unifiable<Integer> x1 = lvar();
+		Unifiable<String> y1 = lvar();
+		Unifiable<Integer> x2 = lvar();
+		Unifiable<String> y2 = lvar();
+
+		long count = r.posted(db, x1, y1)
+				.and(t.posted(db, x2, y2))
+				.solve(lval(Tuple.of(x1, y1, x2, y2)))
+				.count();
+		assertThat(count).isEqualTo(6);
 	}
 
 	@Test

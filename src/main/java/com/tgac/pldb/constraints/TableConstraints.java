@@ -9,11 +9,13 @@ import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
+import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.lattice.LatticeStore;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Update;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
+import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
@@ -21,10 +23,13 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
+import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.LinkedHashMap;
+import io.vavr.control.Option;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -69,43 +74,102 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	 * Post a lookup as a constraint: park the table propagator and take its
 	 * first examination — the initial narrowing — through the kernel's
 	 * statement entry. {@code exists} stays the enumerate-now alternative.
+	 * Priced 0-or-1: a post whose bound pattern hits an empty bucket can
+	 * never be satisfied (candidates only shrink), so the planner hoists the
+	 * failure; a live post is a constraint statement — one success, ever —
+	 * so the planner floats it ahead of enumerations.
 	 */
 	public static Goal posted(Database db, Relation rel, Array<Unifiable<?>> args) {
-		return p -> Propagation.activate(
+		Goal post = p -> Propagation.activate(
 						Propagator.of(TableConstraints.class,
 								rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db)),
 								args,
 								new TableBody(db, rel)))
 				.apply(registered(p));
+		return Bounded.of(s -> postedOrder(s, db, rel, args), post);
+	}
+
+	private static long postedOrder(Substitutions s, Database db, Relation rel, Array<Unifiable<?>> args) {
+		IndexedSeq<Optional<Object>> probe = args
+				.map(u -> (Unifiable<?>) s.walk(u))
+				.map(Unifiable::getObjectUnifiable)
+				.map(Unifiable::asVal)
+				.map(Option::toJavaOptional);
+		return db.estimate(rel, probe) == 0 ? 0 : 1;
 	}
 
 	/**
 	 * The declared branch point: enumerate each variable's LIVE support, in
 	 * the given order — collapses cascade between labellings, so later
-	 * variables usually bind without branching.
+	 * variables usually bind without branching. Each labelling is priced at
+	 * its live support size, so the optimizer's cheapest-first sort is CP's
+	 * min-domain heuristic.
 	 */
 	public static Goal labelo(Unifiable<?>... xs) {
 		return Arrays.stream(xs)
-				.map(TableConstraints::label)
+				.map(x -> Bounded.sighted(p -> labelOrder(p, x), label(x)))
 				.reduce(Goal::and)
 				.orElseGet(Goal::success);
+	}
+
+	private static long labelOrder(Package p, Term<?> x) {
+		Term<?> w = p.walk(x);
+		if (!w.asVar().isDefined()) {
+			return 1;
+		}
+		return p.getStores().get(TableConstraints.class)
+				.map(TableConstraints.class::cast)
+				.flatMap(live -> live.getValue(w))
+				.map(support -> (long) support.getValues().size())
+				.getOrElse(1L);
 	}
 
 	/**
 	 * Answers may not leave with live records: each surviving record grounds
 	 * ROW-WISE — the store recognizes its own bodies and branches over each
-	 * record's live candidates. Self-sufficient for lone and joined records
-	 * alike; collapses cascade between records, so later ones usually verify
-	 * all-ground without branching.
+	 * record's live candidates, FEWEST CANDIDATES FIRST (fail-first: each
+	 * grounding collapses the rest, so the narrowest record minimizes total
+	 * branching). Self-sufficient for lone and joined records alike.
 	 */
 	@Override
 	public <T> Goal enforce(Term<T> x) {
-		return propagators.toJavaStream()
-				.map(p -> p.body() instanceof TableBody
-						? ((TableBody) p.body()).enumerate(p.watchedTerms())
-						: Goal.success())
-				.reduce(Goal::and)
-				.orElseGet(Goal::success);
+		return groundRecords();
+	}
+
+	/** Pick the narrowest live record, enumerate it, repeat against the new state. */
+	private static Goal groundRecords() {
+		return s -> {
+			TableConstraints live = s.getStores().get(TableConstraints.class)
+					.map(TableConstraints.class::cast)
+					.getOrNull();
+			if (live == null) {
+				return Cont.just(s);
+			}
+			TableBody narrowest = null;
+			Array<? extends Term<?>> watched = null;
+			int fewest = Integer.MAX_VALUE;
+			for (Propagator p : live.propagators) {
+				if (!(p.body() instanceof TableBody)) {
+					continue;
+				}
+				Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
+				if (walked.forAll(w -> w.asVal().isDefined())) {
+					continue;
+				}
+				int count = ((TableBody) p.body()).candidates(live, walked).size();
+				if (count < fewest) {
+					fewest = count;
+					narrowest = (TableBody) p.body();
+					watched = p.watchedTerms();
+				}
+			}
+			if (narrowest == null) {
+				return Cont.just(s);
+			}
+			return narrowest.enumerate(watched)
+					.and(Goal.defer(TableConstraints::groundRecords))
+					.apply(s);
+		};
 	}
 
 	private static Goal label(Term<?> x) {
