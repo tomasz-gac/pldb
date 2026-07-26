@@ -6,7 +6,6 @@ package com.tgac.pldb;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.goals.Goal;
@@ -29,7 +28,7 @@ import org.junit.Test;
  * re-narrow it through the index, two posted tables sharing a variable prune
  * each other through their column supports, a singleton candidate set collapses
  * to bindings without branching, and branching happens only at {@code labelo}
- * or at reify (enforce grounds surviving supports, the FD convention).
+ * or at reify (enforce grounds each surviving record row-wise).
  */
 public class TableConstraintsTest {
 
@@ -165,16 +164,19 @@ public class TableConstraintsTest {
 	}
 
 	@Test
-	public void anUnresolvedLoneRecordRefusesAtReify() {
-		// a lone record's projections are transient, so nothing can ground it
-		// at reify — refuse loudly; the row-labeller is exists on the same args
+	public void aLoneRecordGroundsRowWiseAtReify() {
+		// posted is self-sufficient whether or not anything joins it: at
+		// reify each surviving record enumerates its live candidate ROWS —
+		// exactly the rows, never a cartesian product of columns
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
-		assertThatThrownBy(() ->
-						r.posted(db, x, y).solve(y).count())
-				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("without domain");
+		List<String> rows = r.posted(db, x, y)
+				.solve(lval(Tuple.of(x, y)))
+				.map(Term::get)
+				.map(p -> p._1.get() + "," + p._2.get())
+				.collect(Collectors.toList());
+		assertThat(rows).containsExactlyInAnyOrder("1,a", "2,b", "3,c");
 	}
 
 	@Test

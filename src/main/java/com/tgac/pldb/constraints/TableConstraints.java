@@ -12,7 +12,6 @@ import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.LatticeStore;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Update;
-import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Term;
@@ -22,13 +21,10 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
-import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +37,7 @@ import java.util.stream.Collectors;
  * all-ground is a membership check, one candidate COLLAPSES to inferred
  * bindings, many candidates narrow each free column's {@link Support}.
  * Branching happens only at {@link #labelo} — or at reify, where
- * {@code enforce} grounds every surviving support (the FD convention).
+ * {@code enforce} grounds each surviving record row-wise.
  */
 public final class TableConstraints extends LatticeStore<Support, TableConstraints> {
 
@@ -79,7 +75,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 						Propagator.of(TableConstraints.class,
 								rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db)),
 								args,
-								body(db, rel)))
+								new TableBody(db, rel)))
 				.apply(registered(p));
 	}
 
@@ -95,12 +91,21 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 				.orElseGet(Goal::success);
 	}
 
-	/** Answers may not leave with live supports: ground them all, FD-style. */
+	/**
+	 * Answers may not leave with live records: each surviving record grounds
+	 * ROW-WISE — the store recognizes its own bodies and branches over each
+	 * record's live candidates. Self-sufficient for lone and joined records
+	 * alike; collapses cascade between records, so later ones usually verify
+	 * all-ground without branching.
+	 */
 	@Override
 	public <T> Goal enforce(Term<T> x) {
-		return values.keySet()
-				.map(TableConstraints::label)
-				.foldLeft(Goal.success(), Goal::and);
+		return propagators.toJavaStream()
+				.map(p -> p.body() instanceof TableBody
+						? ((TableBody) p.body()).enumerate(p.watchedTerms())
+						: Goal.success())
+				.reduce(Goal::and)
+				.orElseGet(Goal::success);
 	}
 
 	private static Goal label(Term<?> x) {
@@ -130,61 +135,8 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 		return p.getStores().containsKey(TableConstraints.class) ? p : p.withStore(EMPTY);
 	}
 
-	/**
-	 * The record's re-examination, POSITIONAL over the watched terms: walk,
-	 * probe the index by whatever is bound, filter by the live supports of
-	 * whatever is free, verdict.
-	 */
-	private static BiFunction<Array<? extends Term<?>>, Package, Verdict> body(Database db, Relation rel) {
-		return (watched, pkg) -> {
-			Array<Term<?>> walked = watched.map(t -> (Term<?>) pkg.walk(t));
-			TableConstraints store = pkg.getStore(TableConstraints.class);
-			IndexedSeq<Optional<Object>> probe = walked
-					.map(w -> w.asVal()
-							.map(v -> (Object) v)
-							.toJavaOptional());
-			List<Fact> candidates = new ArrayList<>();
-			for (Fact fact : db.get(rel, probe)) {
-				if (admitted(store, walked, fact)) {
-					candidates.add(fact);
-				}
-			}
-			if (candidates.isEmpty()) {
-				return Verdict.fail();
-			}
-			if (walked.forAll(w -> w.asVal().isDefined())) {
-				return Verdict.subsumed();
-			}
-			if (candidates.size() == 1) {
-				Fact row = candidates.get(0);
-				return Verdict.update((state, factor) ->
-						collapse(state, (TableConstraints) factor, walked, row));
-			}
-			return Verdict.update((state, factor) ->
-					narrow(state, (TableConstraints) factor, walked, candidates));
-		};
-	}
-
-	/** Does the row survive every free column's live support? */
-	private static boolean admitted(TableConstraints store, Array<Term<?>> walked, Fact fact) {
-		for (int i = 0; i < walked.size(); i++) {
-			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined()) {
-				continue;
-			}
-			Object cell = fact.getValues().get(i);
-			boolean excluded = store.getValue(w)
-					.map(support -> !support.admits(cell))
-					.getOrElse(false);
-			if (excluded) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	/** One candidate left: bind every free column — the FD-collapse move on tuples. */
-	private static Update collapse(Package state, TableConstraints factor, Array<Term<?>> walked, Fact row) {
+	static Update collapse(Package state, TableConstraints factor, Array<Term<?>> walked, Fact row) {
 		Update.Applied result = Update.applied(factor);
 		boolean bound = false;
 		for (int i = 0; i < walked.size(); i++) {
@@ -233,7 +185,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	 * support has no reader, so the shadow's cost is the join width, not
 	 * every posted column.
 	 */
-	private static Update narrow(Package state, TableConstraints factor,
+	static Update narrow(Package state, TableConstraints factor,
 			Array<Term<?>> walked, List<Fact> candidates) {
 		TableConstraints current = factor;
 		List<Prefix> inferred = new ArrayList<>();
