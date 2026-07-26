@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import lombok.RequiredArgsConstructor;
 
 /**
  * The record's re-examination, POSITIONAL over the watched terms: walk, probe
@@ -27,15 +28,11 @@ import java.util.function.BiFunction;
  * surviving record at reify by branching over its live candidate rows —
  * {@code posted} is self-sufficient whether or not anything joins it.
  */
+@RequiredArgsConstructor
 final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, Verdict> {
 
 	private final Database db;
 	private final Relation rel;
-
-	TableBody(Database db, Relation rel) {
-		this.db = db;
-		this.rel = rel;
-	}
 
 	@Override
 	public Verdict apply(Array<? extends Term<?>> watched, Package pkg) {
