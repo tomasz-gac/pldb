@@ -29,6 +29,6 @@ public interface Relation {
 	}
 
 	static RelationN of(String name, Property<?>... args) {
-		return new RelationN(name, args);
+		return RelationN.of(name, args);
 	}
 }

@@ -11,17 +11,23 @@ import lombok.Getter;
 public class Property<T> {
 	private final String name;
 	private final boolean indexed;
+	private final boolean ground;
 
 	public static <T> Property<T> of(String name) {
-		return new Property<>(name, false);
+		return new Property<>(name, false, false);
 	}
 
 	public Property<T> indexed() {
-		return new Property<T>(name, true);
+		return new Property<T>(name, true, ground);
+	}
+
+	public Property<T> ground() {
+		return new Property<T>(name, indexed, true);
 	}
 
 	@Override
 	public String toString() {
-		return name;
+		String access = (indexed ? "i" : "") + (ground ? "g" : "");
+		return name + (access.isEmpty() ? "" : "_" + access);
 	}
 }
