@@ -36,37 +36,45 @@ public class Relations {
 	}
 
 	public static <T0> Relations._1<T0> relation(String name, Property<T0> v0) {
+		RelationN.validateProperties(v0);
 		return new Relations._1<>(name, Tuple.of(v0));
 	}
 
 	public static <T0, T1> Relations._2<T0, T1> relation(String name, Property<T0> v0, Property<T1> v1) {
+		RelationN.validateProperties(v0, v1);
 		return new Relations._2<>(name, Tuple.of(v0, v1));
 	}
 
 	public static <T0, T1, T2> Relations._3<T0, T1, T2> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2) {
+		RelationN.validateProperties(v0, v1, v2);
 		return new Relations._3<>(name, Tuple.of(v0, v1, v2));
 	}
 
 	public static <T0, T1, T2, T3> Relations._4<T0, T1, T2, T3> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3) {
+		RelationN.validateProperties(v0, v1, v2, v3);
 		return new Relations._4<>(name, Tuple.of(v0, v1, v2, v3));
 	}
 
 	public static <T0, T1, T2, T3, T4> Relations._5<T0, T1, T2, T3, T4> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4) {
+		RelationN.validateProperties(v0, v1, v2, v3, v4);
 		return new Relations._5<>(name, Tuple.of(v0, v1, v2, v3, v4));
 	}
 
 	public static <T0, T1, T2, T3, T4, T5> Relations._6<T0, T1, T2, T3, T4, T5> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
 			Property<T5> v5) {
+		RelationN.validateProperties(v0, v1, v2, v3, v4, v5);
 		return new Relations._6<>(name, Tuple.of(v0, v1, v2, v3, v4, v5));
 	}
 
 	public static <T0, T1, T2, T3, T4, T5, T6> Relations._7<T0, T1, T2, T3, T4, T5, T6> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3, Property<T4> v4,
 			Property<T5> v5, Property<T6> v6) {
+		RelationN.validateProperties(v0, v1, v2, v3, v4, v5, v6);
 		return new Relations._7<>(name, Tuple.of(v0, v1, v2, v3, v4, v5, v6));
 	}
 
 	public static <T0, T1, T2, T3, T4, T5, T6, T7> Relations._8<T0, T1, T2, T3, T4, T5, T6, T7> relation(String name, Property<T0> v0, Property<T1> v1, Property<T2> v2, Property<T3> v3,
 			Property<T4> v4, Property<T5> v5, Property<T6> v6, Property<T7> v7) {
+		RelationN.validateProperties(v0, v1, v2, v3, v4, v5, v6, v7);
 		return new Relations._8<>(name, Tuple.of(v0, v1, v2, v3, v4, v5, v6, v7));
 	}
 
@@ -98,7 +106,6 @@ public class Relations {
 			return name + properties;
 		}
 
-		@SuppressWarnings("unchecked")
 		public <R> Optional<R> exists(Fact fact, Function0<R> fn) {
 			return Optional.of(fact)
 					.filter(f -> f.getRelation().equals(this))
