@@ -39,7 +39,7 @@ public class Support implements Domain<Support> {
 	}
 
 	@Override
-	public boolean isBottom() {
+	public boolean isAbsorbing() {
 		return values.isEmpty();
 	}
 
