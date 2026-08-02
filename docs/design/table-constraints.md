@@ -1,14 +1,30 @@
 # Table constraints — pldb rows as a constraint store
 
-**STATUS: DESIGN SKETCH (July 2026, the human's observation: "it's almost a
-criminal offense that pldb is not a constraint store — aren't we supposed to
-minimize branching?"). Nothing built. This is the STRONGER form of
-`deferred-lookups.md` (§2 reconciles them) and it CLEARS that sketch's blocker:
-logic's constraint-propagation redesign — the prerequisite both docs named — is
-DONE (July 2026), so the composition plumbing this needs now exists. Companions:
-`logic/docs/design/constraint-kernel.md` (the store protocol this rides),
-`logic/docs/design/lattice.md` §5a (branch→data, the two freedoms),
-`query-planning.md` (the planner that captures the deferral-only win).**
+**STATUS: IMPLEMENTED — FIRST SLICE (built July 2026; header graduated
+August 2026 after an external review caught the doc outliving the build —
+the exact failure logic's method.md now names as "close the design when it
+lands"). Origin: the human's observation, "it's almost a criminal offense
+that pldb is not a constraint store — aren't we supposed to minimize
+branching?". SHIPPED on master: `constraints/TableConstraints` — posted
+lookups as named propagators re-narrowing column supports by index
+re-query (§3's dumb-and-correct choice, as designed), the `Support`
+candidate-row lattice with shared-column propagation, singleton collapse
+binding every free column, explicit `labelo`, row-wise enforcement at
+reification (`groundRecords`: narrowest live record first), and
+live-support `Bounded` pricing (`postedOrder`/`labelOrder`);
+`TableConstraintsTest` (14 tests) names this doc. DEVIATION from the
+design as written: the build landed on `LatticeStore<Support, ·>` — the
+extracted store family, which postdates this doc — rather than directly
+on the raw kernel §3 assumed; the extraction absorbed most of §3's
+plumbing. SHELVED WITH TRIGGERS, as §§3–4 already said: STR/compact-table
+bitsets (benchmark-gated) and the FD bridge (dropped as optimization-only
+on the logic side; revisit on a workload). The sections below are the
+design as proposed. Companions: `logic/docs/reference/constraint-kernel.md`
+(the store protocol this rides), `logic/docs/reference/lattice.md` §5a
+(branch→data, the two freedoms), `query-planning.md` (the planner that
+captures the deferral-only win); `logic/docs/design/note-store.md` places
+this store in the wider family (the positive-points cell of its grid, GAC
+as the agreement move's precedent).**
 
 ---
 
