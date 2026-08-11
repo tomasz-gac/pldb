@@ -81,7 +81,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	 * floats ahead of enumerations.
 	 */
 	public static Statement posted(Database db, Relation rel, Array<Unifiable<?>> args) {
-		return Statement.stated(
+		return Propagation.activate(
 				Propagator.of(TableConstraints.class,
 						rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db)),
 						args,

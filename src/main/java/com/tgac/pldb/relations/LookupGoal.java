@@ -69,7 +69,7 @@ public class LookupGoal implements Goal, Bounded {
 								.map(Unifiable::asVal)
 								.map(Option::toJavaOptional))
 						.spliterator(), false)
-				.map(fact -> lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
+				.map(fact -> (Goal) lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
 						.unifies(query.map(Unifiable::getObjectUnifiable)))
 				.reduce(Goal::or)
 				.orElseGet(Goal::failure);
