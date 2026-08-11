@@ -7,7 +7,7 @@ import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.Propagation;
-import com.tgac.logic.constraints.Statement;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
@@ -80,7 +80,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	 * doom check hoists the failure; a live post is one success, ever, and
 	 * floats ahead of enumerations.
 	 */
-	public static Statement posted(Database db, Relation rel, Array<Unifiable<?>> args) {
+	public static Posting posted(Database db, Relation rel, Array<Unifiable<?>> args) {
 		return Propagation.activate(
 				Propagator.of(TableConstraints.class,
 						rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db)),
