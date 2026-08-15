@@ -5,8 +5,8 @@ import static com.tgac.logic.goals.Goal.condu;
 import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.goals.Matche.llist;
 import static com.tgac.logic.goals.Matche.matche;
-import static com.tgac.logic.separate.Disequality.distincto;
-import static com.tgac.logic.separate.Disequality.separate;
+import static com.tgac.logic.goals.Logic.distincto;
+import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -231,7 +231,7 @@ public class DatabaseWithRelationsTest {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
 		List<List<String>> result = Logic.<LList<Integer>, Integer, Integer> exist(
 						(l, lhsId, rhsId) ->
-								separate(lhsId, rhsId)
+								exclude(lhsId.unifies(rhsId))
 										.and(person.exists(db, rhsId, lval("Tomek"), lvar(), lvar()))
 										.and(person.exists(db, lhsId, lval("Magda"), lvar(), lvar()),
 												relatives(rhsId, lhsId, l),
@@ -240,7 +240,7 @@ public class DatabaseWithRelationsTest {
 																		LList.of(lhsId),
 																		res)
 																.and(LList.map(res, line, personWithIdNameAndSurname(db)))))
-										.accept(new CascadingOptimizer()).get())
+										.accept(new CascadingOptimizer()).ground())
 				.solve(line)
 				.map(DatabaseWithRelationsTest::unwrap)
 				.map(DatabaseWithRelationsTest::concatNameAndSurname)
