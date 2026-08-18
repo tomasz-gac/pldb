@@ -11,7 +11,8 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
-import com.tgac.logic.lattice.LatticeStore;
+import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.lattice.LatticeFactor;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Update;
 import com.tgac.logic.unification.LVar;
@@ -45,16 +46,16 @@ import java.util.stream.Collectors;
  * Branching happens only at {@link #labelo} — or at reify, where
  * {@code enforce} grounds each surviving record row-wise.
  */
-public final class TableConstraints extends LatticeStore<Support, TableConstraints> {
+public final class TableConstraints extends LatticeFactor<Support, TableConstraints> {
 
 	private static final TableConstraints EMPTY =
-			new TableConstraints(LinkedHashMap.empty(), HashSet.empty());
+			new TableConstraints(Theory.empty());
 
 	private static final TableConstraints BOTTOM =
-			new TableConstraints(LinkedHashMap.empty(), HashSet.empty());
+			new TableConstraints(Theory.empty());
 
-	private TableConstraints(LinkedHashMap<Term<?>, Support> values, HashSet<Propagator> propagators) {
-		super(values, propagators);
+	private TableConstraints(Theory<TableConstraints> theory) {
+		super(theory);
 	}
 
 	public static TableConstraints empty() {
@@ -62,8 +63,8 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 	}
 
 	@Override
-	protected TableConstraints create(LinkedHashMap<Term<?>, Support> values, HashSet<Propagator> propagators) {
-		return new TableConstraints(values, propagators);
+	protected TableConstraints create(Theory<TableConstraints> theory) {
+		return new TableConstraints(theory);
 	}
 
 	@Override
@@ -149,7 +150,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 			TableBody narrowest = null;
 			Array<? extends Term<?>> watched = null;
 			long fewest = Long.MAX_VALUE;
-			for (Propagator p : live.propagators) {
+			for (Propagator<TableConstraints> p : live.props().collect(Collectors.toList())) {
 				if (!(p.body() instanceof TableBody)) {
 					continue;
 				}
@@ -234,7 +235,7 @@ public final class TableConstraints extends LatticeStore<Support, TableConstrain
 			return true;
 		}
 		int watchers = 0;
-		for (Propagator p : store.propagators) {
+		for (Propagator<TableConstraints> p : store.props().collect(Collectors.toList())) {
 			if (p.watches(state, w) && ++watchers >= 2) {
 				return true;
 			}
