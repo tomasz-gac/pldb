@@ -1,11 +1,12 @@
 package com.tgac.pldb.constraints;
 
-// ABOUTME: A posted table's body: the verdict function over the watched terms, and
-// ABOUTME: the row enumerator enforce uses to ground surviving records at reify.
+// ABOUTME: A posted table as a propagator schema: re-narrowing through the index
+// ABOUTME: on wake, and the row enumerator enforce uses to ground survivors.
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
+import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Term;
@@ -17,26 +18,31 @@ import io.vavr.collection.IndexedSeq;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import lombok.RequiredArgsConstructor;
 
 /**
  * The record's re-examination, POSITIONAL over the watched terms: walk, probe
  * the index by whatever is bound, filter by the live supports of whatever is
  * free, verdict. Also the record's ROW ENUMERATOR: the owning store recognizes
- * this body on its own propagators ({@code Propagator.body()}) and grounds a
- * surviving record at reify by branching over its live candidate rows —
- * {@code posted} is self-sufficient whether or not anything joins it.
+ * this schema on its own propagators and grounds a surviving record at reify
+ * by branching over its live candidate rows — {@code posted} is
+ * self-sufficient whether or not anything joins it. The name carries the
+ * relation and its database, so two posts of one lookup on the same terms are
+ * the same knowledge stated twice.
  */
-@RequiredArgsConstructor
-final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, Verdict> {
+final class TablePropagator extends Propagator<TableConstraints> {
 
 	private final Database db;
 	private final Relation rel;
 
+	TablePropagator(Database db, Relation rel, Array<? extends Term<?>> args) {
+		super(args);
+		this.db = db;
+		this.rel = rel;
+	}
+
 	@Override
-	public Verdict apply(Array<? extends Term<?>> watched, Package pkg) {
-		Array<Term<?>> walked = watched.map(t -> (Term<?>) pkg.walk(t));
+	public Verdict propagate(Package pkg) {
+		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
 		List<Fact> candidates = candidates(pkg.getStore(TableConstraints.class), walked);
 		if (candidates.isEmpty()) {
 			return Verdict.fail();
@@ -51,6 +57,36 @@ final class TableBody implements BiFunction<Array<? extends Term<?>>, Package, V
 		}
 		return Verdict.update((state, factor) ->
 				TableConstraints.narrow(state, (TableConstraints) factor, walked, candidates));
+	}
+
+	@Override
+	public TablePropagator watching(Array<? extends Term<?>> terms) {
+		return new TablePropagator(db, rel, terms);
+	}
+
+	@Override
+	public TableConstraints empty() {
+		return TableConstraints.empty();
+	}
+
+	@Override
+	public String name() {
+		return rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db));
+	}
+
+	@Override
+	public Class<? extends TableConstraints> getFactorClass() {
+		return TableConstraints.class;
+	}
+
+	/**
+	 * A post whose bound pattern hits an empty bucket can never be satisfied —
+	 * candidates only shrink, so the failure hoists. Monotone under binding
+	 * growth: bindings only sharpen the probe.
+	 */
+	@Override
+	public boolean doomed(Package p) {
+		return estimate(watchedTerms().map(t -> (Term<?>) p.substitution().walk(t))) == 0;
 	}
 
 	/**

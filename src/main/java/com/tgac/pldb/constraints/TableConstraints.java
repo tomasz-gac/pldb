@@ -17,7 +17,6 @@ import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Update;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
-import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
@@ -25,13 +24,10 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
-import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.LinkedHashMap;
-import io.vavr.control.Option;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -76,28 +72,13 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * Post a lookup as a constraint: park the table propagator and take its
 	 * first examination — the initial narrowing — through the kernel's
 	 * statement entry. {@code exists} stays the enumerate-now alternative.
-	 * The statement prices itself 0-or-1: a post whose bound pattern hits an
-	 * empty bucket can never be satisfied (candidates only shrink), so the
-	 * doom check hoists the failure; a live post is one success, ever, and
+	 * Registration and doom ride the schema: a post whose bound pattern hits
+	 * an empty bucket can never be satisfied (candidates only shrink), so
+	 * the doom hoists the failure; a live post is one success, ever, and
 	 * floats ahead of enumerations.
 	 */
 	public static Posting posted(Database db, Relation rel, Array<Unifiable<?>> args) {
-		return Propagation.activate(
-				Propagator.of(TableConstraints.class,
-						rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db)),
-						args,
-						new TableBody(db, rel)),
-				TableConstraints::registered,
-				p -> postedOrder(p.substitution(), db, rel, args) == 0);
-	}
-
-	private static long postedOrder(Substitutions s, Database db, Relation rel, Array<Unifiable<?>> args) {
-		IndexedSeq<Optional<Object>> probe = args
-				.map(u -> (Unifiable<?>) s.walk(u))
-				.map(Unifiable::getObjectUnifiable)
-				.map(Unifiable::asVal)
-				.map(Option::toJavaOptional);
-		return db.estimate(rel, probe) == 0 ? 0 : 1;
+		return Propagation.activate(new TablePropagator(db, rel, args));
 	}
 
 	/**
@@ -147,21 +128,21 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			if (live == null) {
 				return Cont.just(s);
 			}
-			TableBody narrowest = null;
+			TablePropagator narrowest = null;
 			Array<? extends Term<?>> watched = null;
 			long fewest = Long.MAX_VALUE;
 			for (Propagator<TableConstraints> p : live.props().collect(Collectors.toList())) {
-				if (!(p.body() instanceof TableBody)) {
+				if (!(p instanceof TablePropagator)) {
 					continue;
 				}
 				Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
 				if (walked.forAll(w -> w.asVal().isDefined())) {
 					continue;
 				}
-				long count = ((TableBody) p.body()).estimate(walked);
+				long count = ((TablePropagator) p).estimate(walked);
 				if (count < fewest) {
 					fewest = count;
-					narrowest = (TableBody) p.body();
+					narrowest = (TablePropagator) p;
 					watched = p.watchedTerms();
 				}
 			}
@@ -195,10 +176,6 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	@SuppressWarnings("unchecked")
 	private static Goal unifyWith(Term<?> w, Object value) {
 		return ((LVar<Object>) w.asVar().get()).unifies(value);
-	}
-
-	private static Package registered(Package p) {
-		return p.getStores().containsKey(TableConstraints.class) ? p : p.withStore(EMPTY);
 	}
 
 	/** One candidate left: bind every free column — the FD-collapse move on tuples. */
