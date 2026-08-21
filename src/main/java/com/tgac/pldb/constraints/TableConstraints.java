@@ -11,6 +11,7 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
+import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.lattice.LatticeFactor;
 import com.tgac.logic.lattice.Propagator;
@@ -100,8 +101,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 		if (!w.asVar().isDefined()) {
 			return 1;
 		}
-		return p.getStores().get(TableConstraints.class)
-				.map(TableConstraints.class::cast)
+		return Constraint.in(p, TableConstraints.class)
+				.map(Constraint::getFactor)
 				.flatMap(live -> live.getValue(w))
 				.map(support -> (long) support.getValues().size())
 				.getOrElse(1L);
@@ -122,8 +123,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	/** Pick the narrowest live record, enumerate it, repeat against the new state. */
 	private static Goal groundRecords() {
 		return s -> {
-			TableConstraints live = s.getStores().get(TableConstraints.class)
-					.map(TableConstraints.class::cast)
+			TableConstraints live = Constraint.in(s, TableConstraints.class)
+					.map(Constraint::getFactor)
 					.getOrNull();
 			if (live == null) {
 				return Cont.just(s);
@@ -161,8 +162,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			if (!w.asVar().isDefined()) {
 				return Cont.just(s);
 			}
-			return s.getStores().get(TableConstraints.class)
-					.map(TableConstraints.class::cast)
+			return Constraint.in(s, TableConstraints.class)
+					.map(Constraint::getFactor)
 					.flatMap(live -> live.getValue(w))
 					.map(support -> support.getValues().toJavaStream()
 							.map(v -> unifyWith(w, v))

@@ -4,6 +4,7 @@ package com.tgac.pldb.constraints;
 // ABOUTME: on wake, and the row enumerator enforce uses to ground survivors.
 
 import com.tgac.functional.monad.Cont;
+import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Propagator;
@@ -43,7 +44,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	@Override
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		List<Fact> candidates = candidates(pkg.getStore(TableConstraints.class), walked);
+		List<Fact> candidates = candidates(Constraint.in(pkg, TableConstraints.class).get().getFactor(), walked);
 		if (candidates.isEmpty()) {
 			return Verdict.fail();
 		}
@@ -100,7 +101,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				return Cont.just(s);
 			}
-			return candidates(s.getStore(TableConstraints.class), walked).stream()
+			return candidates(Constraint.in(s, TableConstraints.class).get().getFactor(), walked).stream()
 					.map(row -> rowGoal(walked, row))
 					.reduce(Goal::or)
 					.orElseGet(Goal::failure)

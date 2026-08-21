@@ -8,6 +8,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.functional.monad.Cont;
+import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
@@ -74,7 +75,7 @@ public class TableConstraintsTest {
 		List<String> answers = r.posted(db, x, y)
 				.and(s.posted(db, y, z))
 				.and(probe(p -> {
-					TableConstraints store = p.getStore(TableConstraints.class);
+					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
 					// y is the SHARED column: r's tags met with s's labels,
 					// {a,b,c} ∧ {a,b,d} = {a,b} — the only support materialized
 					assertThat(store.getValue(p.walk(y)).get())
@@ -153,7 +154,7 @@ public class TableConstraintsTest {
 
 		long count = r.posted(db, x, y)
 				.and(probe(p -> {
-					TableConstraints store = p.getStore(TableConstraints.class);
+					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
 					assertThat(store.getValue(p.walk(x)).isDefined()).isFalse();
 					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
 				}))
@@ -190,7 +191,7 @@ public class TableConstraintsTest {
 		long count = t.posted(db, x, y)
 				.and(probe(p -> {
 					assertThat(p.walk(x).get()).isEqualTo(7);
-					TableConstraints store = p.getStore(TableConstraints.class);
+					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
 					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
 				}))
 				.and(y.unifies("u"))
@@ -263,13 +264,13 @@ public class TableConstraintsTest {
 		long count = r.posted(db, x, y)
 				.and(s.posted(db, l, z))
 				.and(probe(p -> {
-					TableConstraints store = p.getStore(TableConstraints.class);
+					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
 					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
 					assertThat(store.getValue(p.walk(l)).isDefined()).isFalse();
 				}))
 				.and(y.unifies(l))
 				.and(probe(p -> {
-					TableConstraints store = p.getStore(TableConstraints.class);
+					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
 					assertThat(store.getValue(p.walk(y)).get())
 							.isEqualTo(Support.of("a", "b"));
 				}))
