@@ -45,28 +45,13 @@ import java.util.stream.Collectors;
  */
 public final class TableConstraints extends LatticeFactor<Support, TableConstraints> {
 
-	private static final TableConstraints EMPTY =
-			new TableConstraints(Theory.empty());
+	private static final TableConstraints EMPTY = new TableConstraints();
 
-	private static final TableConstraints BOTTOM =
-			new TableConstraints(Theory.empty());
-
-	private TableConstraints(Theory<TableConstraints> theory) {
-		super(theory);
+	private TableConstraints() {
 	}
 
 	public static TableConstraints empty() {
 		return EMPTY;
-	}
-
-	@Override
-	protected TableConstraints create(Theory<TableConstraints> theory) {
-		return new TableConstraints(theory);
-	}
-
-	@Override
-	protected TableConstraints bottomStore() {
-		return BOTTOM;
 	}
 
 	/**
@@ -102,8 +87,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			return 1;
 		}
 		return Constraint.in(p, TableConstraints.class)
-				.map(Constraint::getFactor)
-				.flatMap(live -> live.getValue(w))
+				.flatMap(pair -> EMPTY.getValue(pair.getTheory(), w))
 				.map(support -> (long) support.getValues().size())
 				.getOrElse(1L);
 	}
@@ -123,8 +107,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	/** Pick the narrowest live record, enumerate it, repeat against the new state. */
 	private static Goal groundRecords() {
 		return s -> {
-			TableConstraints live = Constraint.in(s, TableConstraints.class)
-					.map(Constraint::getFactor)
+			Theory<TableConstraints> live = Constraint.in(s, TableConstraints.class)
+					.map(Constraint::getTheory)
 					.getOrNull();
 			if (live == null) {
 				return Cont.just(s);
@@ -132,7 +116,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			TablePropagator narrowest = null;
 			Array<? extends Term<?>> watched = null;
 			long fewest = Long.MAX_VALUE;
-			for (Propagator<TableConstraints> p : live.props().collect(Collectors.toList())) {
+			for (Propagator<TableConstraints> p : EMPTY.props(live).collect(Collectors.toList())) {
 				if (!(p instanceof TablePropagator)) {
 					continue;
 				}
@@ -163,8 +147,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 				return Cont.just(s);
 			}
 			return Constraint.in(s, TableConstraints.class)
-					.map(Constraint::getFactor)
-					.flatMap(live -> live.getValue(w))
+					.flatMap(pair -> EMPTY.getValue(pair.getTheory(), w))
 					.map(support -> support.getValues().toJavaStream()
 							.map(v -> unifyWith(w, v))
 							.reduce(Goal::or)
@@ -180,8 +163,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	}
 
 	/** One candidate left: bind every free column — the FD-collapse move on tuples. */
-	static Update collapse(Package state, TableConstraints factor, Array<Term<?>> walked, Fact row) {
-		Update.Applied result = Update.applied(factor);
+	static Update collapse(Package state, Theory<TableConstraints> theory, Array<Term<?>> walked, Fact row) {
+		Update.Applied result = Update.applied(theory);
 		boolean bound = false;
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
@@ -208,12 +191,12 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * wake, not per post, because it arrives late (a later posting, or an
 	 * alias welding two columns).
 	 */
-	private static boolean shared(TableConstraints store, Package state, Term<?> w) {
-		if (store.getValue(w).isDefined()) {
+	private static boolean shared(Theory<TableConstraints> theory, Package state, Term<?> w) {
+		if (EMPTY.getValue(theory, w).isDefined()) {
 			return true;
 		}
 		int watchers = 0;
-		for (Propagator<TableConstraints> p : store.props().collect(Collectors.toList())) {
+		for (Propagator<TableConstraints> p : EMPTY.props(theory).collect(Collectors.toList())) {
 			if (p.watches(state, w) && ++watchers >= 2) {
 				return true;
 			}
@@ -229,9 +212,10 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * support has no reader, so the shadow's cost is the join width, not
 	 * every posted column.
 	 */
-	static Update narrow(Package state, TableConstraints factor,
+	@SuppressWarnings("unchecked")
+	static Update narrow(Package state, Theory<TableConstraints> theory,
 			Array<Term<?>> walked, List<Fact> candidates) {
-		TableConstraints current = factor;
+		Theory<TableConstraints> current = theory;
 		List<Prefix> inferred = new ArrayList<>();
 		List<Term<?>> reexamine = new ArrayList<>();
 		for (int i = 0; i < walked.size(); i++) {
@@ -253,21 +237,21 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			if (!shared(current, state, w)) {
 				continue;
 			}
-			Update step = current.update(state, w, projection);
-			TableConstraints before = current;
+			Update step = EMPTY.update(current, state, w, projection);
+			Theory<TableConstraints> before = current;
 			current = step.match(
 					() -> null,
 					() -> before,
 					applied -> {
 						inferred.addAll(applied.inferred());
 						reexamine.addAll(applied.reexamine());
-						return (TableConstraints) applied.factor();
+						return (Theory<TableConstraints>) applied.theory();
 					});
 			if (current == null) {
 				return Update.fail();
 			}
 		}
-		if (current == factor && inferred.isEmpty() && reexamine.isEmpty()) {
+		if (current == theory && inferred.isEmpty() && reexamine.isEmpty()) {
 			return Update.unchanged();
 		}
 		Update.Applied result = Update.applied(current);

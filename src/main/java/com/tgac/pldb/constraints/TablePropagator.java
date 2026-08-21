@@ -5,6 +5,7 @@ package com.tgac.pldb.constraints;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Constraint;
+import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Propagator;
@@ -42,9 +43,10 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		List<Fact> candidates = candidates(Constraint.in(pkg, TableConstraints.class).get().getFactor(), walked);
+		List<Fact> candidates = candidates(Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
 		if (candidates.isEmpty()) {
 			return Verdict.fail();
 		}
@@ -53,11 +55,11 @@ final class TablePropagator extends Propagator<TableConstraints> {
 		}
 		if (candidates.size() == 1) {
 			Fact row = candidates.get(0);
-			return Verdict.update((state, factor) ->
-					TableConstraints.collapse(state, (TableConstraints) factor, walked, row));
+			return Verdict.update((state, theory) ->
+					TableConstraints.collapse(state, (Theory<TableConstraints>) theory, walked, row));
 		}
-		return Verdict.update((state, factor) ->
-				TableConstraints.narrow(state, (TableConstraints) factor, walked, candidates));
+		return Verdict.update((state, theory) ->
+				TableConstraints.narrow(state, (Theory<TableConstraints>) theory, walked, candidates));
 	}
 
 	@Override
@@ -101,7 +103,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				return Cont.just(s);
 			}
-			return candidates(Constraint.in(s, TableConstraints.class).get().getFactor(), walked).stream()
+			return candidates(Constraint.in(s, TableConstraints.class).get().getTheory(), walked).stream()
 					.map(row -> rowGoal(walked, row))
 					.reduce(Goal::or)
 					.orElseGet(Goal::failure)
@@ -137,11 +139,11 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	/** The index probe under the current bindings, filtered by live supports. */
-	private List<Fact> candidates(TableConstraints store, Array<Term<?>> walked) {
+	private List<Fact> candidates(Theory<TableConstraints> theory, Array<Term<?>> walked) {
 		IndexedSeq<Optional<Object>> probe = probe(walked);
 		List<Fact> candidates = new ArrayList<>();
 		for (Fact fact : db.get(rel, probe)) {
-			if (admitted(store, walked, fact)) {
+			if (admitted(theory, walked, fact)) {
 				candidates.add(fact);
 			}
 		}
@@ -155,14 +157,14 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	/** Does the row survive every free column's live support? */
-	private static boolean admitted(TableConstraints store, Array<Term<?>> walked, Fact fact) {
+	private static boolean admitted(Theory<TableConstraints> theory, Array<Term<?>> walked, Fact fact) {
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
 			if (w.asVal().isDefined()) {
 				continue;
 			}
 			Object cell = fact.getValues().get(i);
-			boolean excluded = store.getValue(w)
+			boolean excluded = TableConstraints.empty().getValue(theory, w)
 					.map(support -> !support.admits(cell))
 					.getOrElse(false);
 			if (excluded) {

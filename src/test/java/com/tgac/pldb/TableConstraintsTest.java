@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Constraint;
+import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
@@ -75,15 +76,15 @@ public class TableConstraintsTest {
 		List<String> answers = r.posted(db, x, y)
 				.and(s.posted(db, y, z))
 				.and(probe(p -> {
-					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
+					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
 					// y is the SHARED column: r's tags met with s's labels,
 					// {a,b,c} ∧ {a,b,d} = {a,b} — the only support materialized
-					assertThat(store.getValue(p.walk(y)).get())
+					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).get())
 							.isEqualTo(Support.of("a", "b"));
 					// x and z are lone columns: their projections are transient,
 					// nobody reads them, nothing is stored
-					assertThat(store.getValue(p.walk(x)).isDefined()).isFalse();
-					assertThat(store.getValue(p.walk(z)).isDefined()).isFalse();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(x)).isDefined()).isFalse();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(z)).isDefined()).isFalse();
 				}))
 				.solve(lval(Tuple.of(x, y, z)))
 				.map(Term::get)
@@ -154,9 +155,9 @@ public class TableConstraintsTest {
 
 		long count = r.posted(db, x, y)
 				.and(probe(p -> {
-					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
-					assertThat(store.getValue(p.walk(x)).isDefined()).isFalse();
-					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
+					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(x)).isDefined()).isFalse();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).isDefined()).isFalse();
 				}))
 				.and(x.unifies(1))
 				.and(y.unifies("a"))
@@ -191,8 +192,8 @@ public class TableConstraintsTest {
 		long count = t.posted(db, x, y)
 				.and(probe(p -> {
 					assertThat(p.walk(x).get()).isEqualTo(7);
-					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
-					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
+					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).isDefined()).isFalse();
 				}))
 				.and(y.unifies("u"))
 				.solve(y)
@@ -264,14 +265,14 @@ public class TableConstraintsTest {
 		long count = r.posted(db, x, y)
 				.and(s.posted(db, l, z))
 				.and(probe(p -> {
-					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
-					assertThat(store.getValue(p.walk(y)).isDefined()).isFalse();
-					assertThat(store.getValue(p.walk(l)).isDefined()).isFalse();
+					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).isDefined()).isFalse();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(l)).isDefined()).isFalse();
 				}))
 				.and(y.unifies(l))
 				.and(probe(p -> {
-					TableConstraints store = Constraint.in(p, TableConstraints.class).get().getFactor();
-					assertThat(store.getValue(p.walk(y)).get())
+					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
+					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).get())
 							.isEqualTo(Support.of("a", "b"));
 				}))
 				.solve(lval(Tuple.of(x, y, z)))
