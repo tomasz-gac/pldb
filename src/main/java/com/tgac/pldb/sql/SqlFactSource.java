@@ -18,7 +18,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -191,17 +190,17 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	private static Array<Object> mergeValuesWithSupplied(IndexedSeq<Optional<Object>> args, Object[] values) {
 		int i = 0, j = 0;
-		Array<Object> vals = Array.empty();
+		Array<Object> result = Array.empty();
 		while (i + j < args.length()) {
 			if (args.get(i + j).isPresent()) {
-				vals = vals.append(args.get(i + j).get());
+				result = result.append(args.get(i + j).get());
 				++i;
 			} else {
-				vals = vals.append(values[j]);
+				result = result.append(values[j]);
 				++j;
 			}
 		}
-		return vals;
+		return result;
 	}
 
 	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns, List<String> boundColumns) {
