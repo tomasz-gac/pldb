@@ -12,7 +12,7 @@ import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Term;
-import com.tgac.pldb.Database;
+import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -28,17 +28,17 @@ import java.util.Optional;
  * this schema on its own propagators and grounds a surviving record at reify
  * by branching over its live candidate rows — {@code posted} is
  * self-sufficient whether or not anything joins it. The name carries the
- * relation and its database, so two posts of one lookup on the same terms are
+ * relation and its source, so two posts of one lookup on the same terms are
  * the same knowledge stated twice.
  */
 final class TablePropagator extends Propagator<TableConstraints> {
 
-	private final Database db;
+	private final FactSource source;
 	private final Relation rel;
 
-	TablePropagator(Database db, Relation rel, Array<? extends Term<?>> args) {
+	TablePropagator(FactSource source, Relation rel, Array<? extends Term<?>> args) {
 		super(args);
-		this.db = db;
+		this.source = source;
 		this.rel = rel;
 	}
 
@@ -64,7 +64,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 
 	@Override
 	public TablePropagator watching(Array<? extends Term<?>> terms) {
-		return new TablePropagator(db, rel, terms);
+		return new TablePropagator(source, rel, terms);
 	}
 
 	@Override
@@ -74,7 +74,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + Integer.toHexString(System.identityHashCode(db));
+		return rel.getName() + "@" + Integer.toHexString(System.identityHashCode(source));
 	}
 
 	@Override
@@ -135,14 +135,14 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	 * instead of a materialization.
 	 */
 	long estimate(Array<Term<?>> walked) {
-		return db.estimate(rel, probe(walked));
+		return source.estimate(rel, probe(walked));
 	}
 
 	/** The index probe under the current bindings, filtered by live supports. */
 	private List<Fact> candidates(Theory<TableConstraints> theory, Array<Term<?>> walked) {
 		IndexedSeq<Optional<Object>> probe = probe(walked);
 		List<Fact> candidates = new ArrayList<>();
-		for (Fact fact : db.get(rel, probe)) {
+		for (Fact fact : source.get(rel, probe)) {
 			if (admitted(theory, walked, fact)) {
 				candidates.add(fact);
 			}

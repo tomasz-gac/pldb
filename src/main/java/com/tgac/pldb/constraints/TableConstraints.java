@@ -20,7 +20,7 @@ import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.Database;
+import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -63,8 +63,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * the doom hoists the failure; a live post is one success, ever, and
 	 * floats ahead of enumerations.
 	 */
-	public static Posting posted(Database db, Relation rel, Array<Unifiable<?>> args) {
-		return Propagation.activate(new TablePropagator(db, rel, args));
+	public static Posting posted(FactSource source, Relation rel, Array<Unifiable<?>> args) {
+		return Propagation.activate(new TablePropagator(source, rel, args));
 	}
 
 	/**

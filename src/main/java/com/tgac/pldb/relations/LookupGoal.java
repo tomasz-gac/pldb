@@ -14,7 +14,7 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.Database;
+import com.tgac.pldb.FactSource;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import io.vavr.control.Option;
@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
- * The lookup captures its own database, so cost estimates need no context:
+ * The lookup captures its own source, so cost estimates need no context:
  * {@link #answers} counts the index bucket the probe would hit under the
  * current bindings — the order function of the narrowing/widening taxonomy
  * (logic's docs/design/optimizer.md §3-4).
@@ -33,7 +33,7 @@ import lombok.Value;
 @Value
 @RequiredArgsConstructor(staticName = "of")
 public class LookupGoal implements Goal, Bounded {
-	Database db;
+	FactSource source;
 	Relation rel;
 	Array<Unifiable<?>> args;
 
@@ -50,7 +50,7 @@ public class LookupGoal implements Goal, Bounded {
 				.map(Unifiable::getObjectUnifiable)
 				.map(Unifiable::asVal)
 				.map(Option::toJavaOptional);
-		return db.estimate(rel, probe);
+		return source.estimate(rel, probe);
 	}
 
 	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Substitutions s, Array<Unifiable<?>> query) {
@@ -64,7 +64,7 @@ public class LookupGoal implements Goal, Bounded {
 	}
 
 	private Goal unifyQueryResults(Array<Unifiable<?>> query) {
-		return StreamSupport.stream(db.get(rel, query
+		return StreamSupport.stream(source.get(rel, query
 								.map(Unifiable::getObjectUnifiable)
 								.map(Unifiable::asVal)
 								.map(Option::toJavaOptional))

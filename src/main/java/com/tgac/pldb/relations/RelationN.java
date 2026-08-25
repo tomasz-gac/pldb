@@ -3,7 +3,7 @@ package com.tgac.pldb.relations;
 
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.Database;
+import com.tgac.pldb.FactSource;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.collection.Array;
 import java.util.Arrays;
@@ -44,20 +44,20 @@ public class RelationN implements Relation {
 		return args;
 	}
 
-	public Goal apply(Database db, Unifiable<?>... args) {
-		return relation(db, this, args);
+	public Goal apply(FactSource source, Unifiable<?>... args) {
+		return relation(source, this, args);
 	}
 
-	public static Goal relation(Database db, Relation rel, Unifiable<?>... args) {
-		return LookupGoal.of(db, rel, Array.of(args));
+	public static Goal relation(FactSource source, Relation rel, Unifiable<?>... args) {
+		return LookupGoal.of(source, rel, Array.of(args));
 	}
 
-	public Goal posted(Database db, Unifiable<?>... args) {
-		return posted(db, this, args);
+	public Goal posted(FactSource source, Unifiable<?>... args) {
+		return posted(source, this, args);
 	}
 
-	public static Goal posted(Database db, Relation rel, Unifiable<?>... args) {
-		return TableConstraints.posted(db, rel, Array.of(args));
+	public static Goal posted(FactSource source, Relation rel, Unifiable<?>... args) {
+		return TableConstraints.posted(source, rel, Array.of(args));
 	}
 
 	public Fact apply(Object... vs) {
