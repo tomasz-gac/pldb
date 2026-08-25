@@ -23,6 +23,18 @@ public interface FactSource {
 	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
 
 	/**
+	 * The source's identity, as knowledge: two posts of one lookup are the
+	 * same constraint exactly when their sources answer for the same data,
+	 * and this string is what says so. The default is object identity —
+	 * right for in-memory values, where each database IS its data; a
+	 * backend reachable through many handles must override with a declared
+	 * id, or equal lookups against it will read as distinct knowledge.
+	 */
+	default String id() {
+		return Integer.toHexString(System.identityHashCode(this));
+	}
+
+	/**
 	 * Upper bound on the facts {@link #get} would yield — the planner's order
 	 * function (logic's optimizer.md §3). Exposure, not computation: the
 	 * default counts, backends with sized buckets should override.

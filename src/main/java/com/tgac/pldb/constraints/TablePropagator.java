@@ -74,7 +74,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + Integer.toHexString(System.identityHashCode(source));
+		return rel.getName() + "@" + source.id();
 	}
 
 	@Override
