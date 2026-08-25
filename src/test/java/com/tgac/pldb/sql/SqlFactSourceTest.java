@@ -116,6 +116,40 @@ public class SqlFactSourceTest {
 		}
 	}
 
+	@Test
+	public void aFirstProbeWithABoundPositionLandsRealValues() {
+		// the projection fetches only unbound columns; the merge must land the
+		// bound VALUE, not its Optional wrapper — and the landed index must
+		// answer by it
+		try (SqlFactSource source = source()) {
+			Unifiable<String> out = lvar();
+			List<String> answers = person.exists(source, com.tgac.logic.unification.LVal.lval(2), out)
+					.solve(out)
+					.map(Object::toString)
+					.collect(Collectors.toList());
+			assertThat(answers).hasSize(1);
+			assertThat(answers.get(0)).contains("Alan");
+		}
+	}
+
+	@Test
+	public void aFullyBoundFirstProbeIsAnExistenceCheck() {
+		// every position bound: the projection degenerates — no unbound
+		// columns to select — and must still compile to legal SQL
+		try (SqlFactSource source = source()) {
+			assertThat(person.exists(source,
+					com.tgac.logic.unification.LVal.lval(3),
+					com.tgac.logic.unification.LVal.lval("Kurt"))
+					.solve(lvar())
+					.count()).isEqualTo(1);
+			assertThat(person.exists(source,
+					com.tgac.logic.unification.LVal.lval(3),
+					com.tgac.logic.unification.LVal.lval("Ada"))
+					.solve(lvar())
+					.count()).isZero();
+		}
+	}
+
 	private static List<String> solvedNames(FactSource source) {
 		Unifiable<String> out = lvar();
 		return person.exists(source, lvar(), out)

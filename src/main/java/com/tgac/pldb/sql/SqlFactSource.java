@@ -169,16 +169,57 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		Property<?>[] columns = relation.getArgs();
 		List<String> boundColumns = new ArrayList<>();
 		List<Object> boundValues = new ArrayList<>();
+		List<String> unboundColumns = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
 			if (args.get(i).isPresent()) {
 				boundColumns.add(columns[i].getName());
 				boundValues.add(args.get(i).get());
+			} else {
+				unboundColumns.add(columns[i].getName());
 			}
 		}
+		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns);
+		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+			for (int i = 0; i < boundValues.size(); i++) {
+				statement.setObject(i + 1, boundValues.get(i));
+			}
+			try (ResultSet rows = statement.executeQuery()) {
+				List<Fact> facts = new ArrayList<>();
+				while (rows.next()) {
+					Object[] values = new Object[unboundColumns.size()];
+					for (int i = 0; i < values.length; i++) {
+						values[i] = rows.getObject(unboundColumns.get(i));
+					}
+					Array<Object> vals = mergeValuesWithSupplied(args, values);
+					facts.add(Fact.of(relation, Array.ofAll(vals)));
+				}
+				return facts;
+			}
+		} catch (SQLException e) {
+			throw new IllegalStateException("fetch failed on " + id + ": " + sql, e);
+		}
+	}
+
+	private static Array<Object> mergeValuesWithSupplied(IndexedSeq<Optional<Object>> args, Object[] values) {
+		int i = 0, j = 0;
+		Array<Object> vals = Array.empty();
+		while (i + j < args.length()) {
+			if (args.get(i + j).isPresent()) {
+				vals = vals.append(args.get(i + j).get());
+				++i;
+			} else {
+				vals = vals.append(values[j]);
+				++j;
+			}
+		}
+		return vals;
+	}
+
+	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns, List<String> boundColumns) {
+		// every position bound: nothing to project, the probe is an existence
+		// check — a blank select list would not compile
 		StringBuilder sql = new StringBuilder("SELECT ")
-				.append(Arrays.stream(columns)
-						.map(Property::getName)
-						.collect(Collectors.joining(", ")))
+				.append(unboundColumns.isEmpty() ? "1" : String.join(", ", unboundColumns))
 				.append(" FROM ")
 				.append(relation.getName());
 		if (!boundColumns.isEmpty()) {
@@ -187,24 +228,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 							.map(c -> c + " = ?")
 							.collect(Collectors.joining(" AND ")));
 		}
-		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-			for (int i = 0; i < boundValues.size(); i++) {
-				statement.setObject(i + 1, boundValues.get(i));
-			}
-			try (ResultSet rows = statement.executeQuery()) {
-				List<Fact> facts = new ArrayList<>();
-				while (rows.next()) {
-					Object[] values = new Object[columns.length];
-					for (int i = 0; i < values.length; i++) {
-						values[i] = rows.getObject(columns[i].getName());
-					}
-					facts.add(Fact.of(relation, Array.of(values)));
-				}
-				return facts;
-			}
-		} catch (SQLException e) {
-			throw new IllegalStateException("fetch failed on " + id + ": " + sql, e);
-		}
+		return sql;
 	}
 
 	@Override
