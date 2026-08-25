@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
  * A relation backend over one pinned JDBC connection, by CONVENTION: the
  * database schema matches the pldb schema, so the relation's name is the
  * table and its property names are the columns — no mapping layer, and
- * values must be JDBC-representable. The source declares which relations
- * it serves; an unserved relation refuses loudly as a config error.
+ * values must be JDBC-representable. The backend is the schema authority:
+ * a relation without a table fails loudly at its first fetch.
  *
  * <p>Pinning happens at construction: auto-commit off, {@code REPEATABLE
  * READ} where the driver's metadata admits it (recorded either way — a
@@ -57,20 +57,18 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	private final String id;
 	private final Connection connection;
-	private final Set<Relation> served;
 	private final int isolation;
 
 	private Database landed = ImmutableDatabase.empty();
 	private final Map<Relation, List<IndexedSeq<Optional<Object>>>> covered = new HashMap<>();
 
-	private SqlFactSource(String id, Connection connection, Set<Relation> served, int isolation) {
+	private SqlFactSource(String id, Connection connection, int isolation) {
 		this.id = id;
 		this.connection = connection;
-		this.served = served;
 		this.isolation = isolation;
 	}
 
-	public static SqlFactSource pinned(String id, Connection connection, Relation... served) {
+	public static SqlFactSource pinned(String id, Connection connection) {
 		try {
 			connection.setAutoCommit(false);
 			if (connection.getMetaData().supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ)) {
@@ -79,8 +77,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 			try (Statement anchor = connection.createStatement()) {
 				anchor.execute("SELECT 1");
 			}
-			return new SqlFactSource(id, connection,
-					new HashSet<>(Arrays.asList(served)), connection.getTransactionIsolation());
+			return new SqlFactSource(id, connection, connection.getTransactionIsolation());
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not pin " + id, e);
 		}
@@ -98,7 +95,6 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		refuseUnserved(relation);
 		if (!coveredBy(relation, args)) {
 			land(relation, fetch(relation, args));
 			covered.computeIfAbsent(relation, r -> new ArrayList<>()).add(args);
@@ -108,7 +104,6 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public synchronized long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
-		refuseUnserved(relation);
 		return coveredBy(relation, args) ?
 				landed.estimate(relation, args) :
 				Long.MAX_VALUE;
@@ -121,12 +116,6 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 			connection.close();
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not close " + id, e);
-		}
-	}
-
-	private void refuseUnserved(Relation relation) {
-		if (!served.contains(relation)) {
-			throw new IllegalArgumentException(id + " does not serve " + relation.getId());
 		}
 	}
 
@@ -233,8 +222,6 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public String toString() {
-		return id + served.stream()
-				.map(Relation::getName)
-				.collect(Collectors.joining(", ", "[", "]"));
+		return id;
 	}
 }

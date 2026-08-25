@@ -4,10 +4,12 @@ package com.tgac.pldb.sql;
 // ABOUTME: the in-memory reference, refuses unserved relations, and lands fetches
 // ABOUTME: so subsumed probes never touch the backend again.
 
+import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.FactSource;
@@ -60,7 +62,7 @@ public class SqlFactSourceTest {
 	}
 
 	private SqlFactSource source() {
-		return SqlFactSource.pinned("h2-test", counting(connection), person);
+		return SqlFactSource.pinned("h2-test", counting(connection));
 	}
 
 	@Test
@@ -87,11 +89,14 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void anUnservedRelationRefusesLoudly() {
+	public void aRelationWithoutATableFailsLoudlyAtFirstFetch() {
+		// the backend is the schema authority: no declared relation set —
+		// a missing table surfaces as the fetch's own loud failure, naming
+		// the SQL it tried
 		Relations._1<Integer> orphan = Relations.relation("orphan", id);
 		try (SqlFactSource source = source()) {
 			assertThatThrownBy(() -> orphan.exists(source, lvar()).solve(lvar()).count())
-					.isInstanceOf(IllegalArgumentException.class)
+					.isInstanceOf(IllegalStateException.class)
 					.hasMessageContaining("orphan");
 		}
 	}
@@ -103,7 +108,7 @@ public class SqlFactSourceTest {
 			int afterWide = statements.get();
 
 			Unifiable<String> narrow = lvar();
-			List<String> viaLanded = person.exists(source, com.tgac.logic.unification.LVal.lval(2), narrow)
+			List<String> viaLanded = person.exists(source, lval(2), narrow)
 					.solve(narrow)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -123,7 +128,7 @@ public class SqlFactSourceTest {
 		// answer by it
 		try (SqlFactSource source = source()) {
 			Unifiable<String> out = lvar();
-			List<String> answers = person.exists(source, com.tgac.logic.unification.LVal.lval(2), out)
+			List<String> answers = person.exists(source, lval(2), out)
 					.solve(out)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -138,13 +143,13 @@ public class SqlFactSourceTest {
 		// columns to select — and must still compile to legal SQL
 		try (SqlFactSource source = source()) {
 			assertThat(person.exists(source,
-					com.tgac.logic.unification.LVal.lval(3),
-					com.tgac.logic.unification.LVal.lval("Kurt"))
+					lval(3),
+					lval("Kurt"))
 					.solve(lvar())
 					.count()).isEqualTo(1);
 			assertThat(person.exists(source,
-					com.tgac.logic.unification.LVal.lval(3),
-					com.tgac.logic.unification.LVal.lval("Ada"))
+					lval(3),
+					lval("Ada"))
 					.solve(lvar())
 					.count()).isZero();
 		}
