@@ -1,13 +1,14 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The JDBC-backed FactSource: probes compile to SELECT..WHERE over the
-// ABOUTME: pinned connection; fetches land in an internal database and covered
-// ABOUTME: probes serve locally, so a subsumed probe never touches the backend.
+// ABOUTME: The JDBC-backed FactSource: the relation IS the table (name and
+// ABOUTME: property names verbatim), probes compile to SELECT..WHERE over the
+// ABOUTME: pinned connection, fetches land, subsumed probes serve locally.
 
 import com.tgac.pldb.Database;
 import com.tgac.pldb.FactSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
@@ -17,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,12 +28,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A relation backend over one pinned JDBC connection. Pinning happens at
- * construction: auto-commit off, {@code REPEATABLE READ} where the driver's
- * metadata admits it (recorded either way — a backend that cannot promise
- * the level still answers, at its declared capability), and the snapshot
- * anchored by a first read. {@link #close()} rolls the transaction back —
- * the source never writes.
+ * A relation backend over one pinned JDBC connection, by CONVENTION: the
+ * database schema matches the pldb schema, so the relation's name is the
+ * table and its property names are the columns — no mapping layer, and
+ * values must be JDBC-representable. The source declares which relations
+ * it serves; an unserved relation refuses loudly as a config error.
+ *
+ * <p>Pinning happens at construction: auto-commit off, {@code REPEATABLE
+ * READ} where the driver's metadata admits it (recorded either way — a
+ * backend that cannot promise the level still answers, at its declared
+ * capability), and the snapshot anchored by a first read. {@link #close()}
+ * rolls the transaction back — the source never writes.
  *
  * <p>A probe fetches only when no already-covered probe subsumes it (same
  * relation, bound positions a subset with equal values — the wider fetch
@@ -50,20 +57,20 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	private final String id;
 	private final Connection connection;
-	private final Map<Relation, SqlMapping> mappings;
+	private final Set<Relation> served;
 	private final int isolation;
 
 	private Database landed = ImmutableDatabase.empty();
 	private final Map<Relation, List<IndexedSeq<Optional<Object>>>> covered = new HashMap<>();
 
-	private SqlFactSource(String id, Connection connection, Map<Relation, SqlMapping> mappings, int isolation) {
+	private SqlFactSource(String id, Connection connection, Set<Relation> served, int isolation) {
 		this.id = id;
 		this.connection = connection;
-		this.mappings = mappings;
+		this.served = served;
 		this.isolation = isolation;
 	}
 
-	public static SqlFactSource pinned(String id, Connection connection, SqlMapping... mappings) {
+	public static SqlFactSource pinned(String id, Connection connection, Relation... served) {
 		try {
 			connection.setAutoCommit(false);
 			if (connection.getMetaData().supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ)) {
@@ -72,11 +79,8 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 			try (Statement anchor = connection.createStatement()) {
 				anchor.execute("SELECT 1");
 			}
-			Map<Relation, SqlMapping> byRelation = new HashMap<>();
-			for (SqlMapping mapping : mappings) {
-				byRelation.put(mapping.getRelation(), mapping);
-			}
-			return new SqlFactSource(id, connection, byRelation, connection.getTransactionIsolation());
+			return new SqlFactSource(id, connection,
+					new HashSet<>(Arrays.asList(served)), connection.getTransactionIsolation());
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not pin " + id, e);
 		}
@@ -94,9 +98,9 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		SqlMapping mapping = mappingFor(relation);
+		refuseUnserved(relation);
 		if (!coveredBy(relation, args)) {
-			land(relation, fetch(mapping, args));
+			land(relation, fetch(relation, args));
 			covered.computeIfAbsent(relation, r -> new ArrayList<>()).add(args);
 		}
 		return landed.get(relation, args);
@@ -104,7 +108,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public synchronized long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
-		mappingFor(relation);
+		refuseUnserved(relation);
 		return coveredBy(relation, args) ?
 				landed.estimate(relation, args) :
 				Long.MAX_VALUE;
@@ -120,12 +124,10 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		}
 	}
 
-	private SqlMapping mappingFor(Relation relation) {
-		SqlMapping mapping = mappings.get(relation);
-		if (mapping == null) {
-			throw new IllegalArgumentException(id + " has no mapping for " + relation.getId());
+	private void refuseUnserved(Relation relation) {
+		if (!served.contains(relation)) {
+			throw new IllegalArgumentException(id + " does not serve " + relation.getId());
 		}
-		return mapping;
 	}
 
 	private boolean coveredBy(Relation relation, IndexedSeq<Optional<Object>> probe) {
@@ -163,38 +165,40 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		return Array.fill(relation.getArgs().length, Optional.empty());
 	}
 
-	private List<Fact> fetch(SqlMapping mapping, IndexedSeq<Optional<Object>> args) {
-		List<SqlColumn> boundColumns = new ArrayList<>();
+	private List<Fact> fetch(Relation relation, IndexedSeq<Optional<Object>> args) {
+		Property<?>[] columns = relation.getArgs();
+		List<String> boundColumns = new ArrayList<>();
 		List<Object> boundValues = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
 			if (args.get(i).isPresent()) {
-				boundColumns.add(mapping.getColumns().get(i));
+				boundColumns.add(columns[i].getName());
 				boundValues.add(args.get(i).get());
 			}
 		}
 		StringBuilder sql = new StringBuilder("SELECT ")
-				.append(mapping.getColumns().map(SqlColumn::getName).mkString(", "))
+				.append(Arrays.stream(columns)
+						.map(Property::getName)
+						.collect(Collectors.joining(", ")))
 				.append(" FROM ")
-				.append(mapping.getTable());
+				.append(relation.getName());
 		if (!boundColumns.isEmpty()) {
 			sql.append(" WHERE ")
 					.append(boundColumns.stream()
-							.map(c -> c.getName() + " = ?")
+							.map(c -> c + " = ?")
 							.collect(Collectors.joining(" AND ")));
 		}
 		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-			for (int i = 0; i < boundColumns.size(); i++) {
-				boundColumns.get(i).getBinder().bind(statement, i + 1, boundValues.get(i));
+			for (int i = 0; i < boundValues.size(); i++) {
+				statement.setObject(i + 1, boundValues.get(i));
 			}
 			try (ResultSet rows = statement.executeQuery()) {
 				List<Fact> facts = new ArrayList<>();
 				while (rows.next()) {
-					Object[] values = new Object[mapping.getColumns().size()];
+					Object[] values = new Object[columns.length];
 					for (int i = 0; i < values.length; i++) {
-						SqlColumn column = mapping.getColumns().get(i);
-						values[i] = column.getReader().read(rows, column.getName());
+						values[i] = rows.getObject(columns[i].getName());
 					}
-					facts.add(Fact.of(mapping.getRelation(), Array.of(values)));
+					facts.add(Fact.of(relation, Array.of(values)));
 				}
 				return facts;
 			}
@@ -205,7 +209,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public String toString() {
-		return id + mappings.keySet().stream()
+		return id + served.stream()
 				.map(Relation::getName)
 				.collect(Collectors.joining(", ", "[", "]"));
 	}

@@ -1,7 +1,7 @@
 package com.tgac.pldb.sql;
 
 // ABOUTME: Pins the SQL adapter: an H2-backed FactSource answers identically to
-// ABOUTME: the in-memory reference, refuses unmapped relations, and lands fetches
+// ABOUTME: the in-memory reference, refuses unserved relations, and lands fetches
 // ABOUTME: so subsumed probes never touch the backend again.
 
 import static com.tgac.logic.unification.LVar.lvar;
@@ -60,9 +60,7 @@ public class SqlFactSourceTest {
 	}
 
 	private SqlFactSource source() {
-		return SqlFactSource.pinned("h2-test", counting(connection),
-				SqlMapping.of(person, "person",
-						SqlColumn.of("id"), SqlColumn.of("name")));
+		return SqlFactSource.pinned("h2-test", counting(connection), person);
 	}
 
 	@Test
@@ -89,7 +87,7 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void anUnmappedRelationRefusesLoudly() {
+	public void anUnservedRelationRefusesLoudly() {
 		Relations._1<Integer> orphan = Relations.relation("orphan", id);
 		try (SqlFactSource source = source()) {
 			assertThatThrownBy(() -> orphan.exists(source, lvar()).solve(lvar()).count())
