@@ -1,12 +1,13 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The SQL polling half of the source: one pinned connection, the compiler
-// ABOUTME: registry, and probe+region -> rows plus the region the WHERE enforced.
+// ABOUTME: The SQL polling FactSource: one pinned connection, the compiler
+// ABOUTME: registry, probe+region compiled to SELECT..WHERE — every get a round trip.
 
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
+import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -23,31 +24,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Value;
 
 /**
  * Talks to the backend, nothing else: pins the connection at construction
  * (auto-commit off, {@code REPEATABLE READ} where the driver's metadata
  * admits it, the granted level recorded, the snapshot anchored by a first
  * read), compiles a probe's region through the registered per-family
- * compilers, executes the SELECT, and reports the rows TOGETHER WITH the
- * consumed region — exactly the atoms the WHERE enforced, which is what a
- * caching layer must record to reuse the fetch soundly. Holds no pool and
- * no ledger; every call is a round trip.
+ * compilers into the WHERE, and executes the SELECT. Holds no pool and no
+ * ledger; every get is a round trip, and the estimate is the optimizer
+ * barrier. Package-private: callers compose through {@link SqlFactSource}
+ * — the caching is not optional equipment.
  */
-final class SqlFetch {
+final class SqlFetch implements FactSource {
 
 	private final String id;
 	private final Connection connection;
 	private final int isolation;
 	private final Map<Class<?>, SqlCompiler> compilers = new HashMap<>();
-
-	/** One poll's outcome: the rows, and the region the WHERE enforced. */
-	@Value
-	static class Fetched {
-		List<Fact> rows;
-		Residues consumed;
-	}
 
 	private SqlFetch(String id, Connection connection, int isolation) {
 		this.id = id;
@@ -74,13 +67,28 @@ final class SqlFetch {
 		return isolation;
 	}
 
+	@Override
+	public String id() {
+		return id;
+	}
+
 	void compiling(Class<?> family, SqlCompiler compiler) {
 		compilers.put(family, compiler);
 	}
 
-	Fetched fetch(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
-		Pushed pushed = push(relation, region);
-		return new Fetched(rows(relation, args, pushed.getPredicates()), pushed.getConsumed());
+	@Override
+	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
+		return get(relation, args, Residues.TRUE);
+	}
+
+	@Override
+	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
+		return rows(relation, args, push(relation, region));
+	}
+
+	@Override
+	public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+		return Long.MAX_VALUE;
 	}
 
 	void close() {
@@ -92,40 +100,20 @@ final class SqlFetch {
 		}
 	}
 
-	/** A compilation's outcome: the predicates pushed, the atoms they consumed. */
-	@Value
-	private static class Pushed {
-		List<SqlPredicate> predicates;
-		Residues consumed;
-	}
-
-	/** Every registered family's atoms through its compiler: predicates + consumed. */
-	private Pushed push(Relation relation, Residues region) {
+	/** Every registered family's atoms through its compiler; misses stay local. */
+	private List<SqlPredicate> push(Relation relation, Residues region) {
 		List<SqlPredicate> predicates = new ArrayList<>();
-		io.vavr.collection.Map<Class<?>, Theory<?>> consumed = io.vavr.collection.HashMap.empty();
 		for (Tuple2<Class<?>, Theory<?>> family : region.getTheories()) {
 			SqlCompiler compiler = compilers.get(family._1);
 			if (compiler == null) {
 				continue;
 			}
-			List<Atom<?>> taken = new ArrayList<>();
 			for (Atom<?> atom : family._2.atoms()) {
-				Optional<SqlPredicate> compiled = compiler.compile(atom, columnResolver(relation));
-				if (compiled.isPresent()) {
-					predicates.add(compiled.get());
-					taken.add(atom);
-				}
-			}
-			if (!taken.isEmpty()) {
-				consumed = consumed.put(family._1, theoryOf(taken));
+				compiler.compile(atom, columnResolver(relation))
+						.ifPresent(predicates::add);
 			}
 		}
-		return new Pushed(predicates, Residues.of(consumed));
-	}
-
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static Theory<?> theoryOf(List<Atom<?>> atoms) {
-		return Theory.of((Iterable) atoms);
+		return predicates;
 	}
 
 	/** Positional names resolve to columns: {@code _.i} is the i-th property. */

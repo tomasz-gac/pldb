@@ -1,7 +1,7 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The JDBC-backed FactSource, composed: SqlFetch polls the pinned backend,
-// ABOUTME: Landing reuses covered fetches subsumptively — this shell just wires them.
+// ABOUTME: The JDBC-backed FactSource: a constructor and a wrapper — the caching
+// ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
 import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.FactSource;
@@ -21,33 +21,32 @@ import java.util.Optional;
  * vocabulary at all). The backend is the schema authority: a relation
  * without a table fails loudly at its first fetch.
  *
- * <p>Two halves compose here and this shell only wires them. {@link
- * SqlFetch} owns the backend: the pinned connection, the per-family
- * compiler registry, probe+region to rows plus the CONSUMED region its
- * WHERE enforced. {@link Landing} owns reuse: the landed pool and the
- * coverage ledger, serving a probe locally only on containment proof.
- * A probe that no covered fetch proves fetches once and lands; the
- * propagation loop's narrowing probes after a wide fetch run without
- * round trips. Estimates are exact over covered probes and the optimizer
- * barrier ({@code Long.MAX_VALUE}) otherwise — never a remote round trip.
+ * <p>This class is a constructor and a wrapper: {@link CachingFactSource}
+ * over the pinned {@link SqlFetch}. The fetch owns the backend — the
+ * connection, the per-family compiler registry, probe+region compiled to
+ * SELECT..WHERE, every get a round trip. The cache owns reuse — landing,
+ * the coverage ledger, containment proof. What remains here is the
+ * lifecycle the composition needs: pinning at construction, compiler
+ * registration before first use, and {@link #close()} rolling the
+ * transaction back. Estimates are exact over covered probes and the
+ * optimizer barrier otherwise — never a remote round trip.
  *
- * <p>The connection is shared and synchronized: parallel solves serialize
- * their fetches here. Landed answers are immutable snapshots, so reads
- * outside the monitor stay safe.
+ * <p>The connection is shared and the composed get synchronized: parallel
+ * solves serialize their fetches here. Landed answers are immutable
+ * snapshots, so reads outside the monitor stay safe.
  */
 public final class SqlFactSource implements FactSource, AutoCloseable {
 
-	private final String id;
 	private final SqlFetch fetch;
-	private final Landing landing = new Landing();
+	private final CachingFactSource cached;
 
-	private SqlFactSource(String id, SqlFetch fetch) {
-		this.id = id;
+	private SqlFactSource(SqlFetch fetch) {
 		this.fetch = fetch;
+		this.cached = CachingFactSource.over(fetch);
 	}
 
 	public static SqlFactSource pinned(String id, Connection connection) {
-		return new SqlFactSource(id, SqlFetch.pinned(id, connection));
+		return new SqlFactSource(SqlFetch.pinned(id, connection));
 	}
 
 	/**
@@ -56,8 +55,8 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 	 * order-dependent.
 	 */
 	public SqlFactSource compiling(Class<?> family, SqlCompiler compiler) {
-		if (!landing.isEmpty()) {
-			throw new IllegalStateException(id + ": register compilers before first use");
+		if (!cached.isEmpty()) {
+			throw new IllegalStateException(id() + ": register compilers before first use");
 		}
 		fetch.compiling(family, compiler);
 		return this;
@@ -65,7 +64,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public String id() {
-		return id;
+		return fetch.id();
 	}
 
 	/** The isolation level the backend actually granted — the pin's declared capability. */
@@ -75,23 +74,17 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return get(relation, args, Residues.TRUE);
+		return cached.get(relation, args);
 	}
 
 	@Override
-	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
-		if (!landing.covers(relation, args, region)) {
-			SqlFetch.Fetched fetched = fetch.fetch(relation, args, region);
-			landing.land(relation, args, fetched.getConsumed(), fetched.getRows());
-		}
-		return landing.serve(relation, args);
+	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
+		return cached.get(relation, args, region);
 	}
 
 	@Override
-	public synchronized long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return landing.covers(relation, args, Residues.TRUE) ?
-				landing.estimate(relation, args) :
-				Long.MAX_VALUE;
+	public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+		return cached.estimate(relation, args);
 	}
 
 	@Override
@@ -101,6 +94,6 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 
 	@Override
 	public String toString() {
-		return id;
+		return cached.toString();
 	}
 }
