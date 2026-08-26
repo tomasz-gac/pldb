@@ -15,7 +15,12 @@ import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.constraints.Support;
+import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Relation;
+import io.vavr.collection.IndexedSeq;
+import java.util.Optional;
 import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -65,6 +70,40 @@ public class TableConstraintsTest {
 			check.accept(p);
 			return Cont.just(p);
 		};
+	}
+
+	@Test
+	public void aRecordPricedAtTheBarrierStillGrounds() {
+		// pricing is an ORDER, not a gate: a source that can only answer the
+		// optimizer barrier (no statistics — a remote backend's honest
+		// estimate) must still have its surviving records enumerated at
+		// enforce; the narrowest-selection must tolerate every candidate
+		// pricing at Long.MAX_VALUE
+		FactSource barrier = new FactSource() {
+			@Override
+			public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
+				return db.get(relation, args);
+			}
+
+			@Override
+			public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+				return Long.MAX_VALUE;
+			}
+		};
+		Unifiable<String> viaBarrier = lvar();
+		Unifiable<String> viaDb = lvar();
+		List<String> barrierAnswers = r.posted(barrier, lvar(), viaBarrier)
+				.solve(viaBarrier)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+		List<String> dbAnswers = r.posted(db, lvar(), viaDb)
+				.solve(viaDb)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+		assertThat(dbAnswers).isNotEmpty();
+		assertThat(barrierAnswers).isEqualTo(dbAnswers);
 	}
 
 	@Test

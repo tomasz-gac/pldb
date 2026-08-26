@@ -125,7 +125,9 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 					continue;
 				}
 				long count = ((TablePropagator) p).estimate(walked);
-				if (count < fewest) {
+				// pricing is an order, not a gate: with every candidate at the
+				// barrier the first record still wins — grounding never skips
+				if (narrowest == null || count < fewest) {
 					fewest = count;
 					narrowest = (TablePropagator) p;
 					watched = p.watchedTerms();
