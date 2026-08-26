@@ -12,8 +12,10 @@ import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Term;
+import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Regions;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
@@ -46,7 +48,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	@SuppressWarnings("unchecked")
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		List<Fact> candidates = candidates(Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
+		List<Fact> candidates = candidates(pkg, Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
 		if (candidates.isEmpty()) {
 			return Verdict.fail();
 		}
@@ -103,7 +105,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				return Cont.just(s);
 			}
-			return candidates(Constraint.in(s, TableConstraints.class).get().getTheory(), walked).stream()
+			return candidates(s, Constraint.in(s, TableConstraints.class).get().getTheory(), walked).stream()
 					.map(row -> rowGoal(walked, row))
 					.reduce(Goal::or)
 					.orElseGet(Goal::failure)
@@ -139,10 +141,11 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	/** The index probe under the current bindings, filtered by live supports. */
-	private List<Fact> candidates(Theory<TableConstraints> theory, Array<Term<?>> walked) {
+	private List<Fact> candidates(Package pkg, Theory<TableConstraints> theory, Array<Term<?>> walked) {
 		IndexedSeq<Optional<Object>> probe = probe(walked);
+		Residues region = Regions.about(pkg, walked);
 		List<Fact> candidates = new ArrayList<>();
-		for (Fact fact : source.get(rel, probe)) {
+		for (Fact fact : source.get(rel, probe, region)) {
 			if (admitted(theory, walked, fact)) {
 				candidates.add(fact);
 			}

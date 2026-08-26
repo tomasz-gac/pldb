@@ -3,6 +3,7 @@ package com.tgac.pldb;
 // ABOUTME: The read face of an external relation backend: facts matching a bound
 // ABOUTME: pattern, plus the planner's cardinality estimate over the same probe.
 
+import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.IndexedSeq;
@@ -21,6 +22,19 @@ import java.util.Optional;
 public interface FactSource {
 
 	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
+
+	/**
+	 * The probe with its REGION: the package's knowledge about the argument
+	 * positions ({@link com.tgac.pldb.relations.Regions#about}), live terms,
+	 * one theory per constraint family. ADVISORY — a source may consult it
+	 * to narrow the fetch (compile parts into its own query language), and
+	 * the over-delivery law makes ignoring it, wholly or per family, always
+	 * correct: narrowing the source did not apply stays local, enforced by
+	 * propagation over the returned rows. The default ignores it.
+	 */
+	default Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
+		return get(relation, args);
+	}
 
 	/**
 	 * The source's identity, as knowledge: two posts of one lookup are the

@@ -14,6 +14,7 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.FactSource;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
@@ -40,7 +41,7 @@ public class LookupGoal implements Goal, Bounded {
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
 		return Cont.defer(() -> substituteQueryItems(s.substitution(), args)
-				.map(q -> unifyQueryResults(q).apply(s)));
+				.map(q -> unifyQueryResults(s, q).apply(s)));
 	}
 
 	@Override
@@ -63,11 +64,12 @@ public class LookupGoal implements Goal, Bounded {
 				.map(q -> q.collect(Array.collector()));
 	}
 
-	private Goal unifyQueryResults(Array<Unifiable<?>> query) {
+	private Goal unifyQueryResults(Package s, Array<Unifiable<?>> query) {
 		return StreamSupport.stream(source.get(rel, query
 								.map(Unifiable::getObjectUnifiable)
 								.map(Unifiable::asVal)
-								.map(Option::toJavaOptional))
+								.map(Option::toJavaOptional),
+								Regions.about(s, query))
 						.spliterator(), false)
 				.map(fact -> (Goal) lval(fact.getValues().map(Object.class::cast).map(LVal::lval))
 						.unifies(query.map(Unifiable::getObjectUnifiable)))
