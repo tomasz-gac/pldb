@@ -97,6 +97,18 @@ public class SqlPredicateTest {
 		assertThat(selectNames(p)).containsExactly("Ada", "Alan");
 	}
 
+	@Test
+	public void columnEqualityRendersParameterless() throws SQLException {
+		SqlPredicate p = SqlPredicate.eqColumns("id", "boss");
+		assertThat(p.getFragment()).isEqualTo("id = boss");
+		assertThat(p.getParameters().isEmpty()).isTrue();
+		try (Statement ddl = connection.createStatement()) {
+			ddl.execute("ALTER TABLE person ADD COLUMN boss INT");
+			ddl.execute("UPDATE person SET boss = 2");
+		}
+		assertThat(selectNames(p)).containsExactly("Alan");
+	}
+
 	private List<String> selectNames(SqlPredicate predicate) throws SQLException {
 		String sql = "SELECT name FROM person WHERE " + predicate.getFragment() + " ORDER BY id";
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {

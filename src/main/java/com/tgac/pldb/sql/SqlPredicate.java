@@ -15,6 +15,14 @@ import lombok.Value;
  * WHERE by conjunction. Values are always bound as parameters, never inlined
  * into the text. The vocabulary is deliberately flat — atomic conditions
  * under AND; the useful disjunction (a domain's value set) is {@link #in}.
+ * Nested boolean structure and arithmetic operands are one deferred design
+ * decision (the AST); its reopening triggers are Union domains,
+ * multi-literal nogoods, and an addo atom crossing a region.
+ *
+ * <p>CONVENTION: columns backing relation properties are NON-NULL. SQL's
+ * three-valued logic makes every comparison silently drop NULL rows —
+ * under-delivery, the one sin — while the engine has no null vocabulary
+ * at all; the schema-matching convention therefore excludes them.
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -56,6 +64,11 @@ public class SqlPredicate {
 
 	public static <T> SqlPredicate neq(String column, T value) {
 		return new SqlPredicate(column + " <> ?", Array.of(value));
+	}
+
+	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
+	public static SqlPredicate eqColumns(String left, String right) {
+		return new SqlPredicate(left + " = " + right, Array.empty());
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
