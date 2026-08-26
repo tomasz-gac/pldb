@@ -185,6 +185,35 @@ public class SqlPushdownTest {
 	}
 
 	@Test
+	public void doubleNegationIsBooleanOnBothSides() {
+		// exclude(exclude(x=3)) IS x=3, engine and SQL alike. Engine-side the
+		// trial keeps the equivalence: away from 3 the inner exclusion is
+		// SATISFIED and discharges — the scratch comes back unchanged, the
+		// literal crosses off, the outer nogood fires; at 3 the inner is
+		// doomed, the literal refutes, the outer is satisfied. The compiler's
+		// registry self-delegation pushes NOT (id <> ?), and the oracle
+		// agrees. (The exactness bit still guards the flip: a WEAKENED inner
+		// compilation would refuse its negation.)
+		Unifiable<Long> viaSql = lvar();
+		Unifiable<Long> viaMemory = lvar();
+		List<String> pushed = doubleNegationProgram(pushing(), viaSql);
+		assertThat(pushed).isEqualTo(doubleNegationProgram(reference, viaMemory));
+		assertThat(pushed).hasSize(1);
+		assertThat(statementSql.stream().anyMatch(text -> text.contains("NOT (id <> ?)")))
+				.describedAs("the double negation must reach the backend as the pushed complement")
+				.isTrue();
+	}
+
+	private static List<String> doubleNegationProgram(FactSource source, Unifiable<Long> x) {
+		return exclude(exclude(x.unifies(3L)))
+				.and(person.exists(source, x, lvar()))
+				.solve(x)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
+	@Test
 	public void anExclusionPushesItsNegation() {
 		// the nogood compiler is equipment too: the one-literal exclusion
 		// reaches the WHERE clause as its negation, answers unchanged
