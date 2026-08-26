@@ -57,6 +57,31 @@ public class SqlPredicateTest {
 		assertThat(selectNames(p)).containsExactly("Ada");
 	}
 
+	@Test
+	public void comparisonsRenderAgainstAValue() throws SQLException {
+		assertThat(SqlPredicate.leq("id", 2).getFragment()).isEqualTo("id <= ?");
+		assertThat(selectNames(SqlPredicate.leq("id", 2))).containsExactly("Ada", "Alan");
+		assertThat(SqlPredicate.lss("id", 2).getFragment()).isEqualTo("id < ?");
+		assertThat(selectNames(SqlPredicate.lss("id", 2))).containsExactly("Ada");
+		assertThat(SqlPredicate.geq("id", 2).getFragment()).isEqualTo("id >= ?");
+		assertThat(selectNames(SqlPredicate.geq("id", 2))).containsExactly("Alan", "Kurt");
+		assertThat(SqlPredicate.gtr("id", 2).getFragment()).isEqualTo("id > ?");
+		assertThat(selectNames(SqlPredicate.gtr("id", 2))).containsExactly("Kurt");
+	}
+
+	@Test
+	public void columnComparisonRendersParameterless() throws SQLException {
+		SqlPredicate p = SqlPredicate.leqColumns("id", "boss");
+		assertThat(p.getFragment()).isEqualTo("id <= boss");
+		assertThat(p.getParameters().isEmpty()).isTrue();
+
+		try (Statement ddl = connection.createStatement()) {
+			ddl.execute("ALTER TABLE person ADD COLUMN boss INT");
+			ddl.execute("UPDATE person SET boss = 2");
+		}
+		assertThat(selectNames(p)).containsExactly("Ada", "Alan");
+	}
+
 	private List<String> selectNames(SqlPredicate predicate) throws SQLException {
 		String sql = "SELECT name FROM person WHERE " + predicate.getFragment() + " ORDER BY id";
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {

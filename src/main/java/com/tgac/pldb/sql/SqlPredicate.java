@@ -22,7 +22,7 @@ public class SqlPredicate {
 	String fragment;
 	Array<Object> parameters;
 
-	public static SqlPredicate in(String column, Iterable<?> values) {
+	public static <T> SqlPredicate in(String column, Iterable<T> values) {
 		Array<Object> bound = Array.ofAll(StreamSupport.stream(values.spliterator(), false)
 				.map(Object.class::cast));
 		return new SqlPredicate(
@@ -30,12 +30,33 @@ public class SqlPredicate {
 				bound);
 	}
 
-	public static SqlPredicate between(String column, Object lo, Object hi) {
+	public static <T> SqlPredicate between(String column, T lo, T hi) {
 		return new SqlPredicate(column + " BETWEEN ? AND ?", Array.of(lo, hi));
 	}
 
-	public static SqlPredicate eq(String column, Object value) {
+	public static <T> SqlPredicate eq(String column, T value) {
 		return new SqlPredicate(column + " = ?", Array.of(value));
+	}
+
+	public static <T> SqlPredicate leq(String column, T value) {
+		return new SqlPredicate(column + " <= ?", Array.of(value));
+	}
+
+	public static <T> SqlPredicate lss(String column, T value) {
+		return new SqlPredicate(column + " < ?", Array.of(value));
+	}
+
+	public static <T> SqlPredicate geq(String column, T value) {
+		return new SqlPredicate(column + " >= ?", Array.of(value));
+	}
+
+	public static <T> SqlPredicate gtr(String column, T value) {
+		return new SqlPredicate(column + " > ?", Array.of(value));
+	}
+
+	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
+	public static SqlPredicate leqColumns(String less, String more) {
+		return new SqlPredicate(less + " <= " + more, Array.empty());
 	}
 
 	@Override
