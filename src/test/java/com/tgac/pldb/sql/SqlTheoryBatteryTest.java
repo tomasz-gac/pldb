@@ -12,7 +12,6 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.finitedomain.FiniteDomain;
-import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.finitedomain.domains.Interval;
 import com.tgac.logic.goals.Goal;
@@ -24,14 +23,17 @@ import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.collection.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,10 +77,16 @@ public class SqlTheoryBatteryTest {
 		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE person(id BIGINT, name VARCHAR(64))");
-			ddl.execute("INSERT INTO person VALUES"
-					+ " (1, 'Ada'), (2, 'Alan'), (3, 'Kurt'), (4, 'Barbara'), (5, 'Edsger')");
+			ddl.execute("INSERT INTO person VALUES " +
+					StreamSupport.stream(reference.get(person, Array.of(Optional.empty(), Optional.empty()))
+									.spliterator(), false)
+							.map(f -> "(" + f.get(id).get() + ", '" + f.get(name).get() + "') ")
+							.collect(Collectors.joining(",")));
 			ddl.execute("CREATE TABLE edge(lo BIGINT, hi BIGINT)");
-			ddl.execute("INSERT INTO edge VALUES (1, 2), (2, 1), (3, 3), (1, 5)");
+			ddl.execute("INSERT INTO edge VALUES " +
+					StreamSupport.stream(reference.get(edge, Array.of(Optional.empty(), Optional.empty())).spliterator(), false)
+							.map(f -> "(" + f.get(lo).get() + ", " + f.get(hi).get() + ") ")
+							.collect(Collectors.joining(",")));
 		}
 	}
 
@@ -184,10 +192,9 @@ public class SqlTheoryBatteryTest {
 	}
 
 	private <T> void agree(int expected, BiFunction<FactSource, Unifiable<T>, Goal> program) {
-		Tuple2<SqlFactSource, SqlFactSource> sources = Tuple.of(
-				SqlFactSource.pinned("battery-push", connection)
-						.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler()),
-				SqlFactSource.pinned("battery-plain", connection));
+		Tuple2<FactSource, FactSource> sources = Tuple.of(
+				SqlFactSource.pinned("battery-push", connection),
+				CachingFactSource.over(SqlFetch.pinned("battery-plain", connection)));
 		List<String> pushed = answers(sources._1, program);
 		List<String> unpushed = answers(sources._2, program);
 		List<String> inMemory = answers(reference, program);

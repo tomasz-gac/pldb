@@ -3,6 +3,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: The JDBC-backed FactSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
+import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
@@ -45,8 +46,15 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		this.cached = CachingFactSource.over(fetch);
 	}
 
+	/**
+	 * Pins the connection and wires the ENGINE-CORE compilers as equipment —
+	 * the FD family pushes out of the box. {@link #compiling} registers user
+	 * families and may OVERRIDE a built-in.
+	 */
 	public static SqlFactSource pinned(String id, Connection connection) {
-		return new SqlFactSource(SqlFetch.pinned(id, connection));
+		SqlFetch fetch = SqlFetch.pinned(id, connection);
+		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
+		return new SqlFactSource(fetch);
 	}
 
 	/**

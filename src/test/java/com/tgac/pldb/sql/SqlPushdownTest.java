@@ -48,6 +48,7 @@ public class SqlPushdownTest {
 
 	private Connection connection;
 	private final AtomicInteger statements = new AtomicInteger();
+	private final List<String> statementSql = new java.util.ArrayList<>();
 
 	@Before
 	public void loadH2() throws SQLException {
@@ -65,12 +66,12 @@ public class SqlPushdownTest {
 
 	/** Sources share the test's connection; the @After close owns its lifecycle. */
 	private SqlFactSource pushing() {
-		return SqlFactSource.pinned("h2-push", counting(connection))
-				.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
+		return SqlFactSource.pinned("h2-push", counting(connection));
 	}
 
-	private SqlFactSource plain() {
-		return SqlFactSource.pinned("h2-plain", counting(connection));
+	/** The unpushed leg of the oracle: the bare halves composed, no equipment. */
+	private FactSource plain() {
+		return CachingFactSource.over(SqlFetch.pinned("h2-plain", counting(connection)));
 	}
 
 	@Test
@@ -128,6 +129,29 @@ public class SqlPushdownTest {
 	}
 
 	@Test
+	public void theFdCompilerIsEquipment() {
+		// no compiling(...) call anywhere: the FD compiler is wired at
+		// pinned() — the domain still reaches the WHERE clause
+		SqlFactSource source = SqlFactSource.pinned("h2-equipment", counting(connection));
+		domProgram(source);
+		assertThat(statementSql.stream().anyMatch(sql -> sql.contains("id IN (?, ?)")))
+				.describedAs("the auto-registered FD compiler must push the domain")
+				.isTrue();
+	}
+
+	@Test
+	public void anAutoRegisteredCompilerIsOverridable() {
+		// a user replacement takes the family over: an always-refusing
+		// compiler keeps every FD atom local
+		SqlFactSource source = SqlFactSource.pinned("h2-override", counting(connection))
+				.compiling(FiniteDomainConstraints.class, (atom, columns) -> java.util.Optional.empty());
+		domProgram(source);
+		assertThat(statementSql.stream().noneMatch(sql -> sql.contains("IN (")))
+				.describedAs("the override must replace the built-in")
+				.isTrue();
+	}
+
+	@Test
 	public void anUnregisteredFamilyStaysLocalAndAnswersRight() {
 		// the nogood family has no compiler on this source: its exclusion is
 		// not pushed, not consumed, and enforced locally — same answers as
@@ -178,6 +202,7 @@ public class SqlPushdownTest {
 				(proxy, method, args) -> {
 					if ("prepareStatement".equals(method.getName())) {
 						statements.incrementAndGet();
+						statementSql.add(String.valueOf(args[0]));
 					}
 					try {
 						return method.invoke(real, args);
