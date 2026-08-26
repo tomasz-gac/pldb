@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Theory;
-import com.tgac.logic.finitedomain.FiniteDomain;
+import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
@@ -50,7 +50,7 @@ public class RegionsTest {
 		// addo propagator couples x to y (not an arg) and stays home, and so
 		// does y's domain
 		Theory<?> fd = region.getTheories()
-				.get(FiniteDomain.family())
+				.get(FiniteDomainConstraints.class)
 				.getOrNull();
 		assertThat(fd).isNotNull();
 		assertThat(fd.atoms()).hasSize(1);
@@ -58,6 +58,6 @@ public class RegionsTest {
 
 		// an arg nobody knows anything about contributes nothing
 		assertThat(region.getTheories().keySet()
-				.forAll(family -> family.equals(FiniteDomain.family()))).isTrue();
+				.forAll(family -> family.equals(FiniteDomainConstraints.class))).isTrue();
 	}
 }
