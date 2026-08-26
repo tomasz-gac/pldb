@@ -80,6 +80,11 @@ final class SqlFetch implements FactSource {
 		compilers.put(family, compiler);
 	}
 
+	/** The LIVE registry view — cross-family compilers (nogoods) delegate through it. */
+	Map<Class<?>, SqlCompiler> compilers() {
+		return compilers;
+	}
+
 	@Override
 	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
 		return get(relation, args, Residues.TRUE);

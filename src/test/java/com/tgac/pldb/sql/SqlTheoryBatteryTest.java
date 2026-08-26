@@ -7,6 +7,7 @@ import static com.tgac.logic.finitedomain.FiniteDomain.dom;
 import static com.tgac.logic.finitedomain.FiniteDomain.gtr;
 import static com.tgac.logic.finitedomain.FiniteDomain.lss;
 import static com.tgac.logic.finitedomain.FiniteDomain.separate;
+import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.finitedomain.FiniteDomain;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.finitedomain.domains.Interval;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
@@ -177,6 +179,24 @@ public class SqlTheoryBatteryTest {
 		agree(3, (FactSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
 			return separate(out, b).and(edge.exists(source, out, b));
+		});
+	}
+
+	@Test
+	public void oneLiteralExclusion() {
+		agree(4, (FactSource source, Unifiable<String> out) -> {
+			Unifiable<Long> x = lvar();
+			return exclude(x.unifies(3L)).and(person.exists(source, x, out));
+		});
+	}
+
+	@Test
+	public void multiLiteralExclusionExcludesTheRowNotTheColumns() {
+		// ¬(id=2 ∧ name='Alan') kills exactly the one row where BOTH hold
+		agree(4, (FactSource source, Unifiable<String> out) -> {
+			Unifiable<Long> x = lvar();
+			return exclude(Posting.all(x.unifies(2L), out.unifies("Alan")))
+					.and(person.exists(source, x, out));
 		});
 	}
 

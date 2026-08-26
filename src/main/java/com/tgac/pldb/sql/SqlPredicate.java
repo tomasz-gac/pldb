@@ -128,6 +128,19 @@ public class SqlPredicate {
 				parts.stream().allMatch(SqlPredicate::isExact));
 	}
 
+	/** The conjunction, exact iff every part is; a conjunct may drop freely (weaker). */
+	public static SqlPredicate and(List<SqlPredicate> parts) {
+		if (parts.isEmpty()) {
+			throw new IllegalArgumentException("an empty conjunction claims nothing");
+		}
+		return new SqlPredicate(
+				parts.stream().map(SqlPredicate::getFragment)
+						.collect(Collectors.joining(" AND ", "(", ")")),
+				parts.stream().map(SqlPredicate::getParameters)
+						.reduce(Array.empty(), Array::appendAll),
+				parts.stream().allMatch(SqlPredicate::isExact));
+	}
+
 	@Override
 	public String toString() {
 		return fragment + parameters.mkString(" [", ", ", "]");

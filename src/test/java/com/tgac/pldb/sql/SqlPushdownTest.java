@@ -152,15 +152,17 @@ public class SqlPushdownTest {
 	}
 
 	@Test
-	public void anUnregisteredFamilyStaysLocalAndAnswersRight() {
-		// the nogood family has no compiler on this source: its exclusion is
-		// not pushed, not consumed, and enforced locally — same answers as
-		// the in-memory reference
+	public void anExclusionPushesItsNegation() {
+		// the nogood compiler is equipment too: the one-literal exclusion
+		// reaches the WHERE clause as its negation, answers unchanged
 		Unifiable<Long> viaSql = lvar();
 		Unifiable<Long> viaMemory = lvar();
 		List<String> sql = exclusionProgram(pushing(), viaSql);
 		assertThat(sql).isEqualTo(exclusionProgram(reference, viaMemory));
 		assertThat(sql).hasSize(2);
+		assertThat(statementSql.stream().anyMatch(text -> text.contains("id <> ?")))
+				.describedAs("the exclusion must reach the backend")
+				.isTrue();
 	}
 
 	private static List<String> domProgram(FactSource source) {

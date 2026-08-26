@@ -4,6 +4,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
+import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.pldb.FactSource;
 import com.tgac.pldb.relations.Fact;
@@ -54,6 +55,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 	public static SqlFactSource pinned(String id, Connection connection) {
 		SqlFetch fetch = SqlFetch.pinned(id, connection);
 		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
+		fetch.compiling(NogoodConstraints.class, new NogoodSqlCompiler(fetch.compilers()));
 		return new SqlFactSource(fetch);
 	}
 

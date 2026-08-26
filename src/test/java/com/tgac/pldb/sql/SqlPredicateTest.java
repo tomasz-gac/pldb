@@ -121,6 +121,19 @@ public class SqlPredicateTest {
 	}
 
 	@Test
+	public void andConjoinsWithParenthesesAndConcatenatedParameters() throws SQLException {
+		SqlPredicate p = SqlPredicate.and(Arrays.asList(
+				SqlPredicate.geq("id", 2),
+				SqlPredicate.neq("id", 3)));
+		assertThat(p.getFragment()).isEqualTo("(id >= ? AND id <> ?)");
+		assertThat(p.isExact()).isTrue();
+		assertThat(selectNames(p)).containsExactly("Alan");
+		assertThat(SqlPredicate.and(Arrays.asList(
+				SqlPredicate.eq("id", 1),
+				SqlPredicate.eq("id", 2).weakened())).isExact()).isFalse();
+	}
+
+	@Test
 	public void negationIsTheGuardedComplement() throws SQLException {
 		SqlPredicate in = SqlPredicate.in("id", Arrays.asList(1, 3));
 		assertThat(in.negated()).isPresent();
