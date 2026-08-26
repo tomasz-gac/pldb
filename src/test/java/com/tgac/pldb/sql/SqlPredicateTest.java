@@ -89,6 +89,7 @@ public class SqlPredicateTest {
 		SqlPredicate p = SqlPredicate.leqColumns("id", "boss");
 		assertThat(p.getFragment()).isEqualTo("id <= boss");
 		assertThat(p.getParameters().isEmpty()).isTrue();
+		assertThat(SqlPredicate.lssColumns("id", "boss").getFragment()).isEqualTo("id < boss");
 
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("ALTER TABLE person ADD COLUMN boss INT");

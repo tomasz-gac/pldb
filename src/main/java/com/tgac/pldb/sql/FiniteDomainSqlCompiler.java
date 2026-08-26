@@ -107,6 +107,19 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 				return Optional.of(SqlPredicate.geq(right.get(), leftValue.get()));
 			}
 		}
+		if ("lss".equals(atom.name())) {
+			if (left.isPresent() && right.isPresent()) {
+				return Optional.of(SqlPredicate.lssColumns(left.get(), right.get()));
+			}
+			if (left.isPresent() && rightValue.isPresent()) {
+				return Optional.of(SqlPredicate.lss(left.get(), rightValue.get()));
+			}
+			if (leftValue.isPresent() && right.isPresent()) {
+				// left < right with the column on the RIGHT: the column-first
+				// spelling flips the operator — 2 < col IS col > 2
+				return Optional.of(SqlPredicate.gtr(right.get(), leftValue.get()));
+			}
+		}
 		if ("separate".equals(atom.name())) {
 			if (left.isPresent() && right.isPresent()) {
 				return Optional.of(SqlPredicate.neqColumns(left.get(), right.get()));

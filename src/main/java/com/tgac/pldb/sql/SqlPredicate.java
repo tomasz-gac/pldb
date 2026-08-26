@@ -77,6 +77,11 @@ public class SqlPredicate {
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
+	public static SqlPredicate lssColumns(String less, String more) {
+		return new SqlPredicate(less + " < " + more, Array.empty());
+	}
+
+	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
 	public static SqlPredicate neqColumns(String left, String right) {
 		return new SqlPredicate(left + " <> " + right, Array.empty());
 	}

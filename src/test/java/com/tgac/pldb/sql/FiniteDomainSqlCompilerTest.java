@@ -4,12 +4,15 @@ package com.tgac.pldb.sql;
 // ABOUTME: predicate, including the Union hull — weaker than the union, lawful.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
+import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.finitedomain.Domain;
+import com.tgac.logic.finitedomain.FiniteDomain;
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.finitedomain.domains.Arithmetic;
 import com.tgac.logic.finitedomain.domains.Interval;
 import com.tgac.logic.finitedomain.domains.Singleton;
@@ -23,6 +26,31 @@ public class FiniteDomainSqlCompilerTest {
 		Unifiable<Long> x = lvar();
 		Atom<?> atom = ((Posting.Activation) dom(x, domain)).getItem();
 		return new FiniteDomainSqlCompiler().compile(atom, term -> Optional.of("id"));
+	}
+
+	@Test
+	public void strictOrderCompilesSharp() {
+		Unifiable<Long> x = lvar();
+		Unifiable<Long> y = lvar();
+
+		Atom<?> colVal = ((Posting.Activation) FiniteDomain.lss(x, lval(2L))).getItem();
+		Optional<SqlPredicate> lss = new FiniteDomainSqlCompiler()
+				.compile(colVal, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
+		assertThat(lss).isPresent();
+		assertThat(lss.get().getFragment()).isEqualTo("id < ?");
+
+		Atom<?> valCol = ((Posting.Activation) FiniteDomain.gtr(x, lval(2L))).getItem();
+		Optional<SqlPredicate> gtr = new FiniteDomainSqlCompiler()
+				.compile(valCol, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
+		assertThat(gtr).isPresent();
+		assertThat(gtr.get().getFragment()).isEqualTo("id > ?");
+
+		Atom<?> colCol = ((Posting.Activation) FiniteDomain.lss(x, y)).getItem();
+		Optional<SqlPredicate> columns = new FiniteDomainSqlCompiler()
+				.compile(colCol, term -> term.equals(x) ? Optional.of("lo")
+						: term.equals(y) ? Optional.of("hi") : Optional.<String> empty());
+		assertThat(columns).isPresent();
+		assertThat(columns.get().getFragment()).isEqualTo("lo < hi");
 	}
 
 	@Test
