@@ -9,7 +9,6 @@ import com.tgac.pldb.FactSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +40,7 @@ public final class CachingFactSource implements FactSource {
 
 	private final FactSource delegate;
 
-	private Database landed = ImmutableDatabase.empty();
+	private Database cache = ImmutableDatabase.empty();
 	private final Map<Relation, List<Coverage>> covered = new HashMap<>();
 
 	/** One completed fetch: the probe's pattern plus the region passed with it. */
@@ -76,17 +75,17 @@ public final class CachingFactSource implements FactSource {
 	@Override
 	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
 		if (!covers(relation, args, region)) {
-			land(relation, delegate.get(relation, args, region));
+			add(relation, args, delegate.get(relation, args, region));
 			covered.computeIfAbsent(relation, r -> new ArrayList<>())
 					.add(new Coverage(args, region));
 		}
-		return landed.get(relation, args);
+		return cache.get(relation, args);
 	}
 
 	@Override
 	public synchronized long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
 		return covers(relation, args, Residues.TRUE) ?
-				landed.estimate(relation, args) :
+				cache.estimate(relation, args) :
 				delegate.estimate(relation, args);
 	}
 
@@ -108,9 +107,12 @@ public final class CachingFactSource implements FactSource {
 		return true;
 	}
 
-	private void land(Relation relation, Iterable<Fact> rows) {
+	private void add(Relation relation, IndexedSeq<Optional<Object>> pattern, Iterable<Fact> rows) {
+		// every incoming row matches the originating pattern, so any resident
+		// duplicate does too: the pattern's own (indexed) bucket is the whole
+		// dedup universe
 		Set<Fact> resident = new HashSet<>();
-		for (Fact fact : landed.get(relation, allFree(relation))) {
+		for (Fact fact : cache.get(relation, pattern)) {
 			resident.add(fact);
 		}
 		List<Fact> fresh = new ArrayList<>();
@@ -120,13 +122,9 @@ public final class CachingFactSource implements FactSource {
 			}
 		}
 		if (!fresh.isEmpty()) {
-			landed = landed.withFacts(fresh)
+			cache = cache.withFacts(fresh)
 					.getOrElseThrow(e -> new IllegalStateException("could not land rows of " + relation.getName(), e));
 		}
-	}
-
-	private static IndexedSeq<Optional<Object>> allFree(Relation relation) {
-		return Array.fill(relation.getArgs().length, Optional.empty());
 	}
 
 	@Override

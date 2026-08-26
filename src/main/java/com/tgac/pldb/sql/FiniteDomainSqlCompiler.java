@@ -71,7 +71,12 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 
 			@Override
 			public Optional<SqlPredicate> visit(Union<Object> domain) {
-				return Optional.empty();
+				// the hull: BETWEEN min AND max selects a SUPERSET (the holes
+				// come back, filtered locally) — weaker than the atom, the
+				// lawful direction; exact disjunctive structure waits on the
+				// deferred AST ruling
+				return Optional.of(SqlPredicate.between(column,
+						domain.min().getValue(), domain.max().getValue()));
 			}
 
 			@Override
@@ -97,6 +102,8 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 				return Optional.of(SqlPredicate.leq(left.get(), rightValue.get()));
 			}
 			if (leftValue.isPresent() && right.isPresent()) {
+				// left <= right with the column on the RIGHT: the column-first
+				// spelling flips the operator — 5 <= col IS col >= 5
 				return Optional.of(SqlPredicate.geq(right.get(), leftValue.get()));
 			}
 		}

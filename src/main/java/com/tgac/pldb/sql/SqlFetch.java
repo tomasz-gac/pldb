@@ -54,6 +54,10 @@ final class SqlFetch implements FactSource {
 			if (connection.getMetaData().supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ)) {
 				connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
 			}
+			// an MVCC snapshot begins at the transaction's FIRST READ, not at
+			// setup — without this anchor, "pinned at construction" would
+			// silently mean "pinned at the first probe", and writes landing
+			// in between would leak into the view
 			try (Statement anchor = connection.createStatement()) {
 				anchor.execute("SELECT 1");
 			}
@@ -103,13 +107,14 @@ final class SqlFetch implements FactSource {
 	/** Every registered family's atoms through its compiler; misses stay local. */
 	private List<SqlPredicate> push(Relation relation, Residues region) {
 		List<SqlPredicate> predicates = new ArrayList<>();
+		SqlCompiler.ColumnResolver resolver = columnResolver(relation);
 		for (Tuple2<Class<?>, Theory<?>> family : region.getTheories()) {
 			SqlCompiler compiler = compilers.get(family._1);
 			if (compiler == null) {
 				continue;
 			}
 			for (Atom<?> atom : family._2.atoms()) {
-				compiler.compile(atom, columnResolver(relation))
+				compiler.compile(atom, resolver)
 						.ifPresent(predicates::add);
 			}
 		}
