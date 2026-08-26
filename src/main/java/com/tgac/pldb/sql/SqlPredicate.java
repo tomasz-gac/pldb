@@ -4,6 +4,9 @@ package com.tgac.pldb.sql;
 // ABOUTME: bound positionally — what a registered compiler produces from an atom.
 
 import io.vavr.collection.Array;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,60 +33,99 @@ public class SqlPredicate {
 	String fragment;
 	Array<Object> parameters;
 
+	/**
+	 * Does this predicate select EXACTLY its atom's rows? Factories say yes;
+	 * a compiler that approximates marks {@link #weakened()}. The bit guards
+	 * the one composition the approximation direction forbids: a weakening
+	 * selects MORE than the atom, so its complement selects LESS than the
+	 * atom's complement — under-delivery — and {@link #negated()} refuses.
+	 */
+	boolean exact;
+
 	public static <T> SqlPredicate in(String column, Iterable<T> values) {
 		Array<Object> bound = Array.ofAll(StreamSupport.stream(values.spliterator(), false)
 				.map(Object.class::cast));
 		return new SqlPredicate(
 				column + bound.map(v -> "?").mkString(" IN (", ", ", ")"),
-				bound);
+				bound, true);
 	}
 
 	public static <T> SqlPredicate between(String column, T lo, T hi) {
-		return new SqlPredicate(column + " BETWEEN ? AND ?", Array.of(lo, hi));
+		return new SqlPredicate(column + " BETWEEN ? AND ?", Array.of(lo, hi), true);
 	}
 
 	public static <T> SqlPredicate eq(String column, T value) {
-		return new SqlPredicate(column + " = ?", Array.of(value));
+		return new SqlPredicate(column + " = ?", Array.of(value), true);
 	}
 
 	public static <T> SqlPredicate leq(String column, T value) {
-		return new SqlPredicate(column + " <= ?", Array.of(value));
+		return new SqlPredicate(column + " <= ?", Array.of(value), true);
 	}
 
 	public static <T> SqlPredicate lss(String column, T value) {
-		return new SqlPredicate(column + " < ?", Array.of(value));
+		return new SqlPredicate(column + " < ?", Array.of(value), true);
 	}
 
 	public static <T> SqlPredicate geq(String column, T value) {
-		return new SqlPredicate(column + " >= ?", Array.of(value));
+		return new SqlPredicate(column + " >= ?", Array.of(value), true);
 	}
 
 	public static <T> SqlPredicate gtr(String column, T value) {
-		return new SqlPredicate(column + " > ?", Array.of(value));
+		return new SqlPredicate(column + " > ?", Array.of(value), true);
 	}
 
 	public static <T> SqlPredicate neq(String column, T value) {
-		return new SqlPredicate(column + " <> ?", Array.of(value));
+		return new SqlPredicate(column + " <> ?", Array.of(value), true);
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
 	public static SqlPredicate eqColumns(String left, String right) {
-		return new SqlPredicate(left + " = " + right, Array.empty());
+		return new SqlPredicate(left + " = " + right, Array.empty(), true);
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
 	public static SqlPredicate leqColumns(String less, String more) {
-		return new SqlPredicate(less + " <= " + more, Array.empty());
+		return new SqlPredicate(less + " <= " + more, Array.empty(), true);
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
 	public static SqlPredicate lssColumns(String less, String more) {
-		return new SqlPredicate(less + " < " + more, Array.empty());
+		return new SqlPredicate(less + " < " + more, Array.empty(), true);
 	}
 
 	/** Column against column — parameterless; a distinct name, since a String value would be ambiguous. */
 	public static SqlPredicate neqColumns(String left, String right) {
-		return new SqlPredicate(left + " <> " + right, Array.empty());
+		return new SqlPredicate(left + " <> " + right, Array.empty(), true);
+	}
+
+	/** The same selection, DECLARED wider than the atom — a compiler that approximates says so. */
+	public SqlPredicate weakened() {
+		return new SqlPredicate(fragment, parameters, false);
+	}
+
+	/** The complement — present only while exact; a weakening's complement under-delivers. */
+	public Optional<SqlPredicate> negated() {
+		return exact ?
+				Optional.of(new SqlPredicate("NOT (" + fragment + ")", parameters, true)) :
+				Optional.empty();
+	}
+
+	/**
+	 * The disjunction, exact iff every part is. Disjunctions push WHOLE or
+	 * not at all — dropping a disjunct strengthens, the forbidden direction —
+	 * so callers assemble the full list or refuse; an empty or() has no
+	 * meaning here and throws.
+	 */
+	public static SqlPredicate or(List<SqlPredicate> parts) {
+		if (parts.isEmpty()) {
+			throw new IllegalArgumentException("an empty disjunction has no rows to name");
+		}
+		return new SqlPredicate(
+				parts.stream().map(SqlPredicate::getFragment)
+						.collect(Collectors.joining(" OR ", "(", ")")),
+				parts.stream().map(SqlPredicate::getParameters)
+						.reduce(Array.empty(), Array::appendAll),
+				parts.stream().allMatch(SqlPredicate::isExact));
 	}
 
 	@Override

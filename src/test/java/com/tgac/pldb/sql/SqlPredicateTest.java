@@ -110,6 +110,34 @@ public class SqlPredicateTest {
 		assertThat(selectNames(p)).containsExactly("Alan");
 	}
 
+	@Test
+	public void orDisjoinsWithParenthesesAndConcatenatedParameters() throws SQLException {
+		SqlPredicate p = SqlPredicate.or(Arrays.asList(
+				SqlPredicate.eq("id", 1),
+				SqlPredicate.gtr("id", 2)));
+		assertThat(p.getFragment()).isEqualTo("(id = ? OR id > ?)");
+		assertThat(p.isExact()).isTrue();
+		assertThat(selectNames(p)).containsExactly("Ada", "Kurt");
+	}
+
+	@Test
+	public void negationIsTheGuardedComplement() throws SQLException {
+		SqlPredicate in = SqlPredicate.in("id", Arrays.asList(1, 3));
+		assertThat(in.negated()).isPresent();
+		assertThat(in.negated().get().getFragment()).isEqualTo("NOT (id IN (?, ?))");
+		assertThat(selectNames(in.negated().get())).containsExactly("Alan");
+
+		// a WEAKENED predicate selects more than its atom: its complement
+		// under-delivers, so negation is structurally unavailable
+		assertThat(in.weakened().isExact()).isFalse();
+		assertThat(in.weakened().negated()).isEmpty();
+
+		// exactness propagates: one weakened part weakens the disjunction
+		assertThat(SqlPredicate.or(Arrays.asList(
+				SqlPredicate.eq("id", 1),
+				SqlPredicate.eq("id", 2).weakened())).isExact()).isFalse();
+	}
+
 	private List<String> selectNames(SqlPredicate predicate) throws SQLException {
 		String sql = "SELECT name FROM person WHERE " + predicate.getFragment() + " ORDER BY id";
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {

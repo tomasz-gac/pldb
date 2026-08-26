@@ -54,16 +54,18 @@ public class FiniteDomainSqlCompilerTest {
 	}
 
 	@Test
-	public void aUnionCompilesToItsHull() {
-		// {1,2,4,5}: the hull BETWEEN 1 AND 5 selects a SUPERSET (3 comes
-		// back, filtered locally) — weaker than the atom, the lawful direction
+	public void aUnionCompilesExactlyAsItsMembersDisjoined() {
+		// {1,2} ∪ {4,5}: the members disjoin — the holes stay out, the
+		// predicate is EXACT, and (unlike the hull it replaces) negatable
 		Domain<Long> holey = Interval.of(1L, 5L)
 				.difference(Singleton.of(Arithmetic.of(3L)));
 		assertThat(holey.getClass().getSimpleName()).isEqualTo("Union");
 		Optional<SqlPredicate> predicate = compiled(holey);
 		assertThat(predicate).isPresent();
-		assertThat(predicate.get().getFragment()).isEqualTo("id BETWEEN ? AND ?");
+		assertThat(predicate.get().getFragment())
+				.isEqualTo("(id BETWEEN ? AND ? OR id BETWEEN ? AND ?)");
 		assertThat(predicate.get().getParameters().toJavaList())
-				.containsExactly(1L, 5L);
+				.containsExactly(1L, 2L, 4L, 5L);
+		assertThat(predicate.get().isExact()).isTrue();
 	}
 }

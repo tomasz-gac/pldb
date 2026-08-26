@@ -15,6 +15,8 @@ import com.tgac.logic.lattice.Imposition;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.unification.Term;
 import io.vavr.collection.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -71,12 +73,19 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 
 			@Override
 			public Optional<SqlPredicate> visit(Union<Object> domain) {
-				// the hull: BETWEEN min AND max selects a SUPERSET (the holes
-				// come back, filtered locally) — weaker than the atom, the
-				// lawful direction; exact disjunctive structure waits on the
-				// deferred AST ruling
-				return Optional.of(SqlPredicate.between(column,
-						domain.min().getValue(), domain.max().getValue()));
+				// the members disjoined, EXACT — a disjunction pushes whole
+				// or not at all (dropping a disjunct strengthens, the
+				// forbidden direction), so one uncompilable member refuses
+				// the union
+				List<SqlPredicate> members = new ArrayList<>();
+				for (Domain<Object> member : domain.getIntervals()) {
+					Optional<SqlPredicate> compiled = FiniteDomainSqlCompiler.domain(column, member);
+					if (!compiled.isPresent()) {
+						return Optional.empty();
+					}
+					members.add(compiled.get());
+				}
+				return Optional.of(SqlPredicate.or(members));
 			}
 
 			@Override
