@@ -16,6 +16,7 @@ import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import io.vavr.collection.Array;
@@ -54,7 +55,8 @@ public class RegionsTest {
 				.getOrNull();
 		assertThat(fd).isNotNull();
 		assertThat(fd.atoms()).hasSize(1);
-		assertThat(fd.atoms().head().watched().contains((Term<?>) x)).isTrue();
+		// renamed to the POSITIONAL name: x sits at arg position 0
+		assertThat(fd.atoms().head().watched().contains(Any.of(0))).isTrue();
 
 		// an arg nobody knows anything about contributes nothing
 		assertThat(region.getTheories().keySet()

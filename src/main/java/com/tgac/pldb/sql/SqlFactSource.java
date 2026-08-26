@@ -4,12 +4,17 @@ package com.tgac.pldb.sql;
 // ABOUTME: property names verbatim), probes compile to SELECT..WHERE over the
 // ABOUTME: pinned connection, fetches land, subsumed probes serve locally.
 
+import com.tgac.logic.constraints.store.Atom;
+import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.unification.Any;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.FactSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.sql.Connection;
@@ -25,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Value;
 
 /**
  * A relation backend over one pinned JDBC connection, by CONVENTION: the
@@ -59,7 +65,22 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 	private final int isolation;
 
 	private Database landed = ImmutableDatabase.empty();
-	private final Map<Relation, List<IndexedSeq<Optional<Object>>>> covered = new HashMap<>();
+	private final Map<Relation, List<Coverage>> covered = new HashMap<>();
+	private final Map<Class<?>, SqlCompiler> compilers = new HashMap<>();
+
+	/** One completed fetch: the probe's pattern plus the region its WHERE enforced. */
+	@Value
+	private static class Coverage {
+		IndexedSeq<Optional<Object>> pattern;
+		Residues consumed;
+	}
+
+	/** A compilation's outcome: the predicates pushed, the atoms they consumed. */
+	@Value
+	private static class Pushed {
+		List<SqlPredicate> predicates;
+		Residues consumed;
+	}
 
 	private SqlFactSource(String id, Connection connection, int isolation) {
 		this.id = id;
@@ -82,6 +103,19 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		}
 	}
 
+	/**
+	 * Registers the family's WHERE compiler. Before first use only — a
+	 * registry changing under live coverage would make containment
+	 * order-dependent.
+	 */
+	public SqlFactSource compiling(Class<?> family, SqlCompiler compiler) {
+		if (!covered.isEmpty()) {
+			throw new IllegalStateException(id + ": register compilers before first use");
+		}
+		compilers.put(family, compiler);
+		return this;
+	}
+
 	@Override
 	public String id() {
 		return id;
@@ -93,17 +127,66 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 	}
 
 	@Override
-	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		if (!coveredBy(relation, args)) {
-			land(relation, fetch(relation, args));
-			covered.computeIfAbsent(relation, r -> new ArrayList<>()).add(args);
+	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
+		return get(relation, args, Residues.TRUE);
+	}
+
+	@Override
+	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
+		if (!coveredBy(relation, args, region)) {
+			Pushed pushed = push(relation, region);
+			land(relation, fetch(relation, args, pushed.getPredicates()));
+			covered.computeIfAbsent(relation, r -> new ArrayList<>())
+					.add(new Coverage(args, pushed.getConsumed()));
 		}
 		return landed.get(relation, args);
 	}
 
+	/** Every registered family's atoms through its compiler: predicates + consumed. */
+	private Pushed push(Relation relation, Residues region) {
+		List<SqlPredicate> predicates = new ArrayList<>();
+		io.vavr.collection.Map<Class<?>, Theory<?>> consumed = io.vavr.collection.HashMap.empty();
+		for (Tuple2<Class<?>, Theory<?>> family : region.getTheories()) {
+			SqlCompiler compiler = compilers.get(family._1);
+			if (compiler == null) {
+				continue;
+			}
+			List<Atom<?>> taken = new ArrayList<>();
+			for (Atom<?> atom : family._2.atoms()) {
+				Optional<SqlPredicate> compiled = compiler.compile(atom, columnResolver(relation));
+				if (compiled.isPresent()) {
+					predicates.add(compiled.get());
+					taken.add(atom);
+				}
+			}
+			if (!taken.isEmpty()) {
+				consumed = consumed.put(family._1, theoryOf(taken));
+			}
+		}
+		return new Pushed(predicates, Residues.of(consumed));
+	}
+
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static Theory<?> theoryOf(List<Atom<?>> atoms) {
+		return Theory.of((Iterable) atoms);
+	}
+
+	/** Positional names resolve to columns: {@code _.i} is the i-th property. */
+	private static SqlCompiler.ColumnResolver columnResolver(Relation relation) {
+		return term -> {
+			if (!(term instanceof Any)) {
+				return Optional.empty();
+			}
+			int position = ((Any<?>) term).getNumber();
+			return position >= 0 && position < relation.getArgs().length ?
+					Optional.of(relation.getArgs()[position].getName()) :
+					Optional.empty();
+		};
+	}
+
 	@Override
 	public synchronized long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return coveredBy(relation, args) ?
+		return coveredBy(relation, args, Residues.TRUE) ?
 				landed.estimate(relation, args) :
 				Long.MAX_VALUE;
 	}
@@ -118,10 +201,19 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		}
 	}
 
-	private boolean coveredBy(Relation relation, IndexedSeq<Optional<Object>> probe) {
+	/**
+	 * Serve locally only on PROOF: the probe's pattern subsumed by a covered
+	 * one AND the probe's full region entailing the atoms that fetch's WHERE
+	 * enforced ({@code Residues.leq} true = containment proven). A pushed
+	 * fetch landed only its region's rows — pattern subsumption alone would
+	 * claim completeness for rows it never fetched, and absence reads as
+	 * falsity. leq answering false merely re-fetches, idempotently.
+	 */
+	private boolean coveredBy(Relation relation, IndexedSeq<Optional<Object>> probe, Residues region) {
 		return covered.getOrDefault(relation, java.util.Collections.emptyList())
 				.stream()
-				.anyMatch(prior -> subsumes(prior, probe));
+				.anyMatch(prior -> subsumes(prior.getPattern(), probe)
+						&& region.leq(prior.getConsumed()));
 	}
 
 	/** A wider probe subsumes a narrower one: its bound positions are a subset, values equal. */
@@ -153,7 +245,7 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		return Array.fill(relation.getArgs().length, Optional.empty());
 	}
 
-	private List<Fact> fetch(Relation relation, IndexedSeq<Optional<Object>> args) {
+	private List<Fact> fetch(Relation relation, IndexedSeq<Optional<Object>> args, List<SqlPredicate> predicates) {
 		Property<?>[] columns = relation.getArgs();
 		List<String> boundColumns = new ArrayList<>();
 		List<Object> boundValues = new ArrayList<>();
@@ -166,10 +258,16 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 				unboundColumns.add(columns[i].getName());
 			}
 		}
-		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns);
+		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns, predicates);
 		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-			for (int i = 0; i < boundValues.size(); i++) {
-				statement.setObject(i + 1, boundValues.get(i));
+			int index = 1;
+			for (Object bound : boundValues) {
+				statement.setObject(index++, bound);
+			}
+			for (SqlPredicate predicate : predicates) {
+				for (Object parameter : predicate.getParameters()) {
+					statement.setObject(index++, parameter);
+				}
 			}
 			try (ResultSet rows = statement.executeQuery()) {
 				List<Fact> facts = new ArrayList<>();
@@ -203,18 +301,23 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 		return result;
 	}
 
-	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns, List<String> boundColumns) {
+	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns,
+			List<String> boundColumns, List<SqlPredicate> predicates) {
 		// every position bound: nothing to project, the probe is an existence
 		// check — a blank select list would not compile
 		StringBuilder sql = new StringBuilder("SELECT ")
 				.append(unboundColumns.isEmpty() ? "1" : String.join(", ", unboundColumns))
 				.append(" FROM ")
 				.append(relation.getName());
-		if (!boundColumns.isEmpty()) {
-			sql.append(" WHERE ")
-					.append(boundColumns.stream()
-							.map(c -> c + " = ?")
-							.collect(Collectors.joining(" AND ")));
+		List<String> conditions = new ArrayList<>();
+		for (String column : boundColumns) {
+			conditions.add(column + " = ?");
+		}
+		for (SqlPredicate predicate : predicates) {
+			conditions.add(predicate.getFragment());
+		}
+		if (!conditions.isEmpty()) {
+			sql.append(" WHERE ").append(String.join(" AND ", conditions));
 		}
 		return sql;
 	}
