@@ -70,6 +70,21 @@ public class SqlPredicateTest {
 	}
 
 	@Test
+	public void disequalityRendersBothWays() throws SQLException {
+		assertThat(SqlPredicate.neq("id", 2).getFragment()).isEqualTo("id <> ?");
+		assertThat(selectNames(SqlPredicate.neq("id", 2))).containsExactly("Ada", "Kurt");
+
+		SqlPredicate columns = SqlPredicate.neqColumns("id", "boss");
+		assertThat(columns.getFragment()).isEqualTo("id <> boss");
+		assertThat(columns.getParameters().isEmpty()).isTrue();
+		try (Statement ddl = connection.createStatement()) {
+			ddl.execute("ALTER TABLE person ADD COLUMN boss INT");
+			ddl.execute("UPDATE person SET boss = 2");
+		}
+		assertThat(selectNames(columns)).containsExactly("Ada", "Kurt");
+	}
+
+	@Test
 	public void columnComparisonRendersParameterless() throws SQLException {
 		SqlPredicate p = SqlPredicate.leqColumns("id", "boss");
 		assertThat(p.getFragment()).isEqualTo("id <= boss");
