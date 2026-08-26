@@ -5,15 +5,23 @@ package com.tgac.pldb.sql;
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
+import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.constraints.Posting;
+import com.tgac.logic.constraints.Propagation;
+import com.tgac.logic.constraints.store.Renaming;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.nogoods.Nogood;
 import com.tgac.logic.nogoods.NogoodConstraints;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.LVar;
+import com.tgac.logic.unification.Name;
+import com.tgac.logic.unification.Prefix;
+import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.ImmutableDatabase;
@@ -21,6 +29,7 @@ import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.collection.Array;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -89,6 +98,35 @@ public class NogoodSqlCompilerTest {
 	}
 
 	@Test
+	public void aNestedConjunctionArrivesFlatFromTheEnvelope() {
+		// the Nogood envelope flattens nested alls at construction — the
+		// compiler receives one flat conjunction and disjoins it whole
+		Optional<SqlPredicate> p = compiled(exclude(Posting.all(
+				x.unifies(2L),
+				Posting.all(y.unifies("Alan"), x.unifies(5L)))));
+		assertThat(p).isPresent();
+		assertThat(p.get().getFragment()).isEqualTo("(id <> ? OR name <> ? OR id <> ?)");
+	}
+
+	@Test
+	public void aCrossedResolutionCompilesAsItsUnifications() {
+		// a prefix literal crosses as the conjunction of its binds (the
+		// Renamer's row), so the region hands this compiler UnifyGoals —
+		// receipted through the same rename the extraction performs
+		Posting exclusion = exclude(Propagation.resolve(
+				Prefix.binding(Substitutions.empty(), (LVar<?>) x.asVar().get(), lval(3L)).get()));
+		Atom<?> atom = ((Posting.Activation) exclusion).getItem();
+		Atom<?> crossed = atom.rename(Renaming.of(
+				Collections.<Name<?>, Term<?>> singletonMap(x.asVar().get(), Any.of(0))))
+				.ground();
+		Optional<SqlPredicate> p = compiler().compile(crossed,
+				term -> term.equals(Any.of(0)) ? Optional.of("id") : Optional.empty());
+		assertThat(p).isPresent();
+		assertThat(p.get().getFragment()).isEqualTo("id <> ?");
+		assertThat(p.get().getParameters().toJavaList()).containsExactly(3L);
+	}
+
+	@Test
 	public void aFusedAtomConjoinsItsConjunctsAndMayDropSome() {
 		// two same-surface exclusions fuse into one atom: the conjunction may
 		// push a SUBSET (dropping a conjunct weakens — the lawful direction),
@@ -100,6 +138,12 @@ public class NogoodSqlCompilerTest {
 		assertThat(both.get().getFragment()).isEqualTo("(id <> ? AND id <> ?)");
 		assertThat(both.get().isExact()).isTrue();
 
+		// two different drops, one law each: dropping a CONJUNCT of the fused
+		// atom (¬c1 ∧ ¬c2 -> ¬c1) removes a conjunct from a conjunction —
+		// weaker, admits more, sound. Dropping a LITERAL inside one conjunct
+		// (¬(l1 ∧ l2) -> ¬l1) strengthens — that is the move
+		// oneUncompilableLiteralRefusesTheWholeConjunct forbids. Negation
+		// flips the direction ONCE, at the conjunct boundary.
 		Property<Long> id = Property.of("id");
 		Relations._1<Long> r = Relations.relation("r", id);
 		Posting posted = TableConstraints.posted(ImmutableDatabase.empty(), r, Array.of(x));

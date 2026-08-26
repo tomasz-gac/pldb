@@ -4,6 +4,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: a wider probe), answer identity vs the unpushed source, locality receipts.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
+import static com.tgac.logic.finitedomain.domains.EnumeratedDomain.range;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -149,6 +150,38 @@ public class SqlPushdownTest {
 		assertThat(statementSql.stream().noneMatch(sql -> sql.contains("IN (")))
 				.describedAs("the override must replace the built-in")
 				.isTrue();
+	}
+
+	@Test
+	public void aPartiallyCompiledFusedExclusionStaysSound() {
+		// the oracle answer to the conjunct-drop doubt: two same-surface
+		// exclusions fuse; with FD's compiler overridden to refuse, the
+		// dom-literal conjunct drops and only the binding conjunct pushes —
+		// a WEAKER WHERE, the dropped conjunct enforced locally, answers
+		// identical to the reference enforcing both
+		SqlFactSource partial = SqlFactSource.pinned("h2-partial", counting(connection))
+				.compiling(FiniteDomainConstraints.class, (atom, columns) -> java.util.Optional.empty());
+		Unifiable<Long> viaSql = lvar();
+		Unifiable<Long> viaMemory = lvar();
+		List<String> pushed = fusedProgram(partial, viaSql);
+		assertThat(pushed).isEqualTo(fusedProgram(reference, viaMemory));
+		assertThat(pushed).hasSize(1);
+		assertThat(statementSql.stream().anyMatch(text -> text.contains("id <> ?")))
+				.describedAs("the binding conjunct must still push")
+				.isTrue();
+		assertThat(statementSql.stream().noneMatch(text -> text.contains("IN (")))
+				.describedAs("the refused dom conjunct must stay local")
+				.isTrue();
+	}
+
+	private static List<String> fusedProgram(FactSource source, Unifiable<Long> x) {
+		return exclude(x.unifies(2L))
+				.and(exclude(dom(x, range(1L, 3L))))
+				.and(person.exists(source, x, lvar()))
+				.solve(x)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
 	}
 
 	@Test

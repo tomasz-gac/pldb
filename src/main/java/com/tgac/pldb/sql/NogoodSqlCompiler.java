@@ -63,6 +63,9 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 
 	/** {@code ¬(l₁ ∧ … ∧ lₙ)} disjoins the negations — whole or not at all. */
 	private Optional<SqlPredicate> negatedConjunct(Posting conjunct, ColumnResolver columns) {
+		// conjuncts arrive FLAT by the Nogood envelope's own invariant
+		// (nested alls are one conjunction, flattened at construction);
+		// an AllOf reaching the literal level refuses conservatively below
 		List<Posting> literals = conjunct instanceof Posting.AllOf ?
 				((Posting.AllOf) conjunct).getParts().toJavaList() :
 				Collections.singletonList(conjunct);
@@ -111,6 +114,10 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 
 			@Override
 			public Optional<SqlPredicate> visit(Posting.Resolution resolution) {
+				// a CROSSING resolution already became its unifications
+				// (Renamer: a prefix crosses as the conjunction of its
+				// binds), so what arrives here compiled through the region
+				// is UnifyGoals; an uncrossed one refuses conservatively
 				return Optional.empty();
 			}
 
