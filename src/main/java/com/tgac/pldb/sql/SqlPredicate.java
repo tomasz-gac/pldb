@@ -18,9 +18,11 @@ import lombok.Value;
  * WHERE by conjunction. Values are always bound as parameters, never inlined
  * into the text. The vocabulary is deliberately flat — atomic conditions
  * under AND; the useful disjunction (a domain's value set) is {@link #in}.
- * Nested boolean structure and arithmetic operands are one deferred design
- * decision (the AST); its reopening triggers are Union domains,
- * multi-literal nogoods, and an addo atom crossing a region.
+ * Boolean nesting beyond the flat disjunction and arithmetic operands are
+ * one deferred design decision (the AST); its reopening triggers are an
+ * addo atom crossing a region, or a second SQL dialect forcing late
+ * rendering. (Union domains and multi-literal nogoods, the original
+ * triggers, are served by the flat or.)
  *
  * <p>CONVENTION: columns backing relation properties are NON-NULL. SQL's
  * three-valued logic makes every comparison silently drop NULL rows —
