@@ -15,7 +15,9 @@ import com.tgac.logic.lattice.Imposition;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.unification.Term;
 import io.vavr.collection.Array;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -78,7 +80,19 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 				// forbidden direction), so one uncompilable member refuses
 				// the union
 				List<SqlPredicate> members = new ArrayList<>();
-				for (Domain<Object> member : domain.getIntervals()) {
+				Deque<Domain<Object>> flattening =
+						new ArrayDeque<>(domain.getIntervals().toJavaList());
+				while (!flattening.isEmpty()) {
+					Domain<Object> member = flattening.removeFirst();
+					// a nested union flattens into the same disjunction
+					if (member instanceof Union) {
+						List<Domain<Object>> inner =
+								((Union<Object>) member).getIntervals().toJavaList();
+						for (int i = inner.size() - 1; i >= 0; i--) {
+							flattening.addFirst(inner.get(i));
+						}
+						continue;
+					}
 					Optional<SqlPredicate> compiled = FiniteDomainSqlCompiler.domain(column, member);
 					if (!compiled.isPresent()) {
 						return Optional.empty();

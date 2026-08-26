@@ -54,6 +54,21 @@ public class FiniteDomainSqlCompilerTest {
 	}
 
 	@Test
+	public void aTwiceHoledDomainCompilesFlat() {
+		// two differences: {1,2} u {4,5} u {7..10} — however the domain
+		// algebra nests its unions, the disjunction comes out FLAT
+		Domain<Long> twiceHoley = Interval.of(1L, 10L)
+				.difference(Singleton.of(Arithmetic.of(3L)))
+				.difference(Singleton.of(Arithmetic.of(6L)));
+		Optional<SqlPredicate> predicate = compiled(twiceHoley);
+		assertThat(predicate).isPresent();
+		assertThat(predicate.get().getFragment())
+				.isEqualTo("(id BETWEEN ? AND ? OR id BETWEEN ? AND ? OR id BETWEEN ? AND ?)");
+		assertThat(predicate.get().getParameters().toJavaList())
+				.containsExactly(1L, 2L, 4L, 5L, 7L, 10L);
+	}
+
+	@Test
 	public void aUnionCompilesExactlyAsItsMembersDisjoined() {
 		// {1,2} ∪ {4,5}: the members disjoin — the holes stay out, the
 		// predicate is EXACT, and (unlike the hull it replaces) negatable
