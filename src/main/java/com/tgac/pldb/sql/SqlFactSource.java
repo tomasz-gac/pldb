@@ -1,17 +1,17 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The JDBC-backed FactSource: a constructor and a wrapper — the caching
+// ABOUTME: The JDBC-backed AnswerSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.nogoods.NogoodConstraints;
-import com.tgac.logic.tabling.Residues;
-import com.tgac.pldb.FactSource;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.collection.IndexedSeq;
+import io.vavr.Tuple2;
 import java.sql.Connection;
-import java.util.Optional;
 
 /**
  * A relation backend over one pinned JDBC connection, by CONVENTION: the
@@ -37,7 +37,7 @@ import java.util.Optional;
  * solves serialize their fetches here. Landed answers are immutable
  * snapshots, so reads outside the monitor stay safe.
  */
-public final class SqlFactSource implements FactSource, AutoCloseable {
+public final class SqlFactSource implements AnswerSource, AutoCloseable {
 
 	private final SqlFetch fetch;
 	private final CachingFactSource cached;
@@ -83,18 +83,13 @@ public final class SqlFactSource implements FactSource, AutoCloseable {
 	}
 
 	@Override
-	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return cached.get(relation, args);
+	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+		return cached.answers(probe);
 	}
 
 	@Override
-	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
-		return cached.get(relation, args, region);
-	}
-
-	@Override
-	public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return cached.estimate(relation, args);
+	public long estimate(Call<Relation> probe) {
+		return cached.estimate(probe);
 	}
 
 	@Override

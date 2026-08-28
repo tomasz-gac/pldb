@@ -3,6 +3,8 @@ package com.tgac.pldb.constraints;
 // ABOUTME: A posted table as a propagator schema: re-narrowing through the index
 // ABOUTME: on wake, and the row enumerator enforce uses to ground survivors.
 
+import static com.tgac.logic.unification.LVal.lval;
+
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
@@ -10,35 +12,38 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
-import com.tgac.logic.unification.LVar;
-import com.tgac.logic.unification.Term;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
-import com.tgac.pldb.FactSource;
-import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Regions;
+import com.tgac.logic.unification.LVar;
+import com.tgac.logic.unification.MiniKanren;
+import com.tgac.logic.unification.Reified;
+import com.tgac.logic.unification.Substitutions;
+import com.tgac.logic.unification.Term;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import io.vavr.collection.IndexedSeq;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * The record's re-examination, POSITIONAL over the watched terms: walk, probe
- * the index by whatever is bound, filter by the live supports of whatever is
- * free, verdict. Also the record's ROW ENUMERATOR: the owning store recognizes
- * this schema on its own propagators and grounds a surviving record at reify
- * by branching over its live candidate rows — {@code posted} is
- * self-sufficient whether or not anything joins it. The name carries the
- * relation and its source, so two posts of one lookup on the same terms are
- * the same knowledge stated twice.
+ * the source by the call key under the current bindings, filter by the live
+ * supports of whatever is free, verdict. Also the record's ROW ENUMERATOR: the
+ * owning store recognizes this schema on its own propagators and grounds a
+ * surviving record at reify by branching over its live candidate rows —
+ * {@code posted} is self-sufficient whether or not anything joins it. The name
+ * carries the relation and its source, so two posts of one lookup on the same
+ * terms are the same knowledge stated twice.
  */
 final class TablePropagator extends Propagator<TableConstraints> {
 
-	private final FactSource source;
+	private final AnswerSource source;
 	private final Relation rel;
 
-	TablePropagator(FactSource source, Relation rel, Array<? extends Term<?>> args) {
+	TablePropagator(AnswerSource source, Relation rel, Array<? extends Term<?>> args) {
 		super(args);
 		this.source = source;
 		this.rel = rel;
@@ -48,7 +53,8 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	@SuppressWarnings("unchecked")
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		List<Fact> candidates = candidates(pkg, Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
+		List<Array<Object>> candidates =
+				candidates(pkg, Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
 		if (candidates.isEmpty()) {
 			return Verdict.fail();
 		}
@@ -56,7 +62,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 			return Verdict.subsumed();
 		}
 		if (candidates.size() == 1) {
-			Fact row = candidates.get(0);
+			Array<Object> row = candidates.get(0);
 			return Verdict.update((state, theory) ->
 					TableConstraints.collapse(state, (Theory<TableConstraints>) theory, walked, row));
 		}
@@ -113,14 +119,14 @@ final class TablePropagator extends Propagator<TableConstraints> {
 		};
 	}
 
-	private static Goal rowGoal(Array<Term<?>> walked, Fact row) {
+	private static Goal rowGoal(Array<Term<?>> walked, Array<Object> row) {
 		Goal goal = Goal.success();
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
 			if (w.asVal().isDefined()) {
 				continue;
 			}
-			goal = goal.and(unifyWith(w, row.getValues().get(i)));
+			goal = goal.and(unifyWith(w, row.get(i)));
 		}
 		return goal;
 	}
@@ -134,39 +140,53 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	 * The record's rank for fail-first ordering: the index bucket size under
 	 * the current bindings. An upper bound (support filtering not applied) —
 	 * a heuristic owes a rank, not exactness, and it costs a bucket lookup
-	 * instead of a materialization.
+	 * instead of a materialization. Pricing carries no region: the upper
+	 * bound stays sound ignoring it.
 	 */
 	long estimate(Array<Term<?>> walked) {
-		return source.estimate(rel, probe(walked));
+		Reified<?> image = MiniKanren.reify(Substitutions.empty(),
+						lval(walked.map(Term::getObjectTerm)).getObjectTerm())
+				.ground();
+		return source.estimate(Call.of(rel, image));
 	}
 
-	/** The index probe under the current bindings, filtered by live supports. */
-	private List<Fact> candidates(Package pkg, Theory<TableConstraints> theory, Array<Term<?>> walked) {
-		IndexedSeq<Optional<Object>> probe = probe(walked);
-		Residues region = Regions.about(pkg, walked);
-		List<Fact> candidates = new ArrayList<>();
-		for (Fact fact : source.get(rel, probe, region)) {
-			if (admitted(theory, walked, fact)) {
-				candidates.add(fact);
+	/** The source probe under the current bindings, filtered by live supports. */
+	private List<Array<Object>> candidates(Package pkg, Theory<TableConstraints> theory,
+			Array<Term<?>> walked) {
+		Call<Relation> probe = probe(pkg, walked);
+		List<Array<Object>> candidates = new ArrayList<>();
+		for (Tuple2<Reified<?>, Condition> answer : source.answers(probe)) {
+			if (!Condition.ONE.equals(answer._2)) {
+				// GAC over conditional candidates is open research: skipping
+				// would under-deliver (a wrongly failing record), so refuse
+				throw new IllegalStateException(
+						"conditional answers are not yet consumed by the posted table: " + answer);
+			}
+			Array<Object> row = Answers.values(answer._1);
+			if (admitted(theory, walked, row)) {
+				candidates.add(row);
 			}
 		}
 		return candidates;
 	}
 
-	private static IndexedSeq<Optional<Object>> probe(Array<Term<?>> walked) {
-		return walked.map(w -> w.asVal()
-				.map(v -> (Object) v)
-				.toJavaOptional());
+	/** The probe as the call key, minted at the one reification site. */
+	private Call<Relation> probe(Package pkg, Array<Term<?>> walked) {
+		Tuple2<Reified<?>, Residues> key = Residues.about(pkg,
+						lval(walked.map(Term::getObjectTerm)))
+				.ground();
+		return Call.of(rel, key._1, key._2);
 	}
 
 	/** Does the row survive every free column's live support? */
-	private static boolean admitted(Theory<TableConstraints> theory, Array<Term<?>> walked, Fact fact) {
+	private static boolean admitted(Theory<TableConstraints> theory, Array<Term<?>> walked,
+			Array<Object> row) {
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
 			if (w.asVal().isDefined()) {
 				continue;
 			}
-			Object cell = fact.getValues().get(i);
+			Object cell = row.get(i);
 			boolean excluded = TableConstraints.empty().getValue(theory, w)
 					.map(support -> !support.admits(cell))
 					.getOrElse(false);

@@ -1,6 +1,6 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: Pins the SQL adapter: an H2-backed FactSource answers identically to
+// ABOUTME: Pins the SQL adapter: an H2-backed AnswerSource answers identically to
 // ABOUTME: the in-memory reference, refuses unserved relations, and lands fetches
 // ABOUTME: so subsumed probes never touch the backend again.
 
@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
-import com.tgac.pldb.FactSource;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -155,7 +155,7 @@ public class SqlFactSourceTest {
 		}
 	}
 
-	private static List<String> solvedNames(FactSource source) {
+	private static List<String> solvedNames(AnswerSource source) {
 		Unifiable<String> out = lvar();
 		return person.exists(source, lvar(), out)
 				.solve(out)

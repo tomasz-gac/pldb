@@ -8,6 +8,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.optimizer.CascadingOptimizer;
+import com.tgac.logic.tabling.Call;
 import com.tgac.logic.goals.optimizer.Optimizer;
 import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.unification.Unifiable;
@@ -53,9 +54,9 @@ public class PlannerTest {
 		}
 
 		@Override
-		public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+		public long estimate(Call<Relation> probe) {
 			// pricing is exempt from the enumeration metric: it measures the SEARCH
-			return inner.estimate(relation, args);
+			return inner.estimate(probe);
 		}
 
 		@Override

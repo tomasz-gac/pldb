@@ -15,7 +15,7 @@ import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
-import com.tgac.pldb.FactSource;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -71,7 +71,7 @@ public class SqlPushdownTest {
 	}
 
 	/** The unpushed leg of the oracle: the bare halves composed, no equipment. */
-	private FactSource plain() {
+	private AnswerSource plain() {
 		return CachingFactSource.over(SqlFetch.pinned("h2-plain", counting(connection)));
 	}
 
@@ -174,7 +174,7 @@ public class SqlPushdownTest {
 				.isTrue();
 	}
 
-	private static List<String> fusedProgram(FactSource source, Unifiable<Long> x) {
+	private static List<String> fusedProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(x.unifies(2L))
 				.and(exclude(dom(x, range(1L, 3L))))
 				.and(person.exists(source, x, lvar()))
@@ -204,7 +204,7 @@ public class SqlPushdownTest {
 				.isTrue();
 	}
 
-	private static List<String> doubleNegationProgram(FactSource source, Unifiable<Long> x) {
+	private static List<String> doubleNegationProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(exclude(x.unifies(3L)))
 				.and(person.exists(source, x, lvar()))
 				.solve(x)
@@ -227,7 +227,7 @@ public class SqlPushdownTest {
 				.isTrue();
 	}
 
-	private static List<String> domProgram(FactSource source) {
+	private static List<String> domProgram(AnswerSource source) {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
 		return dom(x, EnumeratedDomain.range(1L, 3L))
@@ -238,7 +238,7 @@ public class SqlPushdownTest {
 				.collect(Collectors.toList());
 	}
 
-	private static List<String> leqProgram(FactSource source) {
+	private static List<String> leqProgram(AnswerSource source) {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
 		return FiniteDomain.leq(x, lval(2L))
@@ -249,7 +249,7 @@ public class SqlPushdownTest {
 				.collect(Collectors.toList());
 	}
 
-	private static List<String> exclusionProgram(FactSource source, Unifiable<Long> x) {
+	private static List<String> exclusionProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(x.unifies(2L))
 				.and(person.exists(source, x, lvar()))
 				.solve(x)

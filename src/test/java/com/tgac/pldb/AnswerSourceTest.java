@@ -1,6 +1,6 @@
 package com.tgac.pldb;
 
-// ABOUTME: Pins the FactSource seam: lookups and posted constraints constructed
+// ABOUTME: Pins the AnswerSource seam: lookups and posted constraints constructed
 // ABOUTME: against the read face answer identically to the Database-typed path.
 
 import static com.tgac.logic.unification.LVar.lvar;
@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
-public class FactSourceTest {
+public class AnswerSourceTest {
 
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
@@ -30,7 +30,7 @@ public class FactSourceTest {
 
 	@Test
 	public void aLookupThroughTheSeamAnswersLikeTheDatabase() {
-		FactSource source = db;
+		AnswerSource source = db;
 
 		Unifiable<String> viaSource = lvar();
 		Unifiable<String> viaDb = lvar();
@@ -46,7 +46,7 @@ public class FactSourceTest {
 
 	@Test
 	public void aPostedConstraintThroughTheSeamAnswersLikeTheDatabase() {
-		FactSource source = db;
+		AnswerSource source = db;
 
 		Unifiable<Integer> keyViaSource = lvar();
 		Unifiable<Integer> keyViaDb = lvar();

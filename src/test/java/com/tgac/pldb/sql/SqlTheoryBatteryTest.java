@@ -19,7 +19,7 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
-import com.tgac.pldb.FactSource;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -99,7 +99,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void intervalDomain() {
-		agree(2, (FactSource source, Unifiable<String> out) -> {
+		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return dom(x, Interval.of(2L, 3L)).and(person.exists(source, x, out));
 		});
@@ -107,7 +107,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void singletonDomainCollapsesToABoundProbe() {
-		agree(1, (FactSource source, Unifiable<String> out) -> {
+		agree(1, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return dom(x, EnumeratedDomain.range(2L, 3L)).and(person.exists(source, x, out));
 		});
@@ -118,7 +118,7 @@ public class SqlTheoryBatteryTest {
 		// separate punches the hole DURING propagation: the probe's region
 		// carries a real Union, pushed as its members disjoined — [1,5] minus
 		// {3} keeps four
-		agree(4, (FactSource source, Unifiable<String> out) -> {
+		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return dom(x, Interval.of(1L, 5L))
 					.and(separate(x, lval(3L)))
@@ -128,7 +128,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void strictOrderAgainstAValue() {
-		agree(2, (FactSource source, Unifiable<String> out) -> {
+		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return lss(x, lval(3L)).and(person.exists(source, x, out));
 		});
@@ -136,7 +136,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void flippedStrictOrderAgainstAValue() {
-		agree(2, (FactSource source, Unifiable<String> out) -> {
+		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return gtr(x, lval(3L)).and(person.exists(source, x, out));
 		});
@@ -144,7 +144,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void looseOrderAgainstAValue() {
-		agree(3, (FactSource source, Unifiable<String> out) -> {
+		agree(3, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return FiniteDomain.leq(x, lval(3L)).and(person.exists(source, x, out));
 		});
@@ -152,7 +152,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void disequalityAgainstAValue() {
-		agree(4, (FactSource source, Unifiable<String> out) -> {
+		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return separate(x, lval(3L)).and(person.exists(source, x, out));
 		});
@@ -160,7 +160,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void strictOrderAcrossTwoColumns() {
-		agree(2, (FactSource source, Unifiable<Long> out) -> {
+		agree(2, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
 			return lss(out, b).and(edge.exists(source, out, b));
 		});
@@ -168,7 +168,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void looseOrderAcrossTwoColumns() {
-		agree(3, (FactSource source, Unifiable<Long> out) -> {
+		agree(3, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
 			return FiniteDomain.leq(out, b).and(edge.exists(source, out, b));
 		});
@@ -176,7 +176,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void disequalityAcrossTwoColumns() {
-		agree(3, (FactSource source, Unifiable<Long> out) -> {
+		agree(3, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
 			return separate(out, b).and(edge.exists(source, out, b));
 		});
@@ -184,7 +184,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void oneLiteralExclusion() {
-		agree(4, (FactSource source, Unifiable<String> out) -> {
+		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return exclude(x.unifies(3L)).and(person.exists(source, x, out));
 		});
@@ -193,7 +193,7 @@ public class SqlTheoryBatteryTest {
 	@Test
 	public void multiLiteralExclusionExcludesTheRowNotTheColumns() {
 		// ¬(id=2 ∧ name='Alan') kills exactly the one row where BOTH hold
-		agree(4, (FactSource source, Unifiable<String> out) -> {
+		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return exclude(Posting.all(x.unifies(2L), out.unifies("Alan")))
 					.and(person.exists(source, x, out));
@@ -202,7 +202,7 @@ public class SqlTheoryBatteryTest {
 
 	@Test
 	public void aConjoinedTheoryPushesAllItsAtoms() {
-		agree(1, (FactSource source, Unifiable<String> out) -> {
+		agree(1, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
 			return dom(x, Interval.of(2L, 5L))
 					.and(lss(x, lval(4L)))
@@ -211,8 +211,8 @@ public class SqlTheoryBatteryTest {
 		});
 	}
 
-	private <T> void agree(int expected, BiFunction<FactSource, Unifiable<T>, Goal> program) {
-		Tuple2<FactSource, FactSource> sources = Tuple.of(
+	private <T> void agree(int expected, BiFunction<AnswerSource, Unifiable<T>, Goal> program) {
+		Tuple2<AnswerSource, AnswerSource> sources = Tuple.of(
 				SqlFactSource.pinned("battery-push", connection),
 				CachingFactSource.over(SqlFetch.pinned("battery-plain", connection)));
 		List<String> pushed = answers(sources._1, program);
@@ -223,7 +223,7 @@ public class SqlTheoryBatteryTest {
 		assertThat(pushed).hasSize(expected);
 	}
 
-	private static <T> List<String> answers(FactSource source, BiFunction<FactSource, Unifiable<T>, Goal> program) {
+	private static <T> List<String> answers(AnswerSource source, BiFunction<AnswerSource, Unifiable<T>, Goal> program) {
 		Unifiable<T> out = lvar();
 		return program.apply(source, out)
 				.solve(out)

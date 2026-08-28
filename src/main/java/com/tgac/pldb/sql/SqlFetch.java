@@ -1,13 +1,17 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The SQL polling FactSource: one pinned connection, the compiler
-// ABOUTME: registry, probe+region compiled to SELECT..WHERE — every get a round trip.
+// ABOUTME: The SQL polling source: one pinned connection, the compiler registry,
+// ABOUTME: the probe's pattern+region compiled to SELECT..WHERE — every answer a round trip.
 
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
-import com.tgac.pldb.FactSource;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -35,7 +39,7 @@ import java.util.Optional;
  * barrier. Package-private: callers compose through {@link SqlFactSource}
  * — the caching is not optional equipment.
  */
-final class SqlFetch implements FactSource {
+final class SqlFetch implements AnswerSource {
 
 	private final String id;
 	private final Connection connection;
@@ -86,17 +90,18 @@ final class SqlFetch implements FactSource {
 	}
 
 	@Override
-	public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-		return get(relation, args, Residues.TRUE);
+	public synchronized Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+		Relation relation = probe.getRelation();
+		IndexedSeq<Optional<Object>> args = Answers.pattern(probe.getArguments());
+		List<Tuple2<Reified<?>, Condition>> answers = new ArrayList<>();
+		for (Fact fact : rows(relation, args, push(relation, probe.getResidues()))) {
+			answers.add(Answers.answer(fact));
+		}
+		return answers;
 	}
 
 	@Override
-	public synchronized Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args, Residues region) {
-		return rows(relation, args, push(relation, region));
-	}
-
-	@Override
-	public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+	public long estimate(Call<Relation> probe) {
 		return Long.MAX_VALUE;
 	}
 

@@ -20,8 +20,7 @@ import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.FactSource;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
@@ -63,7 +62,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * the doom hoists the failure; a live post is one success, ever, and
 	 * floats ahead of enumerations.
 	 */
-	public static Posting posted(FactSource source, Relation rel, Array<Unifiable<?>> args) {
+	public static Posting posted(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
 		return Propagation.activate(new TablePropagator(source, rel, args));
 	}
 
@@ -165,7 +164,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	}
 
 	/** One candidate left: bind every free column — the FD-collapse move on tuples. */
-	static Update collapse(Package state, Theory<TableConstraints> theory, Array<Term<?>> walked, Fact row) {
+	static Update collapse(Package state, Theory<TableConstraints> theory, Array<Term<?>> walked, Array<Object> row) {
 		Update.Applied result = Update.applied(theory);
 		boolean bound = false;
 		for (int i = 0; i < walked.size(); i++) {
@@ -173,7 +172,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			if (w.asVal().isDefined()) {
 				continue;
 			}
-			Prefix prefix = bindingOf(state, w, row.getValues().get(i));
+			Prefix prefix = bindingOf(state, w, row.get(i));
 			if (prefix != null) {
 				result = result.withInferred(prefix);
 				bound = true;
@@ -216,7 +215,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 */
 	@SuppressWarnings("unchecked")
 	static Update narrow(Package state, Theory<TableConstraints> theory,
-			Array<Term<?>> walked, List<Fact> candidates) {
+			Array<Term<?>> walked, List<Array<Object>> candidates) {
 		Theory<TableConstraints> current = theory;
 		List<Prefix> inferred = new ArrayList<>();
 		List<Term<?>> reexamine = new ArrayList<>();
@@ -227,7 +226,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			}
 			int column = i;
 			Support projection = Support.ofAll(candidates.stream()
-					.map(f -> f.getValues().get(column))
+					.map(f -> f.get(column))
 					.collect(Collectors.toSet()));
 			if (projection.asPoint().isDefined()) {
 				Prefix prefix = bindingOf(state, w, projection.asPoint().get());

@@ -15,10 +15,14 @@ import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.constraints.Support;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple2;
 import io.vavr.collection.IndexedSeq;
 import java.util.Optional;
 import com.tgac.pldb.constraints.TableConstraints;
@@ -79,14 +83,14 @@ public class TableConstraintsTest {
 		// estimate) must still have its surviving records enumerated at
 		// enforce; the narrowest-selection must tolerate every candidate
 		// pricing at Long.MAX_VALUE
-		FactSource barrier = new FactSource() {
+		AnswerSource barrier = new AnswerSource() {
 			@Override
-			public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-				return db.get(relation, args);
+			public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+				return db.answers(probe);
 			}
 
 			@Override
-			public long estimate(Relation relation, IndexedSeq<Optional<Object>> args) {
+			public long estimate(Call<Relation> probe) {
 				return Long.MAX_VALUE;
 			}
 		};

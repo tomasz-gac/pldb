@@ -21,7 +21,7 @@ import io.vavr.Function7;
 import io.vavr.Function8;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.FactSource;
+import com.tgac.pldb.AnswerSource;
 import io.vavr.collection.Array;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -89,11 +89,11 @@ public class Relations {
 			return new Property<?>[]{};
 		}
 
-		public Goal exists(FactSource source) {
+		public Goal exists(AnswerSource source) {
 			return RelationN.relation(source, this);
 		}
 
-		public Goal posted(FactSource source) {
+		public Goal posted(AnswerSource source) {
 			return RelationN.posted(source, this);
 		}
 
@@ -124,11 +124,11 @@ public class Relations {
 			return new Property<?>[]{properties._1};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0) {
 			return RelationN.relation(source, this, v0);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0) {
 			return RelationN.posted(source, this, v0);
 		}
 
@@ -160,11 +160,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
 			return RelationN.relation(source, this, v0, v1);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
 			return RelationN.posted(source, this, v0, v1);
 		}
 
@@ -196,11 +196,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.relation(source, this, v0, v1, v2);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.posted(source, this, v0, v1, v2);
 		}
 
@@ -232,11 +232,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 			return RelationN.relation(source, this, v0, v1, v2, v3);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 			return RelationN.posted(source, this, v0, v1, v2, v3);
 		}
 
@@ -268,11 +268,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4);
 		}
 
@@ -304,11 +304,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5);
 		}
 
@@ -341,11 +341,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6, properties._7};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
@@ -378,11 +378,11 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6, properties._7, properties._8};
 		}
 
-		public Goal exists(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
-		public Goal posted(FactSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
