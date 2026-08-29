@@ -117,6 +117,11 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 		return producer.id();
 	}
 
+	/** Has any probe landed yet? Registration windows close at the first one. */
+	public boolean isEmpty() {
+		return table.size() == 0;
+	}
+
 	/** The exact entry, a subsuming one (open included — joining is sound), or fresh. */
 	private TableEntry<Object> entryFor(Call<Relation> probe) {
 		TableEntry<Object> subsumer = table.reusableSubsumer(probe);

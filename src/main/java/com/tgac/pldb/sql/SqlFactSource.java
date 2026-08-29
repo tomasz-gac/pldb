@@ -5,10 +5,15 @@ package com.tgac.pldb.sql;
 
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.nogoods.NogoodConstraints;
+import com.tgac.functional.category.Nothing;
+import com.tgac.functional.fibers.Emitter;
+import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.TabledSource;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import java.sql.Connection;
@@ -23,7 +28,7 @@ import java.sql.Connection;
  * vocabulary at all). The backend is the schema authority: a relation
  * without a table fails loudly at its first fetch.
  *
- * <p>This class is a constructor and a wrapper: {@link CachingFactSource}
+ * <p>This class is a constructor and a wrapper: {@link TabledSource}
  * over the pinned {@link SqlFetch}. The fetch owns the backend — the
  * connection, the per-family compiler registry, probe+region compiled to
  * SELECT..WHERE, every get a round trip. The cache owns reuse — landing,
@@ -37,14 +42,14 @@ import java.sql.Connection;
  * solves serialize their fetches here. Landed answers are immutable
  * snapshots, so reads outside the monitor stay safe.
  */
-public final class SqlFactSource implements AnswerSource, AutoCloseable {
+public final class SqlFactSource implements AnswerSource, AnswerProducer, AutoCloseable {
 
 	private final SqlFetch fetch;
-	private final CachingFactSource cached;
+	private final TabledSource cached;
 
 	private SqlFactSource(SqlFetch fetch) {
 		this.fetch = fetch;
-		this.cached = CachingFactSource.over(fetch);
+		this.cached = TabledSource.over((AnswerSource) fetch);
 	}
 
 	/**
@@ -85,6 +90,11 @@ public final class SqlFactSource implements AnswerSource, AutoCloseable {
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
 		return cached.answers(probe);
+	}
+
+	@Override
+	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit) {
+		return cached.produce(probe, emit);
 	}
 
 	@Override

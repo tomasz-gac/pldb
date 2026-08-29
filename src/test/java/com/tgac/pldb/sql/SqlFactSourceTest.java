@@ -77,13 +77,16 @@ public class SqlFactSourceTest {
 		try (SqlFactSource source = source()) {
 			Unifiable<Integer> viaSql = lvar();
 			Unifiable<Integer> viaDb = lvar();
+			// answer SETS agree; enumeration order is the carrier's own
 			assertThat(person.posted(source, viaSql, lvar())
 					.solve(viaSql)
 					.map(Object::toString)
+					.sorted()
 					.collect(Collectors.toList()))
 					.isEqualTo(person.posted(reference, viaDb, lvar())
 							.solve(viaDb)
 							.map(Object::toString)
+							.sorted()
 							.collect(Collectors.toList()));
 		}
 	}

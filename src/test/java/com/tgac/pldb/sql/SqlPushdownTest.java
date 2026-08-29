@@ -16,6 +16,7 @@ import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.TabledSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -72,7 +73,7 @@ public class SqlPushdownTest {
 
 	/** The unpushed leg of the oracle: the bare halves composed, no equipment. */
 	private AnswerSource plain() {
-		return CachingFactSource.over(SqlFetch.pinned("h2-plain", counting(connection)));
+		return TabledSource.over((AnswerSource) SqlFetch.pinned("h2-plain", counting(connection)));
 	}
 
 	@Test
