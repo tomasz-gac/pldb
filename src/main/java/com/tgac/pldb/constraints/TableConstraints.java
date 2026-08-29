@@ -22,10 +22,13 @@ import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -105,40 +108,30 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 
 	/** Pick the narrowest live record, enumerate it, repeat against the new state. */
 	private static Goal groundRecords() {
-		return s -> {
-			Theory<TableConstraints> live = Constraint.in(s, TableConstraints.class)
-					.map(Constraint::getTheory)
-					.getOrNull();
-			if (live == null) {
-				return Cont.just(s);
+		return groundNarrowestFirst(TableConstraints::liveRecords);
+	}
+
+	/** Each live record priced at its bucket, its row enumerator as the goal. */
+	private static List<Tuple2<Long, Goal>> liveRecords(Package s) {
+		Theory<TableConstraints> live = Constraint.in(s, TableConstraints.class)
+				.map(Constraint::getTheory)
+				.getOrNull();
+		if (live == null) {
+			return Collections.emptyList();
+		}
+		List<Tuple2<Long, Goal>> survivors = new ArrayList<>();
+		for (Propagator<TableConstraints> p : EMPTY.props(live).collect(Collectors.toList())) {
+			if (!(p instanceof TablePropagator)) {
+				continue;
 			}
-			TablePropagator narrowest = null;
-			Array<? extends Term<?>> watched = null;
-			long fewest = Long.MAX_VALUE;
-			for (Propagator<TableConstraints> p : EMPTY.props(live).collect(Collectors.toList())) {
-				if (!(p instanceof TablePropagator)) {
-					continue;
-				}
-				Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
-				if (walked.forAll(w -> w.asVal().isDefined())) {
-					continue;
-				}
-				long count = ((TablePropagator) p).estimate(walked);
-				// pricing is an order, not a gate: with every candidate at the
-				// barrier the first record still wins — grounding never skips
-				if (narrowest == null || count < fewest) {
-					fewest = count;
-					narrowest = (TablePropagator) p;
-					watched = p.watchedTerms();
-				}
+			Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
+			if (walked.forAll(w -> w.asVal().isDefined())) {
+				continue;
 			}
-			if (narrowest == null) {
-				return Cont.just(s);
-			}
-			return narrowest.enumerate(watched)
-					.and(Goal.defer(TableConstraints::groundRecords))
-					.apply(s);
-		};
+			survivors.add(Tuple.of(((TablePropagator) p).estimate(walked),
+					((TablePropagator) p).enumerate(p.watchedTerms())));
+		}
+		return survivors;
 	}
 
 	private static Goal label(Term<?> x) {
