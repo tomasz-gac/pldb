@@ -52,15 +52,14 @@ import java.util.function.Function;
  * delivery whole ({@link Residues#all}) for emission — the bridge
  * between the owned fixpoint and the consumer's state.
  *
- * <p>The SYNC {@link AnswerSource} face REFUSES: consumption streams
- * through {@link #produce}, and the one sync consumer this face would
- * serve — the posted table constraint — must arrive as a PARKING
- * propagator before a tabled source can stand behind it. The type stays
- * on the seam so lookups wire uniformly; the capability waits. Pricing
- * translates the probe to the tabled relation's key — same image, same
- * region, its token — and reads sealed entries.
+ * <p>The tabled source is ONLY the async kind: consumption streams
+ * through {@link #produce}, so the one sync consumer a data source has —
+ * the posted table constraint — cannot take a tabled source by type
+ * until it arrives as a PARKING propagator. Pricing translates the probe
+ * to the tabled relation's key — same image, same region, its token —
+ * and reads sealed entries.
  */
-public final class TabledSource implements AnswerSource, AnswerProducer {
+public final class TabledSource implements AnswerProducer {
 
 	private final Table table = Table.empty();
 	private final Function<Relation, Tabled<Array<Unifiable<?>>>> relations;
@@ -119,12 +118,6 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		throw new IllegalStateException("the tabled source streams: consume " + probe
-				+ " through produce — its sync consumer needs the parking table propagator");
-	}
-
-	@Override
 	public long estimate(Call<Relation> probe) {
 		TableEntry<Object> sealed = sealedFor(probe);
 		return sealed != null ? sealed.getAnswerCount()
@@ -133,7 +126,7 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 
 	@Override
 	public String id() {
-		return backend.isDefined() ? backend.get().id() : AnswerSource.super.id();
+		return backend.isDefined() ? backend.get().id() : AnswerProducer.super.id();
 	}
 
 	/** The probe translated to the tabled relation's key: same image, same region, its token. */

@@ -22,31 +22,42 @@ import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
+import io.vavr.control.Either;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
- * The lookup captures its own source, so cost estimates need no context:
- * {@link #answers} counts the index bucket the probe would hit under the
- * current bindings — the order function of the narrowing/widening taxonomy
- * (logic's docs/design/optimizer.md §3-4). The probe IS the call key,
- * minted at the one reification site ({@link Residues#about}). Delivery is
- * uniform across kinds and conditions: each answer forks per condition
- * conjunct, and one conjunct's delivery is {@link Residues#restate} at the
- * query anchor — the image half unifies the row, the factor half imposes
- * the constraints; a ground row is the corner where the condition is ONE
- * and restate is pure unification. A source that is also the ASYNC kind
- * ({@link AnswerProducer}) streams: emissions deliver as the cell grows,
- * and the seal ends the branch.
+ * The lookup captures its own backend — one of the seam's two kinds — so
+ * cost estimates need no context: {@link #answers} counts the index
+ * bucket the probe would hit under the current bindings — the order
+ * function of the narrowing/widening taxonomy (logic's
+ * docs/design/optimizer.md §3-4). The probe IS the call key, minted at
+ * the one reification site ({@link Residues#about}). Delivery is uniform
+ * across kinds and conditions: each answer forks per condition conjunct,
+ * and one conjunct's delivery is {@link Residues#restate} at the query
+ * anchor — the image half unifies the row, the factor half imposes the
+ * constraints; a ground row is the corner where the condition is ONE and
+ * restate is pure unification. The SYNC kind enumerates inline; the
+ * ASYNC kind streams — emissions deliver as the cell grows, and the seal
+ * ends the branch.
  */
 @Value
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class LookupGoal implements Goal, Bounded {
-	AnswerSource source;
+	Either<AnswerSource, AnswerProducer> backend;
 	Relation rel;
 	Array<Unifiable<?>> args;
+
+	public static LookupGoal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
+		return new LookupGoal(Either.left(source), rel, args);
+	}
+
+	public static LookupGoal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
+		return new LookupGoal(Either.right(producer), rel, args);
+	}
 
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
@@ -58,17 +69,15 @@ public class LookupGoal implements Goal, Bounded {
 				}));
 	}
 
-	/** Async sources stream through produce; sync sources enumerate inline. */
+	/** The sync kind enumerates inline; the async kind streams through produce. */
 	private Goal dispatch(Call<Relation> probe, Unifiable<?> anchor) {
-		if (source instanceof AnswerProducer) {
-			AnswerProducer producer = (AnswerProducer) source;
-			return st -> k -> producer.produce(probe,
-					answer -> deliver(answer, anchor).apply(st).apply(k));
-		}
-		return sync(probe, anchor);
+		return backend.fold(
+				source -> sync(probe, anchor, source),
+				producer -> st -> k -> producer.produce(probe,
+						answer -> deliver(answer, anchor).apply(st).apply(k)));
 	}
 
-	private Goal sync(Call<Relation> probe, Unifiable<?> anchor) {
+	private Goal sync(Call<Relation> probe, Unifiable<?> anchor, AnswerSource source) {
 		return StreamSupport.stream(source.answers(probe).spliterator(), false)
 				.flatMap(answer -> answer._2.conjuncts().toJavaStream()
 						.map(conjunct -> (Goal) Residues.restate(answer._1, conjunct, anchor)))
@@ -91,7 +100,10 @@ public class LookupGoal implements Goal, Bounded {
 								.map(Unifiable::getObjectUnifiable))
 								.getObjectTerm())
 				.ground();
-		return source.estimate(Call.of(rel, image));
+		Call<Relation> call = Call.of(rel, image);
+		return backend.fold(
+				source -> source.estimate(call),
+				producer -> producer.estimate(call));
 	}
 
 	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Substitutions s, Array<Unifiable<?>> query) {

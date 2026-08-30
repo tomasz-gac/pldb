@@ -1,14 +1,13 @@
 package com.tgac.pldb;
 
 // ABOUTME: The one container over any producer: probes memoize through the owned
-// ABOUTME: table, wide sealed entries serve narrow probes, the sync face refuses.
+// ABOUTME: table, wide sealed entries serve narrow probes, the only face streams.
 
 import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
@@ -98,17 +97,6 @@ public class TabledSourceTest {
 		assertThat(narrow).hasSize(1);
 	}
 
-	@Test
-	public void theSyncFaceRefuses() {
-		// consumption streams through produce; the sync consumer this face
-		// would serve — the posted table constraint — must arrive as a
-		// parking propagator before a tabled source can stand behind it
-		TabledSource source = TabledSource.over(counting());
-		assertThatThrownBy(() -> source.answers(probe(null, null)))
-				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("produce");
-	}
-
 	// ---- the point: the derived relation, memoized for inter-solve reuse ----
 
 	private final AtomicInteger bodyRuns = new AtomicInteger();
@@ -124,6 +112,15 @@ public class TabledSourceTest {
 	private List<String> names(AnswerSource source) {
 		Unifiable<String> out = lvar();
 		return RelationN.relation(source, person, lvar(), out)
+				.solve(out)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
+	private List<String> names(AnswerProducer producer) {
+		Unifiable<String> out = lvar();
+		return RelationN.relation(producer, person, lvar(), out)
 				.solve(out)
 				.map(Object::toString)
 				.sorted()

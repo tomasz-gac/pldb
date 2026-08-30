@@ -3,6 +3,7 @@ package com.tgac.pldb.relations;
 
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.collection.Array;
@@ -50,6 +51,10 @@ public class RelationN implements Relation {
 
 	public static Goal relation(AnswerSource source, Relation rel, Unifiable<?>... args) {
 		return LookupGoal.of(source, rel, Array.of(args));
+	}
+
+	public static Goal relation(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
+		return LookupGoal.of(producer, rel, Array.of(args));
 	}
 
 	public Goal posted(AnswerSource source, Unifiable<?>... args) {

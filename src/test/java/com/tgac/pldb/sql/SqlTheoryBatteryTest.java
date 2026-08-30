@@ -20,7 +20,6 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.TabledSource;
 import com.tgac.pldb.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
@@ -215,7 +214,7 @@ public class SqlTheoryBatteryTest {
 	private <T> void agree(int expected, BiFunction<AnswerSource, Unifiable<T>, Goal> program) {
 		Tuple2<AnswerSource, AnswerSource> sources = Tuple.of(
 				SqlFactSource.pinned("battery-push", connection),
-				TabledSource.over((AnswerSource) SqlFetch.pinned("battery-plain", connection)));
+				CachingAnswerSource.over(SqlFetch.pinned("battery-plain", connection)));
 		List<String> pushed = answers(sources._1, program);
 		List<String> unpushed = answers(sources._2, program);
 		List<String> inMemory = answers(reference, program);
