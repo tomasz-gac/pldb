@@ -1,98 +1,133 @@
 package com.tgac.pldb;
 
-// ABOUTME: The one container: an owned table of sealed answer cells over any
-// ABOUTME: AnswerProducer — the derived relation memoized for inter-solve reuse.
+// ABOUTME: The table as the source: derived relations compressed by TABLING into an
+// ABOUTME: owned table that outlives the solve — pldb translates probes and answers.
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Emitter;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
+import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
+import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.tabling.Table;
 import com.tgac.logic.tabling.TableEntry;
+import com.tgac.logic.tabling.Tabled;
+import com.tgac.logic.tabling.Tabling;
+import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.LookupGoal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
+import io.vavr.control.Option;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * The table as the source: an OWNED table of answer cells over any
- * {@link AnswerProducer}, keyed by the whole call and served by
- * subsumption — wide covers narrow, a narrower region never serves a
- * wider probe. The table outlives any solve (sealed entries are portable
- * values; validity over time is the pins' job), which is the point:
- * {@link #solving} memoizes a DERIVED RELATION for inter-solve reuse and,
- * eventually, persistence — the entries are what a memo store marshals.
+ * The table as the source: a derived relation is a goal COMPRESSED by
+ * tabling into answer cells, and this class owns the table the
+ * compression lands in. Tabling takes its table from the package a call
+ * runs in, so residence is a package, not a mechanism: {@link #produce}
+ * applies the TABLED goal from {@code Package.empty().withStore(table)},
+ * and the whole discipline is inherited rather than imitated — the
+ * producer guards, claim-once mastery, finality (ground answers stream,
+ * conditional answers deliver converged at the seal), consume's
+ * unification filter (a narrow probe reads a sealed wide entry and gets
+ * exactly the answers it asked for), and completion detection, so bodies
+ * containing recursive tabled goals seal instead of hanging. The table
+ * outlives any solve (sealed entries are portable values; validity over
+ * time is the pins' job): {@link #solving} memoizes a DERIVED RELATION
+ * for inter-solve reuse and, eventually, persistence — the entries are
+ * what a memo store marshals.
  *
- * <p>{@link #produce} implements the async kind: the first claimant
- * detaches the wrapped producer's OWN produce as the entry's workforce
- * (registration returns immediately — the workforce runs billed to the
- * cell's scope, and the seal arrives from that ledger when it finishes);
- * every claimant, winner included, replays the cell's log by cursor,
- * parking on growth, completed by the seal. Concurrent probes cannot
- * double-fetch: losers of the claim CAS read as consumers. The cell is
- * term → {@link Condition}: conditional answers land natively, duplicates
- * fold inertly — dedup is the join's own algebra.
+ * <p>{@link #produce} instantiates the probe's image into fresh
+ * arguments, restates the probe's region onto them (so the key the
+ * tabled call mints carries it), applies the goal, and re-captures each
+ * delivery whole ({@link Residues#all}) for emission — the bridge
+ * between the owned fixpoint and the consumer's state.
  *
- * <p>The SYNC {@link AnswerSource} face serves SEALED entries — and, for a
- * LIFTED sync producer, populates inline first: that produce cannot park
- * (a sync pump completes before the replay of a sealed cell), so driving
- * it to completion on the caller's thread is deterministic, the same
- * inline cost the sync kind always paid. For any other producer an
- * uncovered probe REFUSES: unknown is not false.
+ * <p>The SYNC {@link AnswerSource} face serves SEALED entries, found by
+ * translating the probe to the tabled relation's key — same image, same
+ * region, its token. A source {@link #over} a sync backend populates
+ * inline first: its body enumerates that backend and cannot park, so
+ * driving production on the caller's thread is deterministic, the same
+ * inline cost the sync kind always paid. A derived source's uncovered
+ * probe REFUSES: unknown is not false.
  */
 public final class TabledSource implements AnswerSource, AnswerProducer {
 
-	private final AnswerProducer producer;
-	private final Table table;
+	private final Table table = Table.empty();
+	private final Function<Relation, Tabled<Array<Unifiable<?>>>> relations;
+	private final Option<AnswerSource> backend;
 
-	private TabledSource(AnswerProducer producer, Table table) {
-		this.producer = producer;
-		this.table = table;
-	}
-
-	/** Produce-on-miss over the wrapped producer. */
-	public static TabledSource over(AnswerProducer producer) {
-		return new TabledSource(producer, Table.empty());
-	}
-
-	/** The sync kind, lifted at the composition point. */
-	public static TabledSource over(AnswerSource source) {
-		return over(AnswerProducer.of(source));
+	private TabledSource(Function<Relation, Tabled<Array<Unifiable<?>>>> relations,
+			Option<AnswerSource> backend) {
+		this.relations = relations;
+		this.backend = backend;
 	}
 
 	/**
-	 * The derived relation: a goal over positional arguments, memoized into
-	 * the owned table. The body runs from the key, caller-agnostic, and
-	 * SHARES the table — inner tabled calls accumulate beside the derived
-	 * entries.
+	 * Produce-on-miss over the sync backend: each relation gets its own
+	 * tabled goal whose body enumerates the backend, so every probe lands
+	 * in the owned table through the one compression path.
+	 */
+	public static TabledSource over(AnswerSource source) {
+		Map<Relation, Tabled<Array<Unifiable<?>>>> defined = new ConcurrentHashMap<>();
+		return new TabledSource(
+				rel -> defined.computeIfAbsent(rel, r ->
+						Tabling.<Array<Unifiable<?>>> define(args -> LookupGoal.of(source, r, args))),
+				Option.some(source));
+	}
+
+	/**
+	 * The derived relation: a goal over positional arguments, defined ONCE
+	 * as a tabled relation and memoized into the owned table. The body runs
+	 * from the key, caller-agnostic; inner tabled calls accumulate beside
+	 * the derived entries and seal under the same completion detection.
 	 */
 	public static TabledSource solving(Function<Array<Unifiable<?>>, Goal> body) {
-		Table shared = Table.empty();
-		return new TabledSource(new GoalSource(body, shared), shared);
+		Tabled<Array<Unifiable<?>>> one = Tabling.define(body);
+		return new TabledSource(rel -> one, Option.none());
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit) {
-		TableEntry<Object> entry = entryFor(probe);
-		return Fiber.produce(entry.channel(), inner -> producer.produce(probe, folding(entry, inner)))
-				.flatMap(registered -> replay(entry, emit, 0));
+		return MiniKanren.instantiateWithAnys((Reified<Object>) probe.getArguments())
+				.flatMap(instantiated -> {
+					Unifiable<Object> argsTerm = instantiated._1;
+					Array<Unifiable<?>> args = Array.ofAll(MiniKanren.members(argsTerm)
+									.getOrElseThrow(() -> new IllegalArgumentException(
+											"not a probe image: " + probe.getArguments())))
+							.map(member -> (Unifiable<?>) member);
+					Goal call = relations.apply(probe.getRelation()).apply(args);
+					Goal seeded = probe.getResidues().isTrue() ?
+							call :
+							Conjunction.of(
+									Residues.restate(probe.getArguments(), probe.getResidues(), argsTerm),
+									call);
+					return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
+							Residues.all(answerPkg, argsTerm).flatMap(answer ->
+									emit.emit(Tuple.of(answer._1, Condition.of(answer._2)))));
+				});
 	}
 
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		TableEntry<Object> sealed = table.findSealedSubsumer(probe);
-		if (sealed == null && producer instanceof SyncLift) {
+		TableEntry<Object> sealed = sealedFor(probe);
+		if (sealed == null && backend.isDefined()) {
 			new BreadthFirstScheduler<>(produce(probe, answer -> Fiber.done(Nothing.nothing()))).get();
-			sealed = table.findSealedSubsumer(probe);
+			sealed = sealedFor(probe);
 		}
 		if (sealed == null) {
 			throw new IllegalStateException("no sealed entry covers " + probe
@@ -108,13 +143,14 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 
 	@Override
 	public long estimate(Call<Relation> probe) {
-		TableEntry<Object> sealed = table.findSealedSubsumer(probe);
-		return sealed != null ? sealed.getAnswerCount() : producer.estimate(probe);
+		TableEntry<Object> sealed = sealedFor(probe);
+		return sealed != null ? sealed.getAnswerCount()
+				: backend.map(raw -> raw.estimate(probe)).getOrElse(Long.MAX_VALUE);
 	}
 
 	@Override
 	public String id() {
-		return producer.id();
+		return backend.isDefined() ? backend.get().id() : AnswerSource.super.id();
 	}
 
 	/** Has any probe landed yet? Registration windows close at the first one. */
@@ -122,37 +158,14 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 		return table.size() == 0;
 	}
 
-	/** The exact entry, a subsuming one (open included — joining is sound), or fresh. */
-	private TableEntry<Object> entryFor(Call<Relation> probe) {
-		TableEntry<Object> subsumer = table.reusableSubsumer(probe);
-		return subsumer != null ? subsumer : table.getOrCreateEntry(probe);
-	}
-
-	/** The producer's emissions folded into the cell as deltas. */
-	private static Emitter<Tuple2<Reified<?>, Condition>> folding(TableEntry<Object> entry,
-			Emitter<JoinMap<Reified<?>, Object>> inner) {
-		return answer -> inner.emit(entry.answerDelta(answer._1, answer._2));
-	}
-
-	/** The cell's log by cursor: emit, park on growth, the seal completes. */
-	private Fiber<Nothing> replay(TableEntry<Object> entry,
-			Emitter<Tuple2<Reified<?>, Condition>> emit, int cursor) {
-		JoinMap<Reified<?>, Object> now = entry.answers();
-		if (cursor < now.logSize()) {
-			Tuple2<Reified<?>, Object> logged = now.logAt(cursor);
-			return emit.emit(Tuple.of(logged._1, (Condition) logged._2))
-					.flatMap(emitted -> replay(entry, emit, cursor + 1));
-		}
-		if (entry.isComplete()) {
-			return Fiber.done(Nothing.nothing());
-		}
-		int at = cursor;
-		return Fiber.await(entry.channel(), value -> value.logSize() > at)
-				.flatMap(grown -> replay(entry, emit, at));
+	/** The probe translated to the tabled relation's key: same image, same region, its token. */
+	private TableEntry<Object> sealedFor(Call<Relation> probe) {
+		return table.findSealedSubsumer(
+				Call.of(relations.apply(probe.getRelation()), probe.getArguments(), probe.getResidues()));
 	}
 
 	@Override
 	public String toString() {
-		return "tabled(" + producer + ")";
+		return "tabled(" + id() + ")";
 	}
 }

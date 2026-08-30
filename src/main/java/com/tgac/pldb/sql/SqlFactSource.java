@@ -31,12 +31,16 @@ import java.sql.Connection;
  * <p>This class is a constructor and a wrapper: {@link TabledSource}
  * over the pinned {@link SqlFetch}. The fetch owns the backend — the
  * connection, the per-family compiler registry, probe+region compiled to
- * SELECT..WHERE, every get a round trip. The cache owns reuse — landing,
- * the coverage ledger, containment proof. What remains here is the
- * lifecycle the composition needs: pinning at construction, compiler
- * registration before first use, and {@link #close()} rolling the
- * transaction back. Estimates are exact over covered probes and the
- * optimizer barrier otherwise — never a remote round trip.
+ * SELECT..WHERE, every get a round trip. The cache owns streaming reuse:
+ * {@link #produce} lands probes in the tabled compression. The SYNC face
+ * fetches RAW: its probes come from the GAC tier, whose regions
+ * transcribe the posted lookup itself — data to the WHERE compiler, but
+ * a production loop if re-imposed as a goal, so they must never enter
+ * the compression. What remains here is the lifecycle the composition
+ * needs: pinning at construction, compiler registration before first
+ * use, and {@link #close()} rolling the transaction back. Estimates are
+ * exact over covered probes and the optimizer barrier otherwise — never
+ * a remote round trip.
  *
  * <p>The connection is shared and the composed get synchronized: parallel
  * solves serialize their fetches here. Landed answers are immutable
@@ -89,7 +93,7 @@ public final class SqlFactSource implements AnswerSource, AnswerProducer, AutoCl
 
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		return cached.answers(probe);
+		return fetch.answers(probe);
 	}
 
 	@Override

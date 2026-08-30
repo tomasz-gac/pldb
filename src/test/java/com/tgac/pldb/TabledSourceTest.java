@@ -3,6 +3,7 @@ package com.tgac.pldb;
 // ABOUTME: The one container over any producer: probes memoize through the owned
 // ABOUTME: table, wide sealed entries serve narrow probes, the sync face is sealed-only.
 
+import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -12,14 +13,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
+import com.tgac.logic.goals.Goal;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.tabling.Tabled;
+import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.RelationN;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
@@ -84,12 +89,13 @@ public class TabledSourceTest {
 	@Test
 	public void aWideSealedEntryServesTheNarrowProbe() {
 		// call subsumption at the data boundary: the narrow probe reads the
-		// wide entry's cell whole — over-delivery, the consumer filters
+		// wide entry through consume's unification filter — exactly the
+		// answers it asked for, and the wrapped source is never re-hit
 		TabledSource source = TabledSource.over(counting());
 		drain(source, probe(null, null));
 		List<Tuple2<Reified<?>, Condition>> narrow = drain(source, probe(2L, null));
 		assertThat(hits.get()).isEqualTo(1);
-		assertThat(narrow).hasSize(3);
+		assertThat(narrow).hasSize(1);
 	}
 
 	@Test
@@ -170,6 +176,64 @@ public class TabledSourceTest {
 		assertThat(RelationN.relation(guarded, person, refused, lvar())
 				.and(refused.unifies(2L))
 				.solve(refused).count()).isZero();
+	}
+
+	@Test
+	public void anAscendedConditionDeliversOnlyConverged() {
+		// the same free image succeeds under two guards, so the cell ASCENDS:
+		// {≠2}, then {≠2}∨{≠3}. A conditional answer is final only at the
+		// seal — the consumer must see the converged condition exactly once
+		// (two conjuncts, two branches), never the transient first arrival
+		TabledSource guarded = TabledSource.solving(args ->
+				exclude(((Unifiable<Object>) args.get(0)).unifies(2L))
+						.or(exclude(((Unifiable<Object>) args.get(0)).unifies(3L))));
+		Unifiable<Long> id = lvar();
+		assertThat(RelationN.relation(guarded, person, id, lvar())
+				.and(id.unifies(4L))
+				.solve(id).count()).isEqualTo(2);
+	}
+
+	@Test
+	public void anAbsorbedConditionIsNeverDelivered() {
+		// one disjunct guards the image, the other admits it outright: the
+		// conditions join to 1 by absorption, and finality means the
+		// transient guarded arrival is never a delivery — one branch, not two
+		TabledSource guarded = TabledSource.solving(args ->
+				exclude(((Unifiable<Object>) args.get(0)).unifies(2L))
+						.or(Goal.success()));
+		Unifiable<Long> id = lvar();
+		assertThat(RelationN.relation(guarded, person, id, lvar())
+				.and(id.unifies(4L))
+				.solve(id).count()).isEqualTo(1);
+	}
+
+	/** Edges 1→2 and 2→3. */
+	private static Goal edge(Unifiable<Long> x, Unifiable<Long> y) {
+		return x.unifies(1L).and(y.unifies(2L))
+				.or(x.unifies(2L).and(y.unifies(3L)));
+	}
+
+	@Test
+	public void aRecursiveInnerTabledBodySeals() {
+		// the body recurses through an inner tabled goal — transitive
+		// closure over the edges. Completion detection is inherited with
+		// the compressor: the derived entry SEALS instead of hanging, the
+		// closure reaches 1→3, and the sealed table serves the sync face
+		Tabled<Tuple2<Unifiable<Long>, Unifiable<Long>>> path =
+				Tabling.defineRecursive(self -> pair -> pair.apply((x, y) ->
+						edge(x, y)
+								.or(defer(() -> {
+									Unifiable<Long> z = lvar();
+									return self.apply(Tuple.of(x, z)).and(edge(z, y));
+								}))));
+		TabledSource reach = TabledSource.solving(args ->
+				path.apply(Tuple.of((Unifiable<Long>) args.get(0), (Unifiable<Long>) args.get(1))));
+		Unifiable<Long> from = lvar();
+		Unifiable<Long> to = lvar();
+		assertThat(RelationN.relation(reach, person, from, to)
+				.and(from.unifies(1L)).and(to.unifies(3L))
+				.solve(from).count()).isEqualTo(1);
+		assertThat(reach.answers(probe(null, null))).hasSize(3);
 	}
 
 	@Test
