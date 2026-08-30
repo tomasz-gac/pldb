@@ -80,7 +80,7 @@ public final class TabledSource implements AnswerProducer {
 		Map<Relation, Tabled<Array<Unifiable<?>>>> defined = new ConcurrentHashMap<>();
 		return new TabledSource(
 				rel -> defined.computeIfAbsent(rel, r ->
-						Tabling.<Array<Unifiable<?>>> define(args -> LookupGoal.of(source, r, args))),
+						Tabling.define(args -> LookupGoal.of(source, r, args))),
 				Option.some(source));
 	}
 
@@ -111,6 +111,11 @@ public final class TabledSource implements AnswerProducer {
 							Conjunction.of(
 									Residues.restate(probe.getArguments(), probe.getResidues(), argsTerm),
 									call);
+					// not a grounding: the applied search IS produce's fiber —
+					// successes leave through the emitter and completion is the
+					// search's own exhaustion, the same shape as Tabling.produce;
+					// Exhaustion.collected is for callers that must observe
+					// exhaustion while capturing out-of-band
 					return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
 							Residues.all(answerPkg, argsTerm).flatMap(answer ->
 									emit.emit(Tuple.of(answer._1, Condition.of(answer._2)))));

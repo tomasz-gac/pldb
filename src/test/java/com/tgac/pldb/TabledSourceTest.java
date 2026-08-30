@@ -165,9 +165,10 @@ public class TabledSourceTest {
 	@Test
 	public void anAscendedConditionDeliversOnlyConverged() {
 		// the same free image succeeds under two guards, so the cell ASCENDS:
-		// {≠2}, then {≠2}∨{≠3}. A conditional answer is final only at the
-		// seal — the consumer must see the converged condition exactly once
-		// (two conjuncts, two branches), never the transient first arrival
+		// {≠2}, then {≠2}∨{≠3}. Delivery forks one branch per conjunct of
+		// the JOINED condition — two at id=4 — and the log enumerates ascent
+		// DELTAS, so each conjunct delivers exactly once whatever the
+		// arrival order
 		TabledSource guarded = TabledSource.solving(args ->
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2L))
 						.or(exclude(((Unifiable<Object>) args.get(0)).unifies(3L))));
