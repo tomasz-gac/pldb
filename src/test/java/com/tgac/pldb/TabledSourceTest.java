@@ -1,7 +1,7 @@
 package com.tgac.pldb;
 
 // ABOUTME: The one container over any producer: probes memoize through the owned
-// ABOUTME: table, wide sealed entries serve narrow probes, the sync face is sealed-only.
+// ABOUTME: table, wide sealed entries serve narrow probes, the sync face refuses.
 
 import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
@@ -99,27 +99,14 @@ public class TabledSourceTest {
 	}
 
 	@Test
-	public void theSyncFaceOfALiftedSourcePopulatesInline() {
-		// a lifted sync producer cannot park, so the sync face drives its
-		// produce to completion on the caller's thread — the inline cost
-		// the sync kind always paid, now memoized
+	public void theSyncFaceRefuses() {
+		// consumption streams through produce; the sync consumer this face
+		// would serve — the posted table constraint — must arrive as a
+		// parking propagator before a tabled source can stand behind it
 		TabledSource source = TabledSource.over(counting());
-		assertThat(source.answers(probe(null, null))).hasSize(3);
-		assertThat(source.answers(probe(2L, null)))
-				.describedAs("a sealed wide entry serves the narrow sync read")
-				.hasSize(3);
-		assertThat(hits.get()).isEqualTo(1);
-	}
-
-	@Test
-	public void theSyncFaceOfADerivedSourceServesOnlySealedEntries() {
-		// unknown is not false: a derived source's uncovered probe refuses
-		// on the sync face — production needs the caller's scheduler
-		TabledSource source = derived();
 		assertThatThrownBy(() -> source.answers(probe(null, null)))
-				.isInstanceOf(IllegalStateException.class);
-		names(source);
-		assertThat(source.answers(probe(null, null))).hasSize(3);
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("produce");
 	}
 
 	// ---- the point: the derived relation, memoized for inter-solve reuse ----
@@ -233,7 +220,7 @@ public class TabledSourceTest {
 		assertThat(RelationN.relation(reach, person, from, to)
 				.and(from.unifies(1L)).and(to.unifies(3L))
 				.solve(from).count()).isEqualTo(1);
-		assertThat(reach.answers(probe(null, null))).hasSize(3);
+		assertThat(drain(reach, probe(null, null))).hasSize(3);
 	}
 
 	@Test

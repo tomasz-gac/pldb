@@ -6,13 +6,11 @@ package com.tgac.pldb;
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Emitter;
 import com.tgac.functional.fibers.Fiber;
-import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.tabling.Table;
 import com.tgac.logic.tabling.TableEntry;
@@ -27,8 +25,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.control.Option;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -56,13 +52,13 @@ import java.util.function.Function;
  * delivery whole ({@link Residues#all}) for emission — the bridge
  * between the owned fixpoint and the consumer's state.
  *
- * <p>The SYNC {@link AnswerSource} face serves SEALED entries, found by
- * translating the probe to the tabled relation's key — same image, same
- * region, its token. A source {@link #over} a sync backend populates
- * inline first: its body enumerates that backend and cannot park, so
- * driving production on the caller's thread is deterministic, the same
- * inline cost the sync kind always paid. A derived source's uncovered
- * probe REFUSES: unknown is not false.
+ * <p>The SYNC {@link AnswerSource} face REFUSES: consumption streams
+ * through {@link #produce}, and the one sync consumer this face would
+ * serve — the posted table constraint — must arrive as a PARKING
+ * propagator before a tabled source can stand behind it. The type stays
+ * on the seam so lookups wire uniformly; the capability waits. Pricing
+ * translates the probe to the tabled relation's key — same image, same
+ * region, its token — and reads sealed entries.
  */
 public final class TabledSource implements AnswerSource, AnswerProducer {
 
@@ -124,21 +120,8 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		TableEntry<Object> sealed = sealedFor(probe);
-		if (sealed == null && backend.isDefined()) {
-			new BreadthFirstScheduler<>(produce(probe, answer -> Fiber.done(Nothing.nothing()))).get();
-			sealed = sealedFor(probe);
-		}
-		if (sealed == null) {
-			throw new IllegalStateException("no sealed entry covers " + probe
-					+ ": unknown is not false — probe through produce, or seal first");
-		}
-		JoinMap<Reified<?>, Object> cell = sealed.answers();
-		List<Tuple2<Reified<?>, Condition>> answers = new ArrayList<>();
-		for (Reified<?> term : cell.order) {
-			answers.add(Tuple.of(term, (Condition) cell.members.get(term).get()));
-		}
-		return answers;
+		throw new IllegalStateException("the tabled source streams: consume " + probe
+				+ " through produce — its sync consumer needs the parking table propagator");
 	}
 
 	@Override
@@ -151,11 +134,6 @@ public final class TabledSource implements AnswerSource, AnswerProducer {
 	@Override
 	public String id() {
 		return backend.isDefined() ? backend.get().id() : AnswerSource.super.id();
-	}
-
-	/** Has any probe landed yet? Registration windows close at the first one. */
-	public boolean isEmpty() {
-		return table.size() == 0;
 	}
 
 	/** The probe translated to the tabled relation's key: same image, same region, its token. */
