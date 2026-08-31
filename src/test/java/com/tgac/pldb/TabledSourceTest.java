@@ -109,6 +109,14 @@ public class TabledSourceTest {
 		});
 	}
 
+	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
+	private static List<String> answers(Goal goal, Unifiable<?> out) {
+		return goal.solve(out)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
 	private List<String> names(AnswerSource source) {
 		Unifiable<String> out = lvar();
 		return RelationN.relation(source, person, lvar(), out)
@@ -153,13 +161,11 @@ public class TabledSourceTest {
 		TabledSource guarded = TabledSource.solving(args ->
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2L)));
 		Unifiable<Long> id = lvar();
-		assertThat(RelationN.relation(guarded, person, id, lvar())
-				.and(id.unifies(1L))
-				.solve(id).count()).isEqualTo(1);
+		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+				.and(id.unifies(1L)), id)).containsExactly("{1}");
 		Unifiable<Long> refused = lvar();
-		assertThat(RelationN.relation(guarded, person, refused, lvar())
-				.and(refused.unifies(2L))
-				.solve(refused).count()).isZero();
+		assertThat(answers(RelationN.relation(guarded, person, refused, lvar())
+				.and(refused.unifies(2L)), refused)).isEmpty();
 	}
 
 	@Test
@@ -173,9 +179,8 @@ public class TabledSourceTest {
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2L))
 						.or(exclude(((Unifiable<Object>) args.get(0)).unifies(3L))));
 		Unifiable<Long> id = lvar();
-		assertThat(RelationN.relation(guarded, person, id, lvar())
-				.and(id.unifies(4L))
-				.solve(id).count()).isEqualTo(2);
+		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+				.and(id.unifies(4L)), id)).containsExactly("{4}", "{4}");
 	}
 
 	@Test
@@ -187,9 +192,8 @@ public class TabledSourceTest {
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2L))
 						.or(Goal.success()));
 		Unifiable<Long> id = lvar();
-		assertThat(RelationN.relation(guarded, person, id, lvar())
-				.and(id.unifies(4L))
-				.solve(id).count()).isEqualTo(1);
+		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+				.and(id.unifies(4L)), id)).containsExactly("{4}");
 	}
 
 	/** Edges 1→2 and 2→3. */
@@ -215,9 +219,8 @@ public class TabledSourceTest {
 				path.apply(Tuple.of((Unifiable<Long>) args.get(0), (Unifiable<Long>) args.get(1))));
 		Unifiable<Long> from = lvar();
 		Unifiable<Long> to = lvar();
-		assertThat(RelationN.relation(reach, person, from, to)
-				.and(from.unifies(1L)).and(to.unifies(3L))
-				.solve(from).count()).isEqualTo(1);
+		assertThat(answers(RelationN.relation(reach, person, from, to)
+				.and(from.unifies(1L)).and(to.unifies(3L)), from)).containsExactly("{1}");
 		assertThat(drain(reach, probe(null, null))).hasSize(3);
 	}
 
