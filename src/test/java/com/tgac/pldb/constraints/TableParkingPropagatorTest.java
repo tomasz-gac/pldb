@@ -9,7 +9,6 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.functional.monad.Cont;
-import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
@@ -21,7 +20,6 @@ import com.tgac.pldb.TabledSource;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import com.tgac.pldb.relations.Relations;
-import io.vavr.collection.Array;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -48,9 +46,9 @@ public class TableParkingPropagatorTest {
 				RelationN.relation(db, r, args.toJavaArray(Unifiable[]::new)));
 	}
 
-	/** The parking post — S2's door spelled out. */
+	/** The parking post through the door: the producer overload resolves. */
 	private static Goal posted(TabledSource source, Unifiable<?>... args) {
-		return Propagation.activate(new TableParkingPropagator(r, source, Array.of(args)));
+		return RelationN.posted(source, r, args);
 	}
 
 	/** A goal that runs assertions against the live package and succeeds. */

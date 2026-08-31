@@ -65,6 +65,14 @@ public class RelationN implements Relation {
 		return TableConstraints.posted(source, rel, Array.of(args));
 	}
 
+	public Goal posted(AnswerProducer producer, Unifiable<?>... args) {
+		return posted(producer, this, args);
+	}
+
+	public static Goal posted(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
+		return TableConstraints.posted(producer, rel, Array.of(args));
+	}
+
 	public Fact apply(Object... vs) {
 		return Fact.of(this, Array.of(vs));
 	}

@@ -19,7 +19,9 @@ import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
+import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
@@ -211,6 +213,28 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	@SuppressWarnings("unchecked")
 	private static Theory<TableConstraints> cast(Theory<?> theory) {
 		return (Theory<TableConstraints>) theory;
+	}
+
+	/**
+	 * The record's rank under the current bindings: the producer's sealed
+	 * knowledge where it prices, the optimizer barrier otherwise. Pricing
+	 * carries no region: the upper bound stays sound ignoring it.
+	 */
+	long estimate(Array<Term<?>> walked) {
+		Reified<?> image = MiniKanren.reify(Substitutions.empty(),
+						lval(walked.map(Term::getObjectTerm)).getObjectTerm())
+				.ground();
+		return producer.estimate(Call.of(rel, image));
+	}
+
+	/**
+	 * A bound pattern over an empty sealed bucket can never be satisfied —
+	 * candidates only shrink. An unpriced producer answers the barrier and
+	 * is never doomed here.
+	 */
+	@Override
+	public boolean doomed(Package p) {
+		return estimate(watchedTerms().map(t -> (Term<?>) p.substitution().walk(t))) == 0;
 	}
 
 	@Override

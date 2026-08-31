@@ -20,6 +20,7 @@ import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
@@ -70,6 +71,16 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 */
 	public static Posting posted(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
 		return Propagation.activate(new TablePropagator(source, rel, args));
+	}
+
+	/**
+	 * Post a lookup over the ASYNC kind: the {@link TableParkingPropagator}
+	 * parks, and its first examination arrives through the cascade wake —
+	 * the parked kind's arrival semantics — not the statement entry.
+	 * Conditional and Any-bearing answers are consumed natively.
+	 */
+	public static Posting posted(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
+		return Propagation.activate(new TableParkingPropagator(rel, producer, args));
 	}
 
 	/**
