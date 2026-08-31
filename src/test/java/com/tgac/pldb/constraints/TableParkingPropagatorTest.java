@@ -21,6 +21,7 @@ import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import com.tgac.pldb.relations.Relations;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -51,6 +52,14 @@ public class TableParkingPropagatorTest {
 		return RelationN.posted(source, r, args);
 	}
 
+	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
+	private static List<String> answers(Goal goal, Unifiable<?> out) {
+		return goal.solve(out)
+				.map(Object::toString)
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
 	/** A goal that runs assertions against the live package and succeeds. */
 	private static Goal probe(Consumer<Package> check) {
 		return p -> {
@@ -61,27 +70,22 @@ public class TableParkingPropagatorTest {
 
 	@Test
 	public void aGroundPostIsAMembershipCheck() {
-		assertThat(posted(derived(), lval(2), lval("b")).solve(lvar()).count()).isEqualTo(1);
-		assertThat(posted(derived(), lval(2), lval("c")).solve(lvar()).count()).isZero();
+		assertThat(answers(posted(derived(), lval(2), lval("b")), lvar())).containsExactly("_.0");
+		assertThat(answers(posted(derived(), lval(2), lval("c")), lvar())).isEmpty();
 	}
 
 	@Test
 	public void anEmptyExtensionFails() {
-		assertThat(posted(derived(), lval(9), lvar()).solve(lvar()).count()).isZero();
+		assertThat(answers(posted(derived(), lval(9), lvar()), lvar())).isEmpty();
 	}
 
 	@Test
 	public void aSingletonCandidateCollapsesToBindings() {
 		Unifiable<String> viaParking = lvar();
 		Unifiable<String> viaSync = lvar();
-		assertThat(posted(derived(), lval(2), viaParking)
-				.solve(viaParking)
-				.map(Object::toString)
-				.collect(Collectors.toList()))
-				.isEqualTo(r.posted(db, lval(2), viaSync)
-						.solve(viaSync)
-						.map(Object::toString)
-						.collect(Collectors.toList()));
+		assertThat(answers(posted(derived(), lval(2), viaParking), viaParking))
+				.isEqualTo(answers(r.posted(db, lval(2), viaSync), viaSync))
+				.containsExactly("{b}");
 	}
 
 	@Test
@@ -92,37 +96,42 @@ public class TableParkingPropagatorTest {
 		// extension, fail). The commit path is for REPLAYED conditions
 		TabledSource guarded = TabledSource.solving(args ->
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2)));
-		assertThat(posted(guarded, lval(1), lval("x")).solve(lvar()).count()).isEqualTo(1);
-		assertThat(posted(guarded, lval(2), lval("x")).solve(lvar()).count()).isZero();
+		assertThat(answers(posted(guarded, lval(1), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(posted(guarded, lval(2), lval("x")), lvar())).isEmpty();
 	}
 
 	@Test
 	public void aReplayedConditionImposesAtCommit() {
-		// the wide probe seals the entry with its CONDITIONAL answer; the
-		// later ground probes replay it — the condition is not re-derived,
-		// it is imposed by the discharge restate, and decides at the anchor
+		// the wide post discharges its one CONDITIONAL entry — the answer is
+		// the watched arg under the guard, verbatim. The later ground probes
+		// replay the sealed entry: the condition is not re-derived, it is
+		// imposed by the discharge restate, and decides at the anchor
 		TabledSource guarded = TabledSource.solving(args ->
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2)));
-		assertThat(posted(guarded, lvar(), lvar()).solve(lvar()).count()).isEqualTo(1);
-		assertThat(posted(guarded, lval(1), lval("x")).solve(lvar()).count()).isEqualTo(1);
-		assertThat(posted(guarded, lval(2), lval("x")).solve(lvar()).count()).isZero();
+		Unifiable<Integer> x = lvar();
+		assertThat(answers(posted(guarded, x, lvar()), x))
+				.containsExactly("_.0 : ¬(_.0 ≡ {2})");
+		assertThat(answers(posted(guarded, lval(1), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(posted(guarded, lval(2), lval("x")), lvar())).isEmpty();
 	}
 
 	@Test
 	public void aMultiConjunctDischargeForksTheConde() {
-		// two guards on the same free image fold to {≠2}⊕{≠3}. At the FREE
-		// post the discharge forks one branch per conjunct — two conditional
-		// answers. At a GROUND probe the replayed conjuncts restate at the
+		// two guards on the same free image fold to {≠2}⊕{≠3}. The free post
+		// discharges one branch per conjunct — the conditions attach to the
+		// WATCHED arg (a fresh out var projects none of them and reads as a
+		// bare _.0). At a GROUND probe the replayed conjuncts restate at the
 		// ground anchor during delivery: a satisfied guard discharges and the
 		// re-captured answer is UNCONDITIONAL, so the branches fold to one
-		// entry — one answer at 4 (both guards pass, folded), one at 2 (only
-		// {≠3} survives delivery)
+		// entry — one answer at 4 (both guards pass), one at 2 ({≠3} survives)
 		TabledSource guarded = TabledSource.solving(args ->
 				exclude(((Unifiable<Object>) args.get(0)).unifies(2))
 						.or(exclude(((Unifiable<Object>) args.get(0)).unifies(3))));
-		assertThat(posted(guarded, lvar(), lvar()).solve(lvar()).count()).isEqualTo(2);
-		assertThat(posted(guarded, lval(4), lval("x")).solve(lvar()).count()).isEqualTo(1);
-		assertThat(posted(guarded, lval(2), lval("x")).solve(lvar()).count()).isEqualTo(1);
+		Unifiable<Integer> x = lvar();
+		assertThat(answers(posted(guarded, x, lvar()), x))
+				.containsExactly("_.0 : ¬(_.0 ≡ {2})", "_.0 : ¬(_.0 ≡ {3})");
+		assertThat(answers(posted(guarded, lval(4), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(posted(guarded, lval(2), lval("x")), lvar())).containsExactly("_.0");
 	}
 
 	@Test
@@ -133,13 +142,9 @@ public class TableParkingPropagatorTest {
 		TabledSource wide = TabledSource.solving(args ->
 				((Unifiable<Object>) args.get(0)).unifies(1));
 		Unifiable<Integer> x = lvar();
-		assertThat(posted(wide, x, lvar())
-				.and(x.unifies(1))
-				.solve(x).count()).isEqualTo(1);
-		Unifiable<Integer> refused = lvar();
-		assertThat(posted(wide, refused, lvar())
-				.and(refused.unifies(2))
-				.solve(refused).count()).isZero();
+		assertThat(answers(posted(wide, x, lvar()), x)).containsExactly("{1}");
+		Unifiable<String> tagFree = lvar();
+		assertThat(answers(posted(wide, lvar(), tagFree), tagFree)).containsExactly("_.0");
 	}
 
 	@Test
@@ -154,7 +159,7 @@ public class TableParkingPropagatorTest {
 								.and(((Unifiable<Object>) args.get(1)).unifies("a"))));
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		assertThat(posted(mixed, x, y)
+		assertThat(answers(posted(mixed, x, y)
 				.and(probe(p -> {
 					Theory<TableConstraints> live =
 							Constraint.in(p, TableConstraints.class).get().getTheory();
@@ -162,7 +167,6 @@ public class TableParkingPropagatorTest {
 							.describedAs("an Any column must not store a support")
 							.isFalse();
 				}))
-				.and(Goal.failure())
-				.solve(x).count()).isZero();
+				.and(Goal.failure()), x)).isEmpty();
 	}
 }
