@@ -26,11 +26,14 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
+import io.vavr.collection.IndexedSeq;
 import io.vavr.collection.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
 /**
@@ -199,6 +202,26 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	}
 
 	/**
+	 * The pattern-aware narrowing: a candidate cell may be FREE (an Any in a
+	 * row admits every value there), and a column ANY candidate leaves free
+	 * projects to TOP — which the store spells as absence, so the column is
+	 * SKIPPED rather than stored. Monotone: the live candidate set only
+	 * shrinks, so a skipped column can only gain a support later, never owe
+	 * a retraction.
+	 */
+	static Update narrowPatterns(Package state, Theory<TableConstraints> theory,
+			Array<Term<?>> walked, List<IndexedSeq<Optional<Object>>> candidates) {
+		return narrow(state, theory, walked,
+				candidates.stream()
+						.map(c -> Array.ofAll(c.map(cell -> cell.orElse(FREE_CELL))))
+						.collect(Collectors.toList()),
+				column -> candidates.stream().anyMatch(c -> !c.get(column).isPresent()));
+	}
+
+	/** A free candidate cell's placeholder — never stored, columns holding one are skipped. */
+	private static final Object FREE_CELL = new Object();
+
+	/**
 	 * Narrow each free column against its projection over the candidates.
 	 * Projections are TRANSIENT: a singleton binds its column right here
 	 * (every candidate agrees, and some candidate must hold), and a wider
@@ -206,15 +229,21 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * support has no reader, so the shadow's cost is the join width, not
 	 * every posted column.
 	 */
-	@SuppressWarnings("unchecked")
 	static Update narrow(Package state, Theory<TableConstraints> theory,
 			Array<Term<?>> walked, List<Array<Object>> candidates) {
+		return narrow(state, theory, walked, candidates, column -> false);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Update narrow(Package state, Theory<TableConstraints> theory,
+			Array<Term<?>> walked, List<Array<Object>> candidates,
+			IntPredicate topColumn) {
 		Theory<TableConstraints> current = theory;
 		List<Prefix> inferred = new ArrayList<>();
 		List<Term<?>> reexamine = new ArrayList<>();
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined()) {
+			if (w.asVal().isDefined() || topColumn.test(i)) {
 				continue;
 			}
 			int column = i;
