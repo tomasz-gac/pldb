@@ -30,12 +30,12 @@ import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Value;
 
 /**
@@ -131,28 +131,20 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	}
 
 	private Verdict verdict(Package pkg, Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension) {
-		Theory<TableConstraints> theory =
-				Constraint.in(pkg, TableConstraints.class).get().getTheory();
-		List<Row> live = new ArrayList<>();
-		for (Reified<?> image : extension.order) {
-			IndexedSeq<Optional<Object>> pattern = Answers.pattern(image);
-			if (compatible(theory, walked, pattern)) {
-				live.add(new Row(image, pattern, extension.members.get(image).get()));
-			}
-		}
+		Theory<TableConstraints> theory = Constraint.in(pkg, TableConstraints.class).get().getTheory();
+		List<Row> live = extractRows(walked, extension, theory);
 		if (live.isEmpty()) {
 			return Verdict.fail();
 		}
 		if (walked.forAll(w -> w.asVal().isDefined())) {
-			if (live.stream().anyMatch(row -> Condition.ONE.equals(row.getCondition()))) {
+			if (isAnyRowUnconditional(live)) {
 				return Verdict.subsumed();
 			}
 			return discharge(live, walked);
 		}
 		if (live.size() == 1) {
 			Row only = live.get(0);
-			if (Condition.ONE.equals(only.getCondition())
-					&& only.getPattern().forAll(Optional::isPresent)) {
+			if (isUnconditional(only) && isGround(only)) {
 				return Verdict.update((state, theory_) ->
 						TableConstraints.collapse(state, cast(theory_), walked,
 								Array.ofAll(only.getPattern().map(Optional::get))));
@@ -170,6 +162,26 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		return Verdict.update((state, theory_) ->
 				TableConstraints.narrowPatterns(state, cast(theory_), walked,
 						live.stream().map(Row::getPattern).collect(Collectors.toList())));
+	}
+
+	private static boolean isUnconditional(Row only) {
+		return Condition.ONE.equals(only.getCondition());
+	}
+
+	private static boolean isGround(Row only) {
+		return only.getPattern().forAll(Optional::isPresent);
+	}
+
+	private static boolean isAnyRowUnconditional(List<Row> live) {
+		return live.stream().anyMatch(TableParkingPropagator::isUnconditional);
+	}
+
+	private static List<Row> extractRows(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension, Theory<TableConstraints> theory) {
+		return extension.order.toJavaStream()
+				.flatMap(image -> Stream.of(Answers.pattern(image))
+						.filter(pattern -> compatible(theory, walked, pattern))
+						.map(pattern -> new Row(image, pattern, extension.members.get(image).get())))
+				.collect(Collectors.toList());
 	}
 
 	/**
