@@ -159,6 +159,14 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 			}
 			return discharge(live, walked);
 		}
+		// the projection reads every condition as TRUE — its sound side. A
+		// value pruned here has no supporting row even conditionally, and a
+		// singleton binds because EVERY disjunct agrees on it, whatever its
+		// condition holds. Nothing is dropped from the constraint: narrow
+		// does not commit, the conditions stay in the extension and take
+		// full effect at the committing restates. Supports stay plain value
+		// sets — ⊕-annotating them per column would still approximate away
+		// the rows' cross-column ⊗ structure, a richer lattice not yet earned
 		return Verdict.update((state, theory_) ->
 				TableConstraints.narrowPatterns(state, cast(theory_), walked,
 						live.stream().map(Row::getPattern).collect(Collectors.toList())));
