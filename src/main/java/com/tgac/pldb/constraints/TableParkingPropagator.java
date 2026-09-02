@@ -8,8 +8,10 @@ import static com.tgac.logic.unification.LVal.lval;
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.interpreter.Scope;
+import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.ParkingPropagator;
@@ -212,6 +214,39 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 						.filter(cells -> compatible(theory, walked, cells))
 						.map(cells -> new Row(image, cells, extension.members.get(image).get())))
 				.collect(Collectors.toList());
+	}
+
+	/**
+	 * The record's reify-time grounding: branch over the live disjuncts —
+	 * each branch restates its row whole, then RE-WAKES the record so the
+	 * verdict that follows discharges it (all-ground, entailed, or the lone
+	 * survivor's commit). The parking leg of enforce's row-wise discipline;
+	 * the re-wake matters because a branch whose row binds nothing (a wide
+	 * or conditional row) would otherwise leave the record parked at reify.
+	 */
+	Goal enumerate(Array<? extends Term<?>> watched) {
+		return st -> k -> {
+			Array<Term<?>> walked = watched.map(t -> (Term<?>) st.walk(t));
+			if (walked.forAll(w -> w.asVal().isDefined())) {
+				return Goal.success().apply(st).apply(k);
+			}
+			return probe(st, walked)
+					.flatMap(this::extension)
+					.flatMap(extension -> {
+						Theory<TableConstraints> theory =
+								Constraint.in(st, TableConstraints.class).get().getTheory();
+						List<Row> live = extractRows(walked, extension, theory);
+						Unifiable<?> anchor = lval(walked.map(Term::getObjectTerm));
+						return live.stream()
+								.flatMap(row -> row.getCondition().conjuncts().toJavaStream()
+										.map(conjunct -> (Goal) Conjunction.of(
+												Residues.restate(row.getImage(), conjunct, anchor),
+												Propagation.activate(this))))
+								.reduce(Goal::or)
+								.orElseGet(Goal::failure)
+								.apply(st).apply(k);
+					});
+		};
 	}
 
 	/**

@@ -16,6 +16,7 @@ import com.tgac.logic.goals.Package;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.ImmutableDatabase;
+import io.vavr.Tuple;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import java.util.Arrays;
@@ -178,6 +179,51 @@ public class TableParkingPropagatorTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 		assertThat(answers(tautology.posted(x, y), lvar())).containsExactly("_.0");
+	}
+
+	@Test
+	public void aParkedTableGroundsRowWiseAtReify() {
+		// a record still parked at reify grounds ROW-WISE through enforce —
+		// the parking kind's leg of the sync discipline, never a cartesian
+		Unifiable<Integer> x = lvar();
+		assertThat(answers(derived().posted(x, lvar()), x))
+				.containsExactly("{1}", "{2}", "{3}");
+	}
+
+	@Test
+	public void postedAgreesWithExists() {
+		// the arc's oracle: a posted derived relation answers exactly like
+		// its enumerating goal — enforce grounds what labelling left open
+		Unifiable<Integer> px = lvar();
+		Unifiable<String> py = lvar();
+		Unifiable<Integer> ex = lvar();
+		Unifiable<String> ey = lvar();
+		assertThat(answers(derived().posted(px, py), lval(Tuple.of(px, py))))
+				.isEqualTo(answers(r.exists(db, ex, ey), lval(Tuple.of(ex, ey))));
+	}
+
+	@Test
+	public void aWideRowGroundsLeavingItsColumnOpenAtReify() {
+		// two rows, one wide: enforce branches row-wise; the wide branch
+		// binds the item, couples the tag to a fresh existential, and the
+		// re-woken record discharges by entailment — the tag stays open
+		Relations._2<Integer, String>.Derived mixed =
+				r.solving((i, t) -> i.unifies(7).or(i.unifies(8).and(t.unifies("a"))));
+		Unifiable<Integer> x = lvar();
+		assertThat(answers(mixed.posted(x, lvar()), x)).containsExactly("{7}", "{8}");
+	}
+
+	@Test
+	public void aConditionalRowRidesItsConditionThroughReify() {
+		// the guarded row's branch imposes its nogood; the re-woken record
+		// discharges as the lone survivor and the condition reifies as the
+		// answer's residue
+		Relations._2<Integer, String>.Derived guarded =
+				r.solving((i, t) -> i.unifies(7).and(exclude(t.unifies("q")))
+						.or(i.unifies(8).and(t.unifies("a"))));
+		Unifiable<String> y = lvar();
+		assertThat(answers(guarded.posted(lvar(), y), y))
+				.containsExactly("_.0 : ¬(_.0 ≡ {q})", "{a}");
 	}
 
 	@Test

@@ -14,6 +14,7 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.lattice.LatticeFactor;
+import com.tgac.logic.lattice.ParkingPropagator;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Update;
 import com.tgac.logic.unification.LVar;
@@ -141,6 +142,17 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			}
 			survivors.add(Tuple.of(((TablePropagator) p).estimate(walked),
 					((TablePropagator) p).enumerate(p.watchedTerms())));
+		}
+		for (ParkingPropagator<TableConstraints> p : EMPTY.parkingProps(live).collect(Collectors.toList())) {
+			if (!(p instanceof TableParkingPropagator)) {
+				continue;
+			}
+			Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
+			if (walked.forAll(w -> w.asVal().isDefined())) {
+				continue;
+			}
+			survivors.add(Tuple.of(((TableParkingPropagator) p).estimate(walked),
+					((TableParkingPropagator) p).enumerate(p.watchedTerms())));
 		}
 		return survivors;
 	}
