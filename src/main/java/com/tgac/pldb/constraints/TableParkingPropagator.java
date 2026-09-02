@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.Value;
 
@@ -174,31 +175,33 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	/**
 	 * An ENTAILED row discharges the constraint whole: its disjunct is 1
 	 * under the current state and 1 ⊕ a = 1 — absorption, the disjunctive
-	 * store's discharge doctrine in its new home. Entailed = condition ONE
-	 * and a binding half that would impose nothing: every cell an Any
-	 * (coupled ones only where the walked terms already agree) or equal to
-	 * the walked ground value.
+	 * store's discharge doctrine in its new home.
 	 */
 	private static boolean entailed(Row row, Array<Term<?>> walked) {
-		if (!isUnconditional(row)) {
-			return false;
-		}
-		for (int i = 0; i < walked.size(); i++) {
-			Term<Object> cell = row.getCells().get(i);
-			Term<?> w = walked.get(i);
-			if (cell.asVal().isDefined()) {
-				if (!w.asVal().isDefined() || !cell.get().equals(w.get())) {
-					return false;
-				}
-				continue;
-			}
-			for (int j = 0; j < i; j++) {
-				if (row.getCells().get(j).equals(cell) && !walked.get(j).equals(w)) {
-					return false;
-				}
-			}
-		}
-		return true;
+		return isUnconditional(row)
+				&& IntStream.range(0, walked.size())
+						.allMatch(position -> imposesNothingAt(row, walked, position));
+	}
+
+	/** A ground cell must already match; a free cell's couplings must already agree. */
+	private static boolean imposesNothingAt(Row row, Array<Term<?>> walked, int position) {
+		Term<Object> cell = row.getCells().get(position);
+		return cell.asVal().isDefined() ?
+				alreadyMatches(cell, walked.get(position)) :
+				couplingsAlreadyAgree(row, walked, position);
+	}
+
+	/** The walked term holds this very value — unifying them would bind nothing. */
+	private static boolean alreadyMatches(Term<Object> cell, Term<?> walked) {
+		return walked.asVal().isDefined() && cell.get().equals(walked.get());
+	}
+
+	/** Every earlier cell holding the SAME any already walks equal — the coupling is spent. */
+	private static boolean couplingsAlreadyAgree(Row row, Array<Term<?>> walked, int position) {
+		Term<Object> cell = row.getCells().get(position);
+		return IntStream.range(0, position)
+				.filter(earlier -> row.getCells().get(earlier).equals(cell))
+				.allMatch(earlier -> walked.get(earlier).equals(walked.get(position)));
 	}
 
 	private static List<Row> extractRows(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension, Theory<TableConstraints> theory) {
