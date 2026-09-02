@@ -10,6 +10,7 @@ import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
+import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
@@ -92,7 +93,7 @@ final class SqlFetch implements AnswerSource {
 	@Override
 	public synchronized Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
 		Relation relation = probe.getRelation();
-		IndexedSeq<Optional<Object>> args = Answers.pattern(probe.getArguments());
+		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
 		List<Tuple2<Reified<?>, Condition>> answers = new ArrayList<>();
 		for (Fact fact : rows(relation, args, push(relation, probe.getResidues()))) {
 			answers.add(Answers.answer(fact));
@@ -144,13 +145,13 @@ final class SqlFetch implements AnswerSource {
 		};
 	}
 
-	private List<Fact> rows(Relation relation, IndexedSeq<Optional<Object>> args, List<SqlPredicate> predicates) {
+	private List<Fact> rows(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
 		Property<?>[] columns = relation.getArgs();
 		List<String> boundColumns = new ArrayList<>();
 		List<Object> boundValues = new ArrayList<>();
 		List<String> unboundColumns = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
-			if (args.get(i).isPresent()) {
+			if (args.get(i).asVal().isDefined()) {
 				boundColumns.add(columns[i].getName());
 				boundValues.add(args.get(i).get());
 			} else {
@@ -185,11 +186,11 @@ final class SqlFetch implements AnswerSource {
 		}
 	}
 
-	private static Array<Object> mergeValuesWithSupplied(IndexedSeq<Optional<Object>> args, Object[] values) {
+	private static Array<Object> mergeValuesWithSupplied(IndexedSeq<Term<Object>> args, Object[] values) {
 		int i = 0, j = 0;
 		Array<Object> result = Array.empty();
 		while (i + j < args.length()) {
-			if (args.get(i + j).isPresent()) {
+			if (args.get(i + j).asVal().isDefined()) {
 				result = result.append(args.get(i + j).get());
 				++i;
 			} else {
