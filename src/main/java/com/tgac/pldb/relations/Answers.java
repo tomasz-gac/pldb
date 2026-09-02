@@ -52,8 +52,15 @@ public final class Answers {
 						Optional.of(position.get()));
 	}
 
+	/**
+	 * The image's cells in Term vocabulary — a ground position is a value
+	 * ({@code asVal}), a free position an any ({@code asReified}) — the same
+	 * vocabulary as the walked terms a row is compared against, coupling
+	 * identity preserved. {@link #pattern} is the {@code Optional} rendering
+	 * the database index keys by; constraint-side consumers read cells.
+	 */
 	@SuppressWarnings("unchecked")
-	private static Array<Term<Object>> positions(Reified<?> image) {
+	public static Array<Term<Object>> positions(Reified<?> image) {
 		return Array.ofAll(MiniKanren.members(image)
 						.getOrElseThrow(() -> new IllegalArgumentException(
 								"not a row image: " + image)))

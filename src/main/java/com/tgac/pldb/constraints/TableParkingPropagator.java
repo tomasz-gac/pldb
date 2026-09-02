@@ -31,7 +31,6 @@ import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.util.List;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -74,11 +73,11 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		this.rel = rel;
 	}
 
-	/** One live disjunct: the row's image, its per-cell pattern, its ⊕-folded condition. */
+	/** One live disjunct: the row's image, its cells in Term vocabulary, its ⊕-folded condition. */
 	@Value
 	private static class Row {
 		Reified<?> image;
-		IndexedSeq<Optional<Object>> pattern;
+		IndexedSeq<Term<Object>> cells;
 		Condition condition;
 	}
 
@@ -147,7 +146,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 			if (isUnconditional(only) && isGround(only)) {
 				return Verdict.update((state, theory_) ->
 						TableConstraints.collapse(state, cast(theory_), walked,
-								Array.ofAll(only.getPattern().map(Optional::get))));
+								Array.ofAll(only.getCells().map(Term::get))));
 			}
 			return discharge(live, walked);
 		}
@@ -161,7 +160,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		// the rows' cross-column ⊗ structure, a richer lattice not yet earned
 		return Verdict.update((state, theory_) ->
 				TableConstraints.narrowPatterns(state, cast(theory_), walked,
-						live.stream().map(Row::getPattern).collect(Collectors.toList())));
+						live.stream().map(Row::getCells).collect(Collectors.toList())));
 	}
 
 	private static boolean isUnconditional(Row only) {
@@ -169,7 +168,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	}
 
 	private static boolean isGround(Row only) {
-		return only.getPattern().forAll(Optional::isPresent);
+		return only.getCells().forAll(cell -> cell.asVal().isDefined());
 	}
 
 	private static boolean isAnyRowUnconditional(List<Row> live) {
@@ -178,9 +177,9 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	private static List<Row> extractRows(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension, Theory<TableConstraints> theory) {
 		return extension.order.toJavaStream()
-				.flatMap(image -> Stream.of(Answers.pattern(image))
-						.filter(pattern -> compatible(theory, walked, pattern))
-						.map(pattern -> new Row(image, pattern, extension.members.get(image).get())))
+				.flatMap(image -> Stream.of(Answers.positions(image))
+						.filter(cells -> compatible(theory, walked, cells))
+						.map(cells -> new Row(image, cells, extension.members.get(image).get())))
 				.collect(Collectors.toList());
 	}
 
@@ -207,11 +206,11 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * cell against a free column must survive that column's live support.
 	 */
 	private static boolean compatible(Theory<TableConstraints> theory, Array<Term<?>> walked,
-			IndexedSeq<Optional<Object>> pattern) {
+			IndexedSeq<Term<Object>> cells) {
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
-			Optional<Object> cell = pattern.get(i);
-			if (!cell.isPresent()) {
+			Term<Object> cell = cells.get(i);
+			if (!cell.asVal().isDefined()) {
 				continue;
 			}
 			if (w.asVal().isDefined()) {

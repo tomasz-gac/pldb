@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
@@ -221,12 +220,13 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * a retraction.
 	 */
 	static Update narrowPatterns(Package state, Theory<TableConstraints> theory,
-			Array<Term<?>> walked, List<IndexedSeq<Optional<Object>>> candidates) {
+			Array<Term<?>> walked, List<IndexedSeq<Term<Object>>> candidates) {
 		return narrow(state, theory, walked,
 				candidates.stream()
-						.map(c -> Array.ofAll(c.map(cell -> cell.orElse(FREE_CELL))))
+						.map(c -> Array.ofAll(c.map(cell ->
+								cell.asVal().isDefined() ? cell.get() : FREE_CELL)))
 						.collect(Collectors.toList()),
-				column -> candidates.stream().anyMatch(c -> !c.get(column).isPresent()));
+				column -> candidates.stream().anyMatch(c -> !c.get(column).asVal().isDefined()));
 	}
 
 	/** A free candidate cell's placeholder — never stored, columns holding one are skipped. */
