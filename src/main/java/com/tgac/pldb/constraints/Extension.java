@@ -5,6 +5,7 @@ package com.tgac.pldb.constraints;
 
 import static com.tgac.logic.unification.LVal.lval;
 
+import com.tgac.functional.Exceptions;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.lattice.Update;
@@ -19,12 +20,12 @@ import com.tgac.pldb.relations.Answers;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import lombok.Value;
 
 /**
@@ -49,24 +50,21 @@ final class Extension {
 
 	/** Answers ⊕-folded per row: duplicate derivations factor by distributivity. */
 	static JoinMap<Reified<?>, Condition> fold(Iterable<Tuple2<Reified<?>, Condition>> answers) {
-		JoinMap<Reified<?>, Condition> folded = JoinMap.empty(Condition.RING);
-		for (Tuple2<Reified<?>, Condition> answer : answers) {
-			folded = folded.append(answer._1, answer._2).getOrElse(folded);
-		}
-		return folded;
+		return StreamSupport.stream(answers.spliterator(), false)
+				.reduce(JoinMap.empty(Condition.RING),
+						(l, r) -> r.apply(l::append).getOrElse(l),
+						Exceptions.throwingBiOp(UnsupportedOperationException::new));
 	}
 
 	/** The disjuncts compatible with the walked tuple, in arrival order. */
 	static List<Row> live(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension,
 			Theory<TableConstraints> theory) {
-		List<Row> live = new ArrayList<>();
-		for (Reified<?> image : extension.order) {
-			IndexedSeq<Term<Object>> cells = Answers.positions(image);
-			if (compatible(theory, walked, cells)) {
-				live.add(new Row(image, cells, extension.members.get(image).get()));
-			}
-		}
-		return live;
+		return extension.order.toJavaStream()
+				.flatMap(image -> Stream.of(image)
+						.map(Answers::positions)
+						.filter(cells -> compatible(theory, walked, cells))
+						.map(cells -> new Row(image, cells, extension.members.get(image).get())))
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -144,7 +142,7 @@ final class Extension {
 	private static boolean entailed(Row row, Array<Term<?>> walked) {
 		return isUnconditional(row)
 				&& IntStream.range(0, walked.size())
-						.allMatch(position -> imposesNothingAt(row, walked, position));
+				.allMatch(position -> imposesNothingAt(row, walked, position));
 	}
 
 	/** A ground cell must already match; a free cell's couplings must already agree. */
@@ -174,8 +172,7 @@ final class Extension {
 	 * here — keeping a falsely compatible row only under-filters), a ground
 	 * cell against a free column must survive that column's live support.
 	 */
-	private static boolean compatible(Theory<TableConstraints> theory, Array<Term<?>> walked,
-			IndexedSeq<Term<Object>> cells) {
+	private static boolean compatible(Theory<TableConstraints> theory, Array<Term<?>> walked, IndexedSeq<Term<Object>> cells) {
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
 			Term<Object> cell = cells.get(i);
