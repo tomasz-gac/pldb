@@ -135,10 +135,10 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		if (live.isEmpty()) {
 			return Verdict.fail();
 		}
+		if (live.stream().anyMatch(row -> entailed(row, walked))) {
+			return Verdict.subsumed();
+		}
 		if (walked.forAll(w -> w.asVal().isDefined())) {
-			if (isAnyRowUnconditional(live)) {
-				return Verdict.subsumed();
-			}
 			return discharge(live, walked);
 		}
 		if (live.size() == 1) {
@@ -171,8 +171,34 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		return only.getCells().forAll(cell -> cell.asVal().isDefined());
 	}
 
-	private static boolean isAnyRowUnconditional(List<Row> live) {
-		return live.stream().anyMatch(TableParkingPropagator::isUnconditional);
+	/**
+	 * An ENTAILED row discharges the constraint whole: its disjunct is 1
+	 * under the current state and 1 ⊕ a = 1 — absorption, the disjunctive
+	 * store's discharge doctrine in its new home. Entailed = condition ONE
+	 * and a binding half that would impose nothing: every cell an Any
+	 * (coupled ones only where the walked terms already agree) or equal to
+	 * the walked ground value.
+	 */
+	private static boolean entailed(Row row, Array<Term<?>> walked) {
+		if (!isUnconditional(row)) {
+			return false;
+		}
+		for (int i = 0; i < walked.size(); i++) {
+			Term<Object> cell = row.getCells().get(i);
+			Term<?> w = walked.get(i);
+			if (cell.asVal().isDefined()) {
+				if (!w.asVal().isDefined() || !cell.get().equals(w.get())) {
+					return false;
+				}
+				continue;
+			}
+			for (int j = 0; j < i; j++) {
+				if (row.getCells().get(j).equals(cell) && !walked.get(j).equals(w)) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	private static List<Row> extractRows(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension, Theory<TableConstraints> theory) {

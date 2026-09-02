@@ -149,6 +149,38 @@ public class TableParkingPropagatorTest {
 	}
 
 	@Test
+	public void aCoupledRowRefusesMismatchedGroundArgs() {
+		// the body couples the columns: the one entry is (Any₀, Any₀) — the
+		// diagonal, not the plane. A ground post off the diagonal must fail;
+		// on it, discharge — never subsumed on the uncoupled shadow
+		Relations._2<String, String> pair = Relations.relation("pair",
+				Property.of("l"), Property.of("r"));
+		Relations._2<String, String>.Derived diagonal =
+				pair.solving((l, rr) -> l.unifies(rr));
+		assertThat(answers(diagonal.posted(lval("v"), lval("v")), lvar())).containsExactly("_.0");
+		assertThat(answers(diagonal.posted(lval("v"), lval("w")), lvar())).isEmpty();
+		// and through a sealed WIDE entry: the coupling rides the replay —
+		// consume's unification filter kills the off-diagonal delivery
+		Relations._2<String, String>.Derived replayed =
+				pair.solving((l, rr) -> l.unifies(rr));
+		assertThat(answers(replayed.posted(lvar(), lvar()), lvar())).containsExactly("_.0");
+		assertThat(answers(replayed.posted(lval("v"), lval("w")), lvar())).isEmpty();
+		assertThat(answers(replayed.posted(lval("v"), lval("v")), lvar())).containsExactly("_.0");
+	}
+
+	@Test
+	public void anEntailedRowDischargesTheAlternatives() {
+		// one wide row at ONE entails every tuple: the disjunct absorbs the
+		// whole ⊕ (1 ⊕ a = 1), so the constraint dissolves — alternatives
+		// and all — instead of parking on the choice between two rows
+		Relations._2<Integer, String>.Derived tautology =
+				r.solving((i, t) -> Goal.success().or(i.unifies(1).and(t.unifies("b"))));
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+		assertThat(answers(tautology.posted(x, y), lvar())).containsExactly("_.0");
+	}
+
+	@Test
 	public void anAnyColumnProjectsToTopAndStoresNoSupport() {
 		// two live entries, one leaving the tag free: the tag column projects
 		// to TOP — no support may be stored, or values the Any-row admits
