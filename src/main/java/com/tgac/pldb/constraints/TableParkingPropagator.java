@@ -48,9 +48,11 @@ import lombok.Value;
  * condition cannot be dropped because it is not separable. Verdicts:
  * <ul>
  * <li>no live entries — fail;</li>
+ * <li>some live row ENTAILED (condition {@code ONE}, binding half imposing
+ * nothing) — its disjunct is 1 and 1 ⊕ a = 1: subsumed, the alternatives
+ * dissolve with the constraint;</li>
  * <li>all watched terms ground — the residual is the ⊕ of the subsuming
- * entries' conditions: a {@code ONE} among them subsumes outright, anything
- * else discharges as a conde of per-conjunct restates;</li>
+ * entries' conditions, discharged as a conde of per-conjunct restates;</li>
  * <li>one live entry — a ground row at {@code ONE} collapses to inferred
  * bindings (the sync kind's move); any other entry discharges by
  * restate;</li>
