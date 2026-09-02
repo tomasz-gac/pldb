@@ -134,6 +134,15 @@ public final class TabledSource implements AnswerProducer {
 		return backend.isDefined() ? backend.get().id() : AnswerProducer.super.id();
 	}
 
+	/**
+	 * The owned table: sealed entries as portable values, what a memo store
+	 * marshals and a warm start reconstructs. Validity over time is the
+	 * pins' job, not the table's.
+	 */
+	public Table table() {
+		return table;
+	}
+
 	/** The probe translated to the tabled relation's key: same image, same region, its token. */
 	private TableEntry<Object> sealedFor(Call<Relation> probe) {
 		return table.findSealedSubsumer(
