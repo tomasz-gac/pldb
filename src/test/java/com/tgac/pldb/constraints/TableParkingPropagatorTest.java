@@ -8,17 +8,30 @@ import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tgac.functional.category.Nothing;
+import com.tgac.functional.fibers.Fiber;
+import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.Database;
 import com.tgac.pldb.ImmutableDatabase;
+import com.tgac.pldb.TabledSource;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
+import io.vavr.Tuple2;
+import io.vavr.collection.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -224,6 +237,28 @@ public class TableParkingPropagatorTest {
 		Unifiable<String> y = lvar();
 		assertThat(answers(guarded.posted(lvar(), y), y))
 				.containsExactly("_.0 : ¬(_.0 ≡ {q})", "{a}");
+	}
+
+	@Test
+	public void aSyncSourceShippingConditionsImposesAtCommit() {
+		// the kinds are symmetric: a hand-rolled SYNC source serving a
+		// conditional answer is consumed like the parking kind's — imposed
+		// at commit, never refused. The answer is manufactured by draining
+		// a derived produce once and canning the emission
+		TabledSource producing = TabledSource.solving(args ->
+				exclude(((Unifiable<Object>) args.get(0)).unifies(2)));
+		Call<Relation> wide = Call.of(r, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+		List<Tuple2<Reified<?>, Condition>> canned = new ArrayList<>();
+		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {
+			canned.add(answer);
+			return Fiber.done(Nothing.nothing());
+		})).get();
+		AnswerSource sync = probe -> canned;
+		Unifiable<Integer> x = lvar();
+		assertThat(answers(r.posted(sync, x, lvar()), x))
+				.containsExactly("_.0 : ¬(_.0 ≡ {2})");
+		assertThat(answers(r.posted(sync, lval(2), lval("q")), lvar())).isEmpty();
+		assertThat(answers(r.posted(sync, lval(1), lval("q")), lvar())).containsExactly("_.0");
 	}
 
 	@Test

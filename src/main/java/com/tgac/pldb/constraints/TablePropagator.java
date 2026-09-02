@@ -8,24 +8,22 @@ import static com.tgac.logic.unification.LVal.lval;
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.constraints.Propagation;
+import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
-import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,24 +48,15 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		List<Array<Object>> candidates =
-				candidates(pkg, Constraint.in(pkg, TableConstraints.class).get().getTheory(), walked);
-		if (candidates.isEmpty()) {
-			return Verdict.fail();
-		}
-		if (walked.forAll(w -> w.asVal().isDefined())) {
-			return Verdict.subsumed();
-		}
-		if (candidates.size() == 1) {
-			Array<Object> row = candidates.get(0);
-			return Verdict.update((state, theory) ->
-					TableConstraints.collapse(state, (Theory<TableConstraints>) theory, walked, row));
-		}
-		return Verdict.update((state, theory) ->
-				TableConstraints.narrow(state, (Theory<TableConstraints>) theory, walked, candidates));
+		List<Extension.Row> live = Extension.live(walked,
+				Extension.fold(source.answers(probe(pkg, walked))), theory(pkg));
+		return Extension.verdict(walked, live, theory -> theory.without(this));
+	}
+
+	private static Theory<TableConstraints> theory(Package pkg) {
+		return Constraint.in(pkg, TableConstraints.class).get().getTheory();
 	}
 
 	@Override
@@ -101,9 +90,10 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	}
 
 	/**
-	 * Branch over the record's LIVE candidate rows, binding every free column —
-	 * exactly the rows, never a cartesian product of columns. All-ground is a
-	 * no-op: the record verifies itself through the ordinary wake.
+	 * Branch over the record's LIVE disjuncts — each branch restates its row
+	 * whole and RE-WAKES the record so the verdict that follows discharges
+	 * it. Exactly the rows, never a cartesian product of columns. All-ground
+	 * is a no-op: the record verifies itself through the ordinary wake.
 	 */
 	Goal enumerate(Array<? extends Term<?>> watched) {
 		return s -> {
@@ -111,29 +101,14 @@ final class TablePropagator extends Propagator<TableConstraints> {
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				return Cont.just(s);
 			}
-			return candidates(s, Constraint.in(s, TableConstraints.class).get().getTheory(), walked).stream()
-					.map(row -> rowGoal(walked, row))
+			List<Extension.Row> live = Extension.live(walked,
+					Extension.fold(source.answers(probe(s, walked))), theory(s));
+			return Extension.branchRestates(live, walked)
+					.map(branch -> (Goal) Conjunction.of(branch, Propagation.activate(this)))
 					.reduce(Goal::or)
 					.orElseGet(Goal::failure)
 					.apply(s);
 		};
-	}
-
-	private static Goal rowGoal(Array<Term<?>> walked, Array<Object> row) {
-		Goal goal = Goal.success();
-		for (int i = 0; i < walked.size(); i++) {
-			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined()) {
-				continue;
-			}
-			goal = goal.and(unifyWith(w, row.get(i)));
-		}
-		return goal;
-	}
-
-	@SuppressWarnings("unchecked")
-	private static Goal unifyWith(Term<?> w, Object value) {
-		return ((LVar<Object>) w.asVar().get()).unifies(value);
 	}
 
 	/**
@@ -150,26 +125,6 @@ final class TablePropagator extends Propagator<TableConstraints> {
 		return source.estimate(Call.of(rel, image));
 	}
 
-	/** The source probe under the current bindings, filtered by live supports. */
-	private List<Array<Object>> candidates(Package pkg, Theory<TableConstraints> theory,
-			Array<Term<?>> walked) {
-		Call<Relation> probe = probe(pkg, walked);
-		List<Array<Object>> candidates = new ArrayList<>();
-		for (Tuple2<Reified<?>, Condition> answer : source.answers(probe)) {
-			if (!Condition.ONE.equals(answer._2)) {
-				// GAC over conditional candidates is open research: skipping
-				// would under-deliver (a wrongly failing record), so refuse
-				throw new IllegalStateException(
-						"conditional answers are not yet consumed by the posted table: " + answer);
-			}
-			Array<Object> row = Answers.values(answer._1);
-			if (admitted(theory, walked, row)) {
-				candidates.add(row);
-			}
-		}
-		return candidates;
-	}
-
 	/** The probe as the call key, minted at the one reification site. */
 	private Call<Relation> probe(Package pkg, Array<Term<?>> walked) {
 		Tuple2<Reified<?>, Residues> key = Residues.about(pkg,
@@ -178,22 +133,4 @@ final class TablePropagator extends Propagator<TableConstraints> {
 		return Call.of(rel, key._1, key._2);
 	}
 
-	/** Does the row survive every free column's live support? */
-	private static boolean admitted(Theory<TableConstraints> theory, Array<Term<?>> walked,
-			Array<Object> row) {
-		for (int i = 0; i < walked.size(); i++) {
-			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined()) {
-				continue;
-			}
-			Object cell = row.get(i);
-			boolean excluded = TableConstraints.empty().getValue(theory, w)
-					.map(support -> !support.admits(cell))
-					.getOrElse(false);
-			if (excluded) {
-				return false;
-			}
-		}
-		return true;
-	}
 }

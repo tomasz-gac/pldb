@@ -1,0 +1,205 @@
+package com.tgac.pldb.constraints;
+
+// ABOUTME: The posted table's extension read as its algebra: rows ⊕-folded with their
+// ABOUTME: conditions, filtered live, and answered with the shared verdict ladder.
+
+import static com.tgac.logic.unification.LVal.lval;
+
+import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.goals.Goal;
+import com.tgac.logic.lattice.Update;
+import com.tgac.logic.lattice.Verdict;
+import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.tabling.JoinMap;
+import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.unification.Reified;
+import com.tgac.logic.unification.Term;
+import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answers;
+import io.vavr.Tuple2;
+import io.vavr.collection.Array;
+import io.vavr.collection.IndexedSeq;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import lombok.Value;
+
+/**
+ * The shared half of both posted-table kinds: the extension {(rᵢ, Cᵢ)} as
+ * the Condition ⊕ᵢ (t=rᵢ ⊗ Cᵢ), folded per row, filtered by unification
+ * compatibility, and read off as the verdict ladder. The kinds differ only
+ * in how the extension arrives — a sync enumeration, or a produce drained
+ * to the seal — and in how their grounding goals re-wake the record.
+ */
+final class Extension {
+
+	private Extension() {
+	}
+
+	/** One live disjunct: the row's image, its cells in Term vocabulary, its ⊕-folded condition. */
+	@Value
+	static class Row {
+		Reified<?> image;
+		IndexedSeq<Term<Object>> cells;
+		Condition condition;
+	}
+
+	/** Answers ⊕-folded per row: duplicate derivations factor by distributivity. */
+	static JoinMap<Reified<?>, Condition> fold(Iterable<Tuple2<Reified<?>, Condition>> answers) {
+		JoinMap<Reified<?>, Condition> folded = JoinMap.empty(Condition.RING);
+		for (Tuple2<Reified<?>, Condition> answer : answers) {
+			folded = folded.append(answer._1, answer._2).getOrElse(folded);
+		}
+		return folded;
+	}
+
+	/** The disjuncts compatible with the walked tuple, in arrival order. */
+	static List<Row> live(Array<Term<?>> walked, JoinMap<Reified<?>, Condition> extension,
+			Theory<TableConstraints> theory) {
+		List<Row> live = new ArrayList<>();
+		for (Reified<?> image : extension.order) {
+			IndexedSeq<Term<Object>> cells = Answers.positions(image);
+			if (compatible(theory, walked, cells)) {
+				live.add(new Row(image, cells, extension.members.get(image).get()));
+			}
+		}
+		return live;
+	}
+
+	/**
+	 * The verdict ladder over the live disjuncts; {@code retire} is how a
+	 * committing verdict removes the asking record from its theory.
+	 */
+	static Verdict verdict(Array<Term<?>> walked, List<Row> live,
+			UnaryOperator<Theory<TableConstraints>> retire) {
+		if (live.isEmpty()) {
+			return Verdict.fail();
+		}
+		if (live.stream().anyMatch(row -> entailed(row, walked))) {
+			return Verdict.subsumed();
+		}
+		if (walked.forAll(w -> w.asVal().isDefined())) {
+			return discharge(live, walked, retire);
+		}
+		if (live.size() == 1) {
+			Row only = live.get(0);
+			if (isUnconditional(only) && isGround(only)) {
+				return Verdict.update((state, theory) ->
+						TableConstraints.collapse(state, cast(theory), walked,
+								Array.ofAll(only.getCells().map(Term::get))));
+			}
+			return discharge(live, walked, retire);
+		}
+		// the projection reads every condition as TRUE — its sound side. A
+		// value pruned here has no supporting row even conditionally, and a
+		// singleton binds because EVERY disjunct agrees on it, whatever its
+		// condition holds. Nothing is dropped from the constraint: narrow
+		// does not commit, the conditions stay in the extension and take
+		// full effect at the committing restates. Supports stay plain value
+		// sets — ⊕-annotating them per column would still approximate away
+		// the rows' cross-column ⊗ structure, a richer lattice not yet earned
+		return Verdict.update((state, theory) ->
+				TableConstraints.narrowPatterns(state, cast(theory), walked,
+						live.stream().map(Row::getCells).collect(Collectors.toList())));
+	}
+
+	/**
+	 * The committing verdict: the constraint dissolves into the ⊕ of its live
+	 * disjuncts, imposed — one branch per (entry, conjunct), each the same
+	 * restate delivery uses, spliced into the run lane after quiescence.
+	 */
+	static Verdict discharge(List<Row> live, Array<Term<?>> walked,
+			UnaryOperator<Theory<TableConstraints>> retire) {
+		Goal body = branchRestates(live, walked)
+				.reduce(Goal::or)
+				.orElseGet(Goal::failure);
+		return Verdict.update((state, theory) ->
+				Update.applied(retire.apply(cast(theory))).withRun(body));
+	}
+
+	/** One goal per (entry, conjunct): the row restated whole at the walked anchor. */
+	static Stream<Goal> branchRestates(List<Row> live, Array<Term<?>> walked) {
+		Unifiable<?> anchor = lval(walked.map(Term::getObjectTerm));
+		return live.stream()
+				.flatMap(row -> row.getCondition().conjuncts().toJavaStream()
+						.map(conjunct -> Residues.restate(row.getImage(), conjunct, anchor)));
+	}
+
+	private static boolean isUnconditional(Row only) {
+		return Condition.ONE.equals(only.getCondition());
+	}
+
+	private static boolean isGround(Row only) {
+		return only.getCells().forAll(cell -> cell.asVal().isDefined());
+	}
+
+	/**
+	 * An ENTAILED row discharges the constraint whole: its disjunct is 1
+	 * under the current state and 1 ⊕ a = 1 — absorption, the disjunctive
+	 * store's discharge doctrine in its new home.
+	 */
+	private static boolean entailed(Row row, Array<Term<?>> walked) {
+		return isUnconditional(row)
+				&& IntStream.range(0, walked.size())
+						.allMatch(position -> imposesNothingAt(row, walked, position));
+	}
+
+	/** A ground cell must already match; a free cell's couplings must already agree. */
+	private static boolean imposesNothingAt(Row row, Array<Term<?>> walked, int position) {
+		Term<Object> cell = row.getCells().get(position);
+		return cell.asVal().isDefined() ?
+				alreadyMatches(cell, walked.get(position)) :
+				couplingsAlreadyAgree(row, walked, position);
+	}
+
+	/** The walked term holds this very value — unifying them would bind nothing. */
+	private static boolean alreadyMatches(Term<Object> cell, Term<?> walked) {
+		return walked.asVal().isDefined() && cell.get().equals(walked.get());
+	}
+
+	/** Every earlier cell holding the SAME any already walks equal — the coupling is spent. */
+	private static boolean couplingsAlreadyAgree(Row row, Array<Term<?>> walked, int position) {
+		Term<Object> cell = row.getCells().get(position);
+		return IntStream.range(0, position)
+				.filter(earlier -> row.getCells().get(earlier).equals(cell))
+				.allMatch(earlier -> walked.get(earlier).equals(walked.get(position)));
+	}
+
+	/**
+	 * Unification compatibility with the walked tuple: a free cell admits
+	 * everything (couplings are enforced by the restate at commit, not
+	 * here — keeping a falsely compatible row only under-filters), a ground
+	 * cell against a free column must survive that column's live support.
+	 */
+	private static boolean compatible(Theory<TableConstraints> theory, Array<Term<?>> walked,
+			IndexedSeq<Term<Object>> cells) {
+		for (int i = 0; i < walked.size(); i++) {
+			Term<?> w = walked.get(i);
+			Term<Object> cell = cells.get(i);
+			if (!cell.asVal().isDefined()) {
+				continue;
+			}
+			if (w.asVal().isDefined()) {
+				if (!cell.get().equals(w.get())) {
+					return false;
+				}
+				continue;
+			}
+			boolean excluded = TableConstraints.empty().getValue(theory, w)
+					.map(support -> !support.admits(cell.get()))
+					.getOrElse(false);
+			if (excluded) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Theory<TableConstraints> cast(Theory<?> theory) {
+		return (Theory<TableConstraints>) theory;
+	}
+}
