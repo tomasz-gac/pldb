@@ -1,10 +1,10 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 import com.tgac.functional.Streams;
 import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.LVar;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.events.ChangeType;
-import com.tgac.pldb.events.FactsChanged;
+import com.tgac.pldb.inmemory.events.ChangeType;
+import com.tgac.pldb.inmemory.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;

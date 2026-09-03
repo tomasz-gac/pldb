@@ -1,7 +1,8 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;

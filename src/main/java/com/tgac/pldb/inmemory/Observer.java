@@ -1,7 +1,7 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 import java.util.function.BiConsumer;
-import com.tgac.pldb.events.ChangeType;
-import com.tgac.pldb.events.FactsChanged;
+import com.tgac.pldb.inmemory.events.ChangeType;
+import com.tgac.pldb.inmemory.events.FactsChanged;
 import com.tgac.pldb.relations.Relation;
 
 import java.util.stream.Collectors;

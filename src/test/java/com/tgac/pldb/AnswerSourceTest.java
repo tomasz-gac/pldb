@@ -7,6 +7,8 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.inmemory.Database;
+import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;
 import java.util.Arrays;

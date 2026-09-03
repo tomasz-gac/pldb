@@ -1,4 +1,4 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 public enum TriggerExecution {
 	BEFORE, AFTER;
 }

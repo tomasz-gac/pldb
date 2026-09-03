@@ -1,9 +1,9 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 
 import com.tgac.functional.Exceptions;
 import io.vavr.Function2;
-import com.tgac.pldb.events.ChangeType;
-import com.tgac.pldb.events.FactsChanged;
+import com.tgac.pldb.inmemory.events.ChangeType;
+import com.tgac.pldb.inmemory.events.FactsChanged;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;

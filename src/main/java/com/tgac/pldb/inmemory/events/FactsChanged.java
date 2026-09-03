@@ -1,4 +1,4 @@
-package com.tgac.pldb.events;
+package com.tgac.pldb.inmemory.events;
 import com.tgac.pldb.relations.Fact;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;

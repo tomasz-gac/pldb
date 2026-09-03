@@ -1,4 +1,4 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 
 import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import static com.tgac.logic.goals.Goal.condu;

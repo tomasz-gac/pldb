@@ -20,6 +20,8 @@ import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.inmemory.Database;
+import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.RelationN;

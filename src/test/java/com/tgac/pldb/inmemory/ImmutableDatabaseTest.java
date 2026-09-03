@@ -1,4 +1,4 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 
 import static com.tgac.logic.goals.Goal.condu;
 import static com.tgac.logic.goals.Goal.defer;

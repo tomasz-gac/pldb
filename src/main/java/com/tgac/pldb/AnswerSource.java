@@ -22,7 +22,7 @@ import io.vavr.Tuple2;
  * language), and ignoring it, wholly or per family, is always correct:
  * a source may only ever OVER-deliver for its probe, never under-deliver;
  * narrowing the source did not apply stays local, enforced by propagation
- * over the returned rows. {@link Database} is the in-memory reference.
+ * over the returned rows.
  */
 public interface AnswerSource {
 

@@ -24,7 +24,7 @@ import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.ImmutableDatabase;
+import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relations;

@@ -1,4 +1,4 @@
-package com.tgac.pldb;
+package com.tgac.pldb.inmemory;
 import com.tgac.functional.Exceptions;
 import com.tgac.functional.index.ImmutableIndex;
 import com.tgac.functional.index.Index;
