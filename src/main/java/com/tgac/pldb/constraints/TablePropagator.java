@@ -125,12 +125,20 @@ final class TablePropagator extends Propagator<TableConstraints> {
 		return source.estimate(Call.of(rel, image));
 	}
 
-	/** The probe as the call key, minted at the one reification site. */
+	/**
+	 * The probe as the call key, minted at the one reification site — WITHOUT
+	 * the asker's own family, the same rule as the parking kind: the posted
+	 * table IS the question, and its per-wake transcription in the key
+	 * fragments the coverage ledger (a wide call recorded at the free state
+	 * cannot prove it covers a ground re-wake). FD domains and nogoods stay:
+	 * the question's honest context, and the pushdown's material.
+	 */
 	private Call<Relation> probe(Package pkg, Array<Term<?>> walked) {
 		Tuple2<Reified<?>, Residues> key = Residues.about(pkg,
 						lval(walked.map(Term::getObjectTerm)))
 				.ground();
-		return Call.of(rel, key._1, key._2);
+		return Call.of(rel, key._1,
+				Residues.of(key._2.getTheories().remove(TableConstraints.class)));
 	}
 
 }

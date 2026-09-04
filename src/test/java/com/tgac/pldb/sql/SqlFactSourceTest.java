@@ -104,6 +104,26 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
+	public void aPostedRecordGroundsFromTheLandedPoolWithoutAFetch() {
+		// the wide fetch lands the whole relation; enforce's row-wise
+		// re-wakes probe GROUND patterns the ledger must prove covered —
+		// one round trip for the entire posted solve, never per-row
+		// existence checks
+		try (SqlFactSource source = source()) {
+			Unifiable<String> out = lvar();
+			assertThat(person.posted(source, lvar(), out)
+					.solve(out)
+					.map(Object::toString)
+					.sorted()
+					.collect(Collectors.toList()))
+					.hasSize(3);
+			assertThat(statements.get())
+					.describedAs("the sealed pool serves the ground re-wakes")
+					.isEqualTo(1);
+		}
+	}
+
+	@Test
 	public void aSubsumedProbeIsServedFromTheLandedPoolWithoutAFetch() {
 		try (SqlFactSource source = source()) {
 			solvedNames(source);                       // the wide fetch: nothing bound
