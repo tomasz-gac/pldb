@@ -17,6 +17,7 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
+import lombok.extern.slf4j.Slf4j;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.sql.Connection;
@@ -40,6 +41,7 @@ import java.util.Optional;
  * barrier. Package-private: callers compose through {@link SqlFactSource}
  * — the caching is not optional equipment.
  */
+@Slf4j
 final class SqlFetch implements AnswerSource {
 
 	private final String id;
@@ -159,6 +161,11 @@ final class SqlFetch implements AnswerSource {
 			}
 		}
 		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns, predicates);
+		if (log.isDebugEnabled()) {
+			List<Object> parameters = new ArrayList<>(boundValues);
+			predicates.forEach(predicate -> predicate.getParameters().forEach(parameters::add));
+			log.debug("{}: {} ← {}", id, sql, parameters);
+		}
 		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
 			int index = 1;
 			for (Object bound : boundValues) {
