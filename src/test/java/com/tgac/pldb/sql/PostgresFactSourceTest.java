@@ -15,16 +15,21 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -54,15 +59,17 @@ public class PostgresFactSourceTest {
 	private static final Relations._2<Integer, Integer> edge =
 			Relations.relation("edge", src.indexed(), dst.indexed());
 
+	private static final List<Fact> facts = Arrays.asList(
+			person.fact(1, "Ada"),
+			person.fact(2, "Alan"),
+			person.fact(3, "Kurt"),
+			edge.fact(1, 2),
+			edge.fact(1, 3),
+			edge.fact(2, 4),
+			edge.fact(3, 4));
+
 	private static final Database reference = ImmutableDatabase.empty()
-			.withFacts(Arrays.asList(
-					person.fact(1, "Ada"),
-					person.fact(2, "Alan"),
-					person.fact(3, "Kurt"),
-					edge.fact(1, 2),
-					edge.fact(1, 3),
-					edge.fact(2, 4),
-					edge.fact(3, 4)))
+			.withFacts(facts)
 			.get();
 
 	private static PostgreSQLContainer<?> postgres;
@@ -89,15 +96,68 @@ public class PostgresFactSourceTest {
 	public void loadPostgres() throws SQLException {
 		connection = DriverManager.getConnection(
 				postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
-		try (Statement ddl = connection.createStatement()) {
-			ddl.execute("DROP TABLE IF EXISTS person");
-			ddl.execute("DROP TABLE IF EXISTS edge");
-			ddl.execute("CREATE TABLE person(id INT NOT NULL, name VARCHAR(64) NOT NULL)");
-			ddl.execute("CREATE TABLE edge(src INT NOT NULL, dst INT NOT NULL)");
-			ddl.execute("INSERT INTO person VALUES (1, 'Ada'), (2, 'Alan'), (3, 'Kurt')");
-			ddl.execute("INSERT INTO edge VALUES (1, 2), (1, 3), (2, 4), (3, 4)");
-		}
+		push(connection, facts);
 		source = SqlFactSource.pinned("pg", connection);
+	}
+
+	/**
+	 * The reference facts pushed into the backend by the naming convention
+	 * the adapter reads by: the relation's name is the table, its property
+	 * names the columns, column types inferred from the values. One fact
+	 * list feeds both worlds — the proof compares backings, not fixtures.
+	 */
+	private static void push(Connection connection, List<Fact> facts) throws SQLException {
+		Map<Relation, List<Fact>> byRelation = facts.stream()
+				.collect(Collectors.groupingBy(Fact::getRelation,
+						LinkedHashMap::new, Collectors.toList()));
+		try (Statement ddl = connection.createStatement()) {
+			for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
+				ddl.execute("DROP TABLE IF EXISTS " + table.getKey().getName());
+				ddl.execute(createTable(table.getKey(), table.getValue().get(0)));
+			}
+		}
+		for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
+			String placeholders = table.getValue().get(0).getValues().toJavaStream()
+					.map(v -> "?")
+					.collect(Collectors.joining(", "));
+			try (PreparedStatement insert = connection.prepareStatement(
+					"INSERT INTO " + table.getKey().getName() + " VALUES (" + placeholders + ")")) {
+				for (Fact fact : table.getValue()) {
+					int column = 1;
+					for (Object value : fact.getValues()) {
+						insert.setObject(column++, value);
+					}
+					insert.addBatch();
+				}
+				insert.executeBatch();
+			}
+		}
+	}
+
+	private static String createTable(Relation relation, Fact sample) {
+		Property<?>[] columns = relation.getArgs();
+		StringBuilder ddl = new StringBuilder("CREATE TABLE ")
+				.append(relation.getName()).append("(");
+		for (int i = 0; i < columns.length; i++) {
+			ddl.append(i == 0 ? "" : ", ")
+					.append(columns[i].getName())
+					.append(" ").append(sqlType(sample.getValues().get(i)))
+					.append(" NOT NULL");
+		}
+		return ddl.append(")").toString();
+	}
+
+	private static String sqlType(Object value) {
+		if (value instanceof Integer) {
+			return "INT";
+		}
+		if (value instanceof Long) {
+			return "BIGINT";
+		}
+		if (value instanceof String) {
+			return "VARCHAR(64)";
+		}
+		throw new IllegalArgumentException("no column type for " + value.getClass());
 	}
 
 	@After
