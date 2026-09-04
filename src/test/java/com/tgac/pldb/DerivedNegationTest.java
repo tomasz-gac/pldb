@@ -34,6 +34,9 @@ public class DerivedNegationTest {
 	private static final Relations._2<Integer, String> r =
 			Relations.relation("r", item, tag);
 
+	private static final Relations._1<Integer> s =
+			Relations.relation("s", item);
+
 	/** The exact answers for {@code out}, rendered and sorted. */
 	private static List<String> answers(Goal goal, Unifiable<?> out) {
 		return goal.solve(out)
@@ -126,5 +129,13 @@ public class DerivedNegationTest {
 		List<String> free = answers(exclude(p.posted(x, y)).and(y.unifies("a")), x);
 		assertThat(free).hasSize(1);
 		assertThat(free.get(0)).startsWith("_.0 : ");
+	}
+
+	@Test
+	public void negatedAnyIsUnconditionalFailure() {
+		Relations._1<Integer>.Derived p = s.solving((i) -> Goal.success());
+		Unifiable<Integer> x = lvar();
+		List<String> free = answers(exclude(p.posted(x)).and(x.unifies(2)), x);
+		assertThat(free).hasSize(0);
 	}
 }
