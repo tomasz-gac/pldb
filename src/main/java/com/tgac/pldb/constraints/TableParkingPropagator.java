@@ -15,26 +15,20 @@ import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.ParkingPropagator;
-import com.tgac.logic.lattice.Update;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
-import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
-import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import io.vavr.collection.IndexedSeq;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import lombok.Value;
 
 /**
  * The posted table over the ASYNC kind, read as its algebra: the constraint
@@ -74,18 +68,10 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 		this.rel = rel;
 	}
 
-	/** One live disjunct: the row's image, its cells in Term vocabulary, its ⊕-folded condition. */
-	@Value
-	private static class Row {
-		Reified<?> image;
-		IndexedSeq<Term<Object>> cells;
-		Condition condition;
-	}
-
 	@Override
 	public Fiber<Verdict> propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
-		return probe(pkg, walked)
+		return Extension.probe(pkg, rel, walked)
 				.flatMap(this::extension)
 				.map(extension -> Extension.verdict(walked,
 						Extension.live(walked, extension, theory(pkg)),
@@ -94,22 +80,6 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	private static Theory<TableConstraints> theory(Package pkg) {
 		return Constraint.in(pkg, TableConstraints.class).get().getTheory();
-	}
-
-	/**
-	 * The probe as the call key, minted at the one reification site — WITHOUT
-	 * the asker's own family. The question is "a region for (x,y)", and the
-	 * posted table IS that question: transcribed into its own probe it would
-	 * re-animate inside the producer's body and consume the entry mid-
-	 * production (a wait-for cycle through the seal). The supports are no
-	 * better a citizen: per-wake solver state in the key would fragment the
-	 * memo. FD domains and nogoods on the args are the question's honest
-	 * context and stay.
-	 */
-	private Fiber<Call<Relation>> probe(Package pkg, Array<Term<?>> walked) {
-		return Residues.about(pkg, lval(walked.map(Term::getObjectTerm)))
-				.map(key -> Call.of(rel, key._1,
-						Residues.of(key._2.getTheories().remove(TableConstraints.class))));
 	}
 
 	/**
@@ -144,7 +114,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				return Goal.success().apply(st).apply(k);
 			}
-			return probe(st, walked)
+			return Extension.probe(st, rel, walked)
 					.flatMap(this::extension)
 					.flatMap(extension ->
 							Extension.branchRestates(Extension.live(walked, extension, theory(st)), walked)

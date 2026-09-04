@@ -6,10 +6,13 @@ package com.tgac.pldb.constraints;
 import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.Exceptions;
+import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Update;
 import com.tgac.logic.lattice.Verdict;
+import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.tabling.Residues;
@@ -17,6 +20,7 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
@@ -38,6 +42,22 @@ import lombok.Value;
 final class Extension {
 
 	private Extension() {
+	}
+
+	/**
+	 * The probe as the call key, minted at the one reification site — WITHOUT
+	 * the asker's own family. The question is "a region for (x,y)", and the
+	 * posted table IS that question: transcribed into its own probe it would
+	 * re-animate inside the producer's body and consume the entry mid-
+	 * production (a wait-for cycle through the seal). The supports are no
+	 * better a citizen: per-wake solver state in the key would fragment the
+	 * memo. FD domains and nogoods on the args are the question's honest
+	 * context and stay.
+	 */
+	static Fiber<Call<Relation>> probe(Package pkg, Relation rel, Array<Term<?>> walked) {
+		return Residues.about(pkg, lval(walked.map(Term::getObjectTerm)))
+				.map(key -> Call.of(rel, key._1,
+						Residues.of(key._2.getTheories().remove(TableConstraints.class))));
 	}
 
 	/** One live disjunct: the row's image, its cells in Term vocabulary, its ⊕-folded condition. */

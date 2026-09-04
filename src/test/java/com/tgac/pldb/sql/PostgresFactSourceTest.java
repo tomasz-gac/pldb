@@ -176,7 +176,16 @@ public class PostgresFactSourceTest {
 				.collect(Collectors.toList());
 	}
 
-	/** The closure of edge over the given backing — a fresh derived relation per source. */
+	/**
+	 * The closure of edge over the given backing — a fresh derived relation
+	 * per source. Deliberately MIXED consumption: the base case must
+	 * ENUMERATE (exists — the generator's choices live in the search tree),
+	 * while the recursive conjunct rides posted as a GUARD — sound here
+	 * because self's delivery grounds z first and every recursive step has a
+	 * single successor, so the collapse fires and the guard discharges into
+	 * ground answers. On data whose recursive steps branch, the guard would
+	 * park and answers would go conditional.
+	 */
 	private static Relations._2<Integer, Integer>.Derived reach(AnswerSource backing) {
 		return Relations.relation("reachable", src, dst)
 				.solvingRecursive(self -> (x, y) ->
@@ -184,7 +193,7 @@ public class PostgresFactSourceTest {
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return self.apply(x, z)
-											.and(edge.exists(backing, z, y));
+											.and(edge.posted(backing, z, y));
 								})));
 	}
 
@@ -222,9 +231,9 @@ public class PostgresFactSourceTest {
 		Unifiable<Integer> pgTo = lvar();
 		Unifiable<Integer> memoryFrom = lvar();
 		Unifiable<Integer> memoryTo = lvar();
-		List<String> pg = answers(reach(source).exists(pgFrom, pgTo),
+		List<String> pg = answers(reach(source).posted(pgFrom, pgTo),
 				lval(Tuple.of(pgFrom, pgTo)));
-		List<String> memory = answers(reach(reference).exists(memoryFrom, memoryTo),
+		List<String> memory = answers(reach(reference).posted(memoryFrom, memoryTo),
 				lval(Tuple.of(memoryFrom, memoryTo)));
 		assertThat(pg).isNotEmpty().isEqualTo(memory);
 	}

@@ -6,23 +6,21 @@ package com.tgac.pldb.constraints;
 import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.monad.Cont;
+import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
-import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.goals.Conjunction;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.List;
 
@@ -51,7 +49,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	public Verdict propagate(Package pkg) {
 		Array<Term<?>> walked = watchedTerms().map(t -> (Term<?>) pkg.walk(t));
 		List<Extension.Row> live = Extension.live(walked,
-				Extension.fold(source.answers(probe(pkg, walked))), theory(pkg));
+				Extension.fold(source.answers(Extension.probe(pkg, rel, walked).ground())), theory(pkg));
 		return Extension.verdict(walked, live, theory -> theory.without(this));
 	}
 
@@ -102,7 +100,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 				return Cont.just(s);
 			}
 			List<Extension.Row> live = Extension.live(walked,
-					Extension.fold(source.answers(probe(s, walked))), theory(s));
+					Extension.fold(source.answers(Extension.probe(s, rel, walked).ground())), theory(s));
 			return Extension.branchRestates(live, walked)
 					.map(branch -> (Goal) Conjunction.of(branch, Propagation.activate(this)))
 					.reduce(Goal::or)
@@ -123,22 +121,6 @@ final class TablePropagator extends Propagator<TableConstraints> {
 						lval(walked.map(Term::getObjectTerm)).getObjectTerm())
 				.ground();
 		return source.estimate(Call.of(rel, image));
-	}
-
-	/**
-	 * The probe as the call key, minted at the one reification site — WITHOUT
-	 * the asker's own family, the same rule as the parking kind: the posted
-	 * table IS the question, and its per-wake transcription in the key
-	 * fragments the coverage ledger (a wide call recorded at the free state
-	 * cannot prove it covers a ground re-wake). FD domains and nogoods stay:
-	 * the question's honest context, and the pushdown's material.
-	 */
-	private Call<Relation> probe(Package pkg, Array<Term<?>> walked) {
-		Tuple2<Reified<?>, Residues> key = Residues.about(pkg,
-						lval(walked.map(Term::getObjectTerm)))
-				.ground();
-		return Call.of(rel, key._1,
-				Residues.of(key._2.getTheories().remove(TableConstraints.class)));
 	}
 
 }
