@@ -9,8 +9,6 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.Goal;
-import com.tgac.logic.tabling.Tabled;
-import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
@@ -120,8 +118,10 @@ public class PostgresFactSourceTest {
 			String placeholders = table.getValue().get(0).getValues().toJavaStream()
 					.map(v -> "?")
 					.collect(Collectors.joining(", "));
-			try (PreparedStatement insert = connection.prepareStatement(
-					"INSERT INTO " + table.getKey().getName() + " VALUES (" + placeholders + ")")) {
+			try (
+					PreparedStatement insert = connection.prepareStatement(
+							"INSERT INTO " + table.getKey().getName() + " VALUES (" + placeholders + ")")
+			) {
 				for (Fact fact : table.getValue()) {
 					int column = 1;
 					for (Object value : fact.getValues()) {
@@ -178,17 +178,14 @@ public class PostgresFactSourceTest {
 
 	/** The closure of edge over the given backing — a fresh derived relation per source. */
 	private static Relations._2<Integer, Integer>.Derived reach(AnswerSource backing) {
-		Relations._2<Integer, Integer> reachable =
-				Relations.relation("reachable", src, dst);
-		Tabled<Tuple2<Unifiable<Integer>, Unifiable<Integer>>> path =
-				Tabling.defineRecursive(self -> pair -> pair.apply((x, y) ->
+		return Relations.relation("reachable", src, dst)
+				.solvingRecursive(self -> (x, y) ->
 						edge.exists(backing, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
-									return self.apply(Tuple.of(x, z))
+									return self.apply(x, z)
 											.and(edge.exists(backing, z, y));
-								}))));
-		return reachable.solving((x, y) -> path.apply(Tuple.of(x, y)));
+								})));
 	}
 
 	@Test

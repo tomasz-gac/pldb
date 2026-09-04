@@ -23,6 +23,8 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.tabling.Table;
+import com.tgac.logic.tabling.Tabled;
+import com.tgac.logic.tabling.Tabling;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.TabledSource;
@@ -190,6 +192,22 @@ public class Relations {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0))));
 		}
 
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function1<Unifiable<T0>, Goal>, Function1<Unifiable<T0>, Goal>> body) {
+			Tabled<Tuple1<Unifiable<T0>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							v0 -> self.apply(Tuple.of(v0)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0)))));
+		}
+
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
 		public class Derived {
 			private final TabledSource source;
@@ -262,6 +280,22 @@ public class Relations {
 		@SuppressWarnings("unchecked")
 		public Derived solving(Function2<Unifiable<T0>, Unifiable<T1>, Goal> body) {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1))));
+		}
+
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function2<Unifiable<T0>, Unifiable<T1>, Goal>, Function2<Unifiable<T0>, Unifiable<T1>, Goal>> body) {
+			Tabled<Tuple2<Unifiable<T0>, Unifiable<T1>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1) -> self.apply(Tuple.of(v0, v1)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1)))));
 		}
 
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
@@ -338,6 +372,22 @@ public class Relations {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2))));
 		}
 
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal>, Function3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal>> body) {
+			Tabled<Tuple3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2) -> self.apply(Tuple.of(v0, v1, v2)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2)))));
+		}
+
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
 		public class Derived {
 			private final TabledSource source;
@@ -410,6 +460,22 @@ public class Relations {
 		@SuppressWarnings("unchecked")
 		public Derived solving(Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal> body) {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3))));
+		}
+
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal>, Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal>> body) {
+			Tabled<Tuple4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2, v3) -> self.apply(Tuple.of(v0, v1, v2, v3)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3)))));
 		}
 
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
@@ -486,6 +552,22 @@ public class Relations {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4))));
 		}
 
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal>, Function5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal>> body) {
+			Tabled<Tuple5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2, v3, v4) -> self.apply(Tuple.of(v0, v1, v2, v3, v4)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4)))));
+		}
+
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
 		public class Derived {
 			private final TabledSource source;
@@ -558,6 +640,22 @@ public class Relations {
 		@SuppressWarnings("unchecked")
 		public Derived solving(Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal> body) {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5))));
+		}
+
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal>, Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal>> body) {
+			Tabled<Tuple6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2, v3, v4, v5) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5)))));
 		}
 
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
@@ -635,6 +733,22 @@ public class Relations {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6))));
 		}
 
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal>, Function7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal>> body) {
+			Tabled<Tuple7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2, v3, v4, v5, v6) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5, v6)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6)))));
+		}
+
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */
 		public class Derived {
 			private final TabledSource source;
@@ -708,6 +822,22 @@ public class Relations {
 		@SuppressWarnings("unchecked")
 		public Derived solving(Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal> body) {
 			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6), (Unifiable<T7>) args.get(7))));
+		}
+
+		/**
+		 * The recursive derived relation: {@code self} is wired to the
+		 * INNER fixpoint tabling — a recursive call is an inside reader the
+		 * group seal can close — while the handle wraps once at the
+		 * boundary. The body never sees the Derived, so recursing through
+		 * produce (the ring that cannot terminate) stays unwritable.
+		 */
+		@SuppressWarnings("unchecked")
+		public Derived solvingRecursive(Function1<Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal>, Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal>> body) {
+			Tabled<Tuple8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>>> fixpoint = Tabling.defineRecursive(self ->
+					args -> args.apply(body.apply(
+							(v0, v1, v2, v3, v4, v5, v6, v7) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5, v6, v7)))));
+			return new Derived(TabledSource.solving(args ->
+					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6), (Unifiable<T7>) args.get(7)))));
 		}
 
 		/** A relation with intrinsic storage: the token and its producer, inseparable. */

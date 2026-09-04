@@ -3,6 +3,7 @@ package com.tgac.pldb;
 // ABOUTME: Constructive negation by composition: exclude(derived.posted(args)) — the
 // ABOUTME: trial imposes the posted table on scratch and judges the complement.
 
+import static com.tgac.logic.goals.Goal.defer;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,6 +130,31 @@ public class DerivedNegationTest {
 		List<String> free = answers(exclude(p.posted(x, y)).and(y.unifies("a")), x);
 		assertThat(free).hasSize(1);
 		assertThat(free.get(0)).startsWith("_.0 : ");
+	}
+
+	@Test
+	public void aRecursiveDerivedRelationNegates() {
+		// unreachability by composition: the closure seals (the fixpoint is
+		// the inner tabling), and its complement filters — 1 reaches 3, so
+		// (1,3) is excluded; 3 reaches nothing, so (3,1) passes
+		Relations._2<Integer, Integer> reach = Relations.relation("reach",
+				Property.of("src"), Property.of("dst"));
+		Relations._2<Integer, Integer>.Derived p = reach.solvingRecursive(self -> (x, y) ->
+				x.unifies(1).and(y.unifies(2))
+						.or(x.unifies(2).and(y.unifies(3)))
+						.or(defer(() -> {
+							Unifiable<Integer> z = lvar();
+							return self.apply(x, z)
+									.and(z.unifies(2).and(y.unifies(3)));
+						})));
+		Unifiable<Integer> x = lvar();
+		Unifiable<Integer> y = lvar();
+		assertThat(answers(exclude(p.posted(x, y))
+				.and(x.unifies(1)).and(y.unifies(3)), x)).isEmpty();
+		Unifiable<Integer> x2 = lvar();
+		Unifiable<Integer> y2 = lvar();
+		assertThat(answers(exclude(p.posted(x2, y2))
+				.and(x2.unifies(3)).and(y2.unifies(1)), x2)).containsExactly("{3}");
 	}
 
 	@Test
