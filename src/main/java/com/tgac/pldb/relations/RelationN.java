@@ -1,6 +1,7 @@
 package com.tgac.pldb.relations;
 
 
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
@@ -57,19 +58,19 @@ public class RelationN implements Relation {
 		return LookupGoal.of(producer, rel, Array.of(args));
 	}
 
-	public Goal posted(AnswerSource source, Unifiable<?>... args) {
+	public Posting posted(AnswerSource source, Unifiable<?>... args) {
 		return posted(source, this, args);
 	}
 
-	public static Goal posted(AnswerSource source, Relation rel, Unifiable<?>... args) {
+	public static Posting posted(AnswerSource source, Relation rel, Unifiable<?>... args) {
 		return TableConstraints.posted(source, rel, Array.of(args));
 	}
 
-	public Goal posted(AnswerProducer producer, Unifiable<?>... args) {
+	public Posting posted(AnswerProducer producer, Unifiable<?>... args) {
 		return posted(producer, this, args);
 	}
 
-	public static Goal posted(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
+	public static Posting posted(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
 		return TableConstraints.posted(producer, rel, Array.of(args));
 	}
 

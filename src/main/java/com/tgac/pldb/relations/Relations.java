@@ -19,6 +19,7 @@ import io.vavr.Function5;
 import io.vavr.Function6;
 import io.vavr.Function7;
 import io.vavr.Function8;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.tabling.Table;
@@ -96,11 +97,11 @@ public class Relations {
 			return RelationN.relation(source, this);
 		}
 
-		public Goal posted(AnswerSource source) {
+		public Posting posted(AnswerSource source) {
 			return RelationN.posted(source, this);
 		}
 
-		public Goal posted(AnswerProducer producer) {
+		public Posting posted(AnswerProducer producer) {
 			return RelationN.posted(producer, this);
 		}
 
@@ -128,7 +129,7 @@ public class Relations {
 				return RelationN.relation(source, _0.this);
 			}
 
-			public Goal posted() {
+			public Posting posted() {
 				return RelationN.posted(source, _0.this);
 			}
 
@@ -169,11 +170,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0) {
 			return RelationN.posted(source, this, v0);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0) {
 			return RelationN.posted(producer, this, v0);
 		}
 
@@ -201,7 +202,7 @@ public class Relations {
 				return RelationN.relation(source, _1.this, v0);
 			}
 
-			public Goal posted(Unifiable<T0> v0) {
+			public Posting posted(Unifiable<T0> v0) {
 				return RelationN.posted(source, _1.this, v0);
 			}
 
@@ -243,11 +244,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
 			return RelationN.posted(source, this, v0, v1);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1) {
 			return RelationN.posted(producer, this, v0, v1);
 		}
 
@@ -275,7 +276,7 @@ public class Relations {
 				return RelationN.relation(source, _2.this, v0, v1);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1) {
 				return RelationN.posted(source, _2.this, v0, v1);
 			}
 
@@ -317,11 +318,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.posted(source, this, v0, v1, v2);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.posted(producer, this, v0, v1, v2);
 		}
 
@@ -349,7 +350,7 @@ public class Relations {
 				return RelationN.relation(source, _3.this, v0, v1, v2);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 				return RelationN.posted(source, _3.this, v0, v1, v2);
 			}
 
@@ -391,11 +392,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2, v3);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 			return RelationN.posted(source, this, v0, v1, v2, v3);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3);
 		}
 
@@ -423,7 +424,7 @@ public class Relations {
 				return RelationN.relation(source, _4.this, v0, v1, v2, v3);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 				return RelationN.posted(source, _4.this, v0, v1, v2, v3);
 			}
 
@@ -465,11 +466,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4);
 		}
 
@@ -497,7 +498,7 @@ public class Relations {
 				return RelationN.relation(source, _5.this, v0, v1, v2, v3, v4);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 				return RelationN.posted(source, _5.this, v0, v1, v2, v3, v4);
 			}
 
@@ -539,11 +540,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5);
 		}
 
@@ -571,7 +572,7 @@ public class Relations {
 				return RelationN.relation(source, _6.this, v0, v1, v2, v3, v4, v5);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 				return RelationN.posted(source, _6.this, v0, v1, v2, v3, v4, v5);
 			}
 
@@ -614,11 +615,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
@@ -646,7 +647,7 @@ public class Relations {
 				return RelationN.relation(source, _7.this, v0, v1, v2, v3, v4, v5, v6);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 				return RelationN.posted(source, _7.this, v0, v1, v2, v3, v4, v5, v6);
 			}
 
@@ -689,11 +690,11 @@ public class Relations {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
-		public Goal posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+		public Posting posted(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.posted(source, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
-		public Goal posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
@@ -721,7 +722,7 @@ public class Relations {
 				return RelationN.relation(source, _8.this, v0, v1, v2, v3, v4, v5, v6, v7);
 			}
 
-			public Goal posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 				return RelationN.posted(source, _8.this, v0, v1, v2, v3, v4, v5, v6, v7);
 			}
 
