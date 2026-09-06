@@ -8,6 +8,8 @@ import static com.tgac.logic.unification.LVal.lval;
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.monad.Cont;
+import com.tgac.logic.constraints.Postable;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
@@ -20,9 +22,11 @@ import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.control.Either;
+import java.util.Arrays;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
@@ -46,17 +50,75 @@ import lombok.Value;
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class LookupGoal implements Goal, Bounded {
+public class Literal implements Goal, Bounded, Postable {
 	Either<AnswerSource, AnswerProducer> backend;
 	Relation rel;
 	Array<Unifiable<?>> args;
 
-	public static LookupGoal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
-		return new LookupGoal(Either.left(source), rel, args);
+	public static Literal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
+		return new Literal(Either.left(source), rel, args);
 	}
 
-	public static LookupGoal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
-		return new LookupGoal(Either.right(producer), rel, args);
+	public static Literal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
+		return new Literal(Either.right(producer), rel, args);
+	}
+
+	/**
+	 * The function-shaped front door: relation and literal minted together,
+	 * one column per {@link #arg}/{@link #indexed}/{@link #ground} call —
+	 * names stated once, arity unbounded, the defining method's signature
+	 * the only typed surface. Relation identity is by value (name plus
+	 * columns), so every mint of one definition is the same relation.
+	 */
+	public static Literal of(String name, AnswerSource source) {
+		return new Literal(Either.left(source), RelationN.of(name), Array.empty());
+	}
+
+	public static Literal of(String name, AnswerProducer producer) {
+		return new Literal(Either.right(producer), RelationN.of(name), Array.empty());
+	}
+
+	public Literal arg(String column, Unifiable<?> value) {
+		return extended(Property.of(column), value);
+	}
+
+	public Literal indexed(String column, Unifiable<?> value) {
+		return extended(Property.of(column).indexed(), value);
+	}
+
+	public Literal ground(String column, Unifiable<?> value) {
+		return extended(Property.of(column).ground(), value);
+	}
+
+	private Literal extended(Property<?> column, Unifiable<?> value) {
+		Property<?>[] existing = rel.getArgs();
+		Property<?>[] wider = Arrays.copyOf(existing, existing.length + 1);
+		wider[existing.length] = column;
+		return new Literal(backend, RelationN.of(rel.getName(), wider), args.append(value));
+	}
+
+	/** The imposition reading — under {@code exclude} this is the only one. */
+	@Override
+	public Posting posted() {
+		return backend.fold(
+				source -> TableConstraints.posted(source, rel, args),
+				producer -> TableConstraints.posted(producer, rel, args));
+	}
+
+	/**
+	 * The literal as a stored row: every column must be a ground value.
+	 * Refuses loudly by relation and column name — a fact with a hole is a
+	 * question, not knowledge.
+	 */
+	public Fact fact() {
+		Array<Object> values = args.zipWithIndex().map(t -> {
+			if (!t._1.asVal().isDefined()) {
+				throw new IllegalStateException("fact() over " + rel.getName()
+						+ ": column '" + rel.getArgs()[t._2].getName() + "' is unbound");
+			}
+			return (Object) t._1.asVal().get();
+		});
+		return Fact.of(rel, values);
 	}
 
 	@Override

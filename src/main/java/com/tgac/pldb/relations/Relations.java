@@ -95,7 +95,7 @@ public class Relations {
 			return new Property<?>[]{};
 		}
 
-		public Goal exists(AnswerSource source) {
+		public Literal exists(AnswerSource source) {
 			return RelationN.relation(source, this);
 		}
 
@@ -127,7 +127,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists() {
+			public Literal exists() {
 				return RelationN.relation(source, _0.this);
 			}
 
@@ -168,7 +168,7 @@ public class Relations {
 			return new Property<?>[]{properties._1};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0) {
 			return RelationN.relation(source, this, v0);
 		}
 
@@ -216,7 +216,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0) {
+			public Literal exists(Unifiable<T0> v0) {
 				return RelationN.relation(source, _1.this, v0);
 			}
 
@@ -258,7 +258,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1) {
 			return RelationN.relation(source, this, v0, v1);
 		}
 
@@ -306,7 +306,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1) {
 				return RelationN.relation(source, _2.this, v0, v1);
 			}
 
@@ -348,7 +348,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.relation(source, this, v0, v1, v2);
 		}
 
@@ -396,7 +396,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 				return RelationN.relation(source, _3.this, v0, v1, v2);
 			}
 
@@ -438,7 +438,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 			return RelationN.relation(source, this, v0, v1, v2, v3);
 		}
 
@@ -486,7 +486,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
 				return RelationN.relation(source, _4.this, v0, v1, v2, v3);
 			}
 
@@ -528,7 +528,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4);
 		}
 
@@ -576,7 +576,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
 				return RelationN.relation(source, _5.this, v0, v1, v2, v3, v4);
 			}
 
@@ -618,7 +618,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5);
 		}
 
@@ -666,7 +666,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 				return RelationN.relation(source, _6.this, v0, v1, v2, v3, v4, v5);
 			}
 
@@ -709,7 +709,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6, properties._7};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
@@ -757,7 +757,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
 				return RelationN.relation(source, _7.this, v0, v1, v2, v3, v4, v5, v6);
 			}
 
@@ -800,7 +800,7 @@ public class Relations {
 			return new Property<?>[]{properties._1, properties._2, properties._3, properties._4, properties._5, properties._6, properties._7, properties._8};
 		}
 
-		public Goal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+		public Literal exists(AnswerSource source, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.relation(source, this, v0, v1, v2, v3, v4, v5, v6, v7);
 		}
 
@@ -848,7 +848,7 @@ public class Relations {
 				this.source = source;
 			}
 
-			public Goal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
+			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 				return RelationN.relation(source, _8.this, v0, v1, v2, v3, v4, v5, v6, v7);
 			}
 

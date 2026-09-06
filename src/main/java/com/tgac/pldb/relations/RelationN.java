@@ -46,16 +46,16 @@ public class RelationN implements Relation {
 		return args;
 	}
 
-	public Goal apply(AnswerSource source, Unifiable<?>... args) {
+	public Literal apply(AnswerSource source, Unifiable<?>... args) {
 		return relation(source, this, args);
 	}
 
-	public static Goal relation(AnswerSource source, Relation rel, Unifiable<?>... args) {
-		return LookupGoal.of(source, rel, Array.of(args));
+	public static Literal relation(AnswerSource source, Relation rel, Unifiable<?>... args) {
+		return Literal.of(source, rel, Array.of(args));
 	}
 
-	public static Goal relation(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
-		return LookupGoal.of(producer, rel, Array.of(args));
+	public static Literal relation(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
+		return Literal.of(producer, rel, Array.of(args));
 	}
 
 	public Posting posted(AnswerSource source, Unifiable<?>... args) {

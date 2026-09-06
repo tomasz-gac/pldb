@@ -19,7 +19,7 @@ import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.relations.LookupGoal;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -80,7 +80,7 @@ public final class TabledSource implements AnswerProducer {
 		Map<Relation, Tabled<Array<Unifiable<?>>>> defined = new ConcurrentHashMap<>();
 		return new TabledSource(
 				rel -> defined.computeIfAbsent(rel, r ->
-						Tabling.define(args -> LookupGoal.of(source, r, args))),
+						Tabling.define(args -> Literal.of(source, r, args))),
 				Option.some(source));
 	}
 
