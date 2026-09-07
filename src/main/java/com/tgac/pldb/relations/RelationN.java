@@ -8,6 +8,7 @@ import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.collection.Array;
+import io.vavr.control.Either;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +52,11 @@ public class RelationN implements Relation {
 	}
 
 	public static Literal relation(AnswerSource source, Relation rel, Unifiable<?>... args) {
-		return Literal.of(source, rel, Array.of(args));
+		return new Literal(Either.left(source), rel, Array.of(args));
 	}
 
 	public static Literal relation(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
-		return Literal.of(producer, rel, Array.of(args));
+		return new Literal(Either.right(producer), rel, Array.of(args));
 	}
 
 	public Posting posted(AnswerSource source, Unifiable<?>... args) {

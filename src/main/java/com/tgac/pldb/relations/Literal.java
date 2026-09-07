@@ -53,20 +53,11 @@ import lombok.Value;
  * ends the branch.
  */
 @Value
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.MODULE)
 public class Literal implements Goal, Bounded, Postable {
 	Either<AnswerSource, AnswerProducer> backend;
 	Relation rel;
 	Array<Unifiable<?>> args;
-	Goal rule;
-
-	public static Literal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(Either.left(source), rel, args, null);
-	}
-
-	public static Literal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(Either.right(producer), rel, args, null);
-	}
 
 	/**
 	 * The function-shaped front door: columns first, backend last. One
@@ -127,27 +118,24 @@ public class Literal implements Goal, Bounded, Postable {
 		}
 
 		public Literal from(AnswerSource source) {
-			return new Literal(Either.left(source), relation(), Array.ofAll(values), null);
+			return new Literal(Either.left(source), relation(), Array.ofAll(values));
 		}
 
 		public Literal produced(AnswerProducer producer) {
-			return new Literal(Either.right(producer), relation(), Array.ofAll(values), null);
+			return new Literal(Either.right(producer), relation(), Array.ofAll(values));
 		}
 
 		public Literal solving(Goal body) {
-			return new Literal(null, relation(), Array.ofAll(values), body);
+			Array<Unifiable<?>> heads = Array.ofAll(values);
+			Relation rek = relation();
+			return new Literal(Either.right(GoalProducer.of(rek, body, heads, Table.empty())), rek, heads);
 		}
 	}
-
-
 
 
 	/** The imposition reading — under {@code exclude} this is the only one. */
 	@Override
 	public Posting posted() {
-		if (rule != null) {
-			return TableConstraints.posted(GoalProducer.of(rel, rule, args, Table.empty()), rel, args);
-		}
 		return backend.fold(
 				source -> TableConstraints.posted(source, rel, args),
 				producer -> TableConstraints.posted(producer, rel, args));
@@ -172,6 +160,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
 		requireGroundColumns(s);
+		Goal rule = ownRule();
 		if (rule != null) {
 			return Tabling.call(rel, args.map(Unifiable::getObjectUnifiable), () -> rule).apply(s);
 		}
@@ -181,6 +170,22 @@ public class Literal implements Goal, Bounded, Postable {
 					return Residues.about(s, anchor)
 							.map(key -> dispatch(Call.of(rel, key._1, key._2), anchor).apply(s));
 				}));
+	}
+
+	/**
+	 * The native reading: when the backend is our own rule producer speaking
+	 * THESE variables (the builder's mint), the goal side consumes through
+	 * the solve's shared table — recursion is an ordinary reader and rings
+	 * seal. Any other producer, or a foreign pairing of this producer with
+	 * different args, streams through produce.
+	 */
+	private Goal ownRule() {
+		return backend.fold(
+				source -> null,
+				producer -> producer instanceof GoalProducer
+						&& ((GoalProducer) producer).getHeads().equals(args)
+						? ((GoalProducer) producer).getRule()
+						: null);
 	}
 
 	/** A ground-marked column is an input: free at application is a caller error. */
@@ -226,9 +231,6 @@ public class Literal implements Goal, Bounded, Postable {
 								.getObjectTerm())
 				.ground();
 		Call<Relation> call = Call.of(rel, image);
-		if (rule != null) {
-			return Long.MAX_VALUE;
-		}
 		return backend.fold(
 				source -> source.estimate(call),
 				producer -> producer.estimate(call));

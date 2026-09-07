@@ -49,6 +49,16 @@ public final class GoalProducer implements AnswerProducer {
 		return new GoalProducer(rel, rule, heads, table);
 	}
 
+	/** The rule this producer drives — the literal's native reading takes it. */
+	public Goal getRule() {
+		return rule;
+	}
+
+	/** The variables the rule speaks — valid for native reading only over these. */
+	public Array<Unifiable<?>> getHeads() {
+		return heads;
+	}
+
 	@Override
 	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit) {
 		Unifiable<Object> anchor = lval(heads.map(Unifiable::getObjectUnifiable));
