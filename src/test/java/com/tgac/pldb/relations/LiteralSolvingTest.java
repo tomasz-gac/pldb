@@ -9,6 +9,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
@@ -73,9 +74,13 @@ public class LiteralSolvingTest {
 		// two mints of one definition: distinct Literal values, value-equal relations
 		Goal first = counted(db, productions, one, a);
 		Goal second = counted(db, productions, one, b);
-		long count = one.unifies(1).and(first).and(second)
-				.solve(lval(Tuple.of(a, b))).count();
-		assertThat(count).isEqualTo(4);
+		List<String> pairs = one.unifies(1).and(first).and(second)
+				.solve(lval(Tuple.of(a, b)))
+				.map(Term::get)
+				.map(t -> t._1.get() + "," + t._2.get())
+				.sorted()
+				.collect(Collectors.toList());
+		assertThat(pairs).containsExactly("2,2", "2,3", "3,2", "3,3");
 		assertThat(productions.get()).isEqualTo(1);
 	}
 
@@ -126,8 +131,10 @@ public class LiteralSolvingTest {
 		List<String> both = x.unifies(1).and(hoisted).and(y.unifies(2))
 				.or(x.unifies(2).and(hoisted).and(y.unifies(3)))
 				.solve(lval(Tuple.of(x, y)))
-				.map(Object::toString).sorted().collect(Collectors.toList());
-		assertThat(both).hasSize(2);
+				.map(Term::get)
+				.map(t -> t._1.get() + "," + t._2.get())
+				.sorted().collect(Collectors.toList());
+		assertThat(both).containsExactly("1,2", "2,3");
 	}
 
 	@Test(timeout = 5000)
@@ -144,6 +151,7 @@ public class LiteralSolvingTest {
 		Literal viaRule = Literal.solving("viaRule", edge(db, x, y))
 				.arg("from", x).arg("to", y);
 		assertThat(answers(x.unifies(1).and(viaRule), y))
+				.containsExactly("{2}", "{3}")
 				.isEqualTo(answers(a.unifies(1).and(oracle.exists(a, b)), b));
 	}
 }
