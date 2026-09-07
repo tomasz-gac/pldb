@@ -28,10 +28,12 @@ import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
+import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
+import io.vavr.control.Either;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -63,22 +65,18 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * derivations of one row factor into a single entry by distributivity.
  */
 public class TableParkingPropagator extends ParkingPropagator<TableConstraints> {
-
-	private final AnswerProducer producer;
-	private final Goal rule;
-	private final Array<Unifiable<?>> heads;
+	private final Either<AnswerProducer, Tuple2<Goal, Array<Unifiable<?>>>> driver;
 	private final Relation rel;
 
 	protected TableParkingPropagator(Relation rel, AnswerProducer producer, Array<? extends Term<?>> watchedTerms) {
-		this(rel, producer, null, null, watchedTerms);
+		super(watchedTerms);
+		this.driver = Either.left(producer);
+		this.rel = rel;
 	}
 
-	private TableParkingPropagator(Relation rel, AnswerProducer producer, Goal rule,
-			Array<Unifiable<?>> heads, Array<? extends Term<?>> watchedTerms) {
+	private TableParkingPropagator(Relation rel, Goal rule, Array<Unifiable<?>> heads, Array<? extends Term<?>> watchedTerms) {
 		super(watchedTerms);
-		this.producer = producer;
-		this.rule = rule;
-		this.heads = heads;
+		this.driver = Either.right(Tuple.of(rule, heads));
 		this.rel = rel;
 	}
 
@@ -89,7 +87,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * re-creations walk the watch list but must never disconnect the body.
 	 */
 	static TableParkingPropagator rule(Relation rel, Goal rule, Array<Unifiable<?>> heads) {
-		return new TableParkingPropagator(rel, null, rule, heads, heads);
+		return new TableParkingPropagator(rel, rule, heads, heads);
 	}
 
 	@Override
@@ -116,45 +114,31 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	private Fiber<JoinMap<Reified<?>, Condition>> extension(Call<Relation> probe, Package pkg) {
 		Scope sub = Scope.scope("TableParkingPropagatorProduction");
 		Queue<Tuple2<Reified<?>, Condition>> delivered = new ConcurrentLinkedQueue<>();
-		Fiber<Nothing> drained = rule != null
-				? ruleDeliveries(probe, pkg, delivered)
-				: producer.produce(probe, answer -> {
+		return Fiber.claim(sub, producerFor(pkg).produce(probe, answer -> {
 					delivered.add(answer);
 					return Fiber.done(Nothing.nothing());
-				});
-		return Fiber.claim(sub, drained)
+				}))
 				.flatMap(explored -> Fiber.sealed(sub))
 				.map(sealed -> Extension.fold(delivered));
 	}
 
 	/**
-	 * The rule's extension from the SOLVE's shared table: the tabled call is
-	 * consumed to exhaustion on a clean package carrying the solve's
-	 * {@link Table}, so the entry this drain produces (or awaits) is the
-	 * same one every goal-side consumer of the relation reads — one
-	 * production serves both drivers.
+	 * The one drain has one producer: the async kind as posted, or the rule
+	 * composed with the SOLVE's table at wake — the residence is the only
+	 * thing a rule was missing to be a producer, and it arrives with the
+	 * package.
 	 */
-	private Fiber<Nothing> ruleDeliveries(Call<Relation> probe, Package pkg,
-			Queue<Tuple2<Reified<?>, Condition>> delivered) {
-		Table table = pkg.getStores().get(Table.class)
-				.map(Table.class::cast)
-				.getOrElseThrow(() -> new IllegalStateException(
-						"posted rule '" + rel.getName() + "' outside a solve: no table in the package"));
-		// the anchor IS the captured heads: the probe image restates onto the
-		// variables the body speaks, the tabled call keys off their resulting
-		// bindings (alpha-aligned with goal-side consumption at the same
-		// probe), and deliveries image back over them — the capture pattern,
-		// sound on the clean package because its lineage is disjoint
-		Unifiable<Object> anchor = lval(heads.map(Unifiable::getObjectUnifiable));
-		Goal seeded = Conjunction.of(
-				Residues.restate(probe.getArguments(), probe.getResidues(), anchor),
-				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));
-		return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
-				Residues.all(answerPkg, anchor).flatMap(answer -> {
-					delivered.add(Tuple.of(answer._1, Condition.of(answer._2)));
-					return Fiber.done(Nothing.nothing());
-				}));
+	private AnswerProducer producerFor(Package pkg) {
+		return driver.fold(
+				producer -> producer,
+				rule -> GoalProducer.of(rel, rule._1, rule._2,
+						pkg.getStores().get(Table.class)
+								.map(Table.class::cast)
+								.getOrElseThrow(() -> new IllegalStateException(
+										"posted rule '" + rel.getName()
+												+ "' outside a solve: no table in the package"))));
 	}
+
 
 	/**
 	 * The record's reify-time grounding: branch over the live disjuncts —
@@ -187,13 +171,10 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * carries no region: the upper bound stays sound ignoring it.
 	 */
 	long estimate(Array<Term<?>> walked) {
-		if (rule != null) {
-			return Long.MAX_VALUE;
-		}
-		Reified<?> image = MiniKanren.reify(Substitutions.empty(),
-						lval(walked.map(Term::getObjectTerm)).getObjectTerm())
-				.ground();
-		return producer.estimate(Call.of(rel, image));
+		return driver.fold(
+				producer -> producer.estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
+						lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground())),
+				goal -> Long.MAX_VALUE);
 	}
 
 	/**
@@ -208,7 +189,9 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public ParkingPropagator<TableConstraints> watching(Array<? extends Term<?>> terms) {
-		return new TableParkingPropagator(rel, producer, rule, heads, terms);
+		return driver.fold(
+				producer -> new TableParkingPropagator(rel, producer, terms),
+				rule -> new TableParkingPropagator(rel, rule._1, rule._2, terms));
 	}
 
 	@Override
@@ -218,7 +201,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + (producer != null ? producer.id() : "rule");
+		return rel.getName() + "@" + driver.fold(AnswerProducer::id, rule -> "rule");
 	}
 
 	@Override
