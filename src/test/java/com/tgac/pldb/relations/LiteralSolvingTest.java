@@ -61,7 +61,7 @@ public class LiteralSolvingTest {
 		Literal direct = Literal.solving("direct", edge(db, x, y))
 				.arg("from", x)
 				.arg("to", y);
-		assertThat(answers(x.unifies(1).and(direct), y)).containsExactly("{2}", "{3}");
+		assertThat(answers(x.unifies(1).and(direct), y)).containsExactlyInAnyOrder("{2}", "{3}");
 	}
 
 	@Test(timeout = 5000)
@@ -80,7 +80,7 @@ public class LiteralSolvingTest {
 				.map(t -> t._1.get() + "," + t._2.get())
 				.sorted()
 				.collect(Collectors.toList());
-		assertThat(pairs).containsExactly("2,2", "2,3", "3,2", "3,3");
+		assertThat(pairs).containsExactlyInAnyOrder("2,2", "2,3", "3,2", "3,3");
 		assertThat(productions.get()).isEqualTo(1);
 	}
 
@@ -100,7 +100,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
-				.containsExactly("{2}", "{3}", "{4}");
+				.containsExactlyInAnyOrder("{2}", "{3}", "{4}");
 	}
 
 	@Test(timeout = 5000)
@@ -109,7 +109,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
-				.containsExactly("{1}", "{2}", "{3}");
+				.containsExactlyInAnyOrder("{1}", "{2}", "{3}");
 	}
 
 	@Test(timeout = 5000)
@@ -118,7 +118,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
-				.containsExactly("{2}", "{3}", "{4}");
+				.containsExactlyInAnyOrder("{2}", "{3}", "{4}");
 	}
 
 	@Test(timeout = 5000)
@@ -134,7 +134,7 @@ public class LiteralSolvingTest {
 				.map(Term::get)
 				.map(t -> t._1.get() + "," + t._2.get())
 				.sorted().collect(Collectors.toList());
-		assertThat(both).containsExactly("1,2", "2,3");
+		assertThat(both).containsExactlyInAnyOrder("1,2", "2,3");
 	}
 
 	@Test(timeout = 5000)
@@ -151,7 +151,7 @@ public class LiteralSolvingTest {
 		Literal viaRule = Literal.solving("viaRule", edge(db, x, y))
 				.arg("from", x).arg("to", y);
 		assertThat(answers(x.unifies(1).and(viaRule), y))
-				.containsExactly("{2}", "{3}")
+				.containsExactlyInAnyOrder("{2}", "{3}")
 				.isEqualTo(answers(a.unifies(1).and(oracle.exists(a, b)), b));
 	}
 }

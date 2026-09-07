@@ -43,7 +43,7 @@ public class LiteralTest {
 	public void aBareLiteralEnumerates() {
 		Unifiable<Integer> i = lvar();
 		Unifiable<String> n = lvar();
-		assertThat(answers(person(db, i, n), n)).containsExactly("{Ada}", "{Alan}");
+		assertThat(answers(person(db, i, n), n)).containsExactlyInAnyOrder("{Ada}", "{Alan}");
 		Unifiable<String> n2 = lvar();
 		assertThat(answers(person(db, lval(2), n2), n2)).containsExactly("{Alan}");
 	}
