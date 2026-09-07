@@ -61,7 +61,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	/**
 	 * Post a lookup as a constraint: park the table propagator and take its
 	 * first examination — the initial narrowing — through the kernel's
-	 * statement entry. {@code exists} stays the enumerate-now alternative.
+	 * statement entry. The applied literal stays the enumerate-now alternative.
 	 * Registration and doom ride the schema: a post whose bound pattern hits
 	 * an empty bucket can never be satisfied (candidates only shrink), so
 	 * the doom hoists the failure; a live post is one success, ever, and
