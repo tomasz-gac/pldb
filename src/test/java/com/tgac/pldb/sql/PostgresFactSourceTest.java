@@ -188,7 +188,10 @@ public class PostgresFactSourceTest {
 	 * park and answers would go conditional.
 	 */
 	private static Literal reach(AnswerSource backing, Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.relation("reachable").arg("src", x).arg("dst", y).solving(edge.exists(backing, x, y)
+		return Literal.relation("reachable")
+				.arg("src", x)
+				.arg("dst", y)
+				.solving(edge.exists(backing, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return reach(backing, x, z)
