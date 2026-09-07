@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 
-// ABOUTME: A relation lookup as a data goal: planner-visible, priced by its
-// ABOUTME: index bucket — the Bounded citizen that collapses the pldb planner to data.
+// ABOUTME: A relation applied to arguments — ONE public type, with how it reads
+// ABOUTME: (source, producer, or rule) as a polymorphic Reading behind it.
 
 import static com.tgac.logic.unification.LVal.lval;
 
@@ -16,6 +16,8 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.tabling.Table;
+import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
@@ -23,11 +25,14 @@ import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import io.vavr.control.Either;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
@@ -35,26 +40,119 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
- * The lookup captures its own backend — one of the seam's two kinds — so
- * cost estimates need no context: {@link #answers} counts the index
- * bucket the probe would hit under the current bindings — the order
- * function of the narrowing/widening taxonomy (logic's
- * docs/design/optimizer.md §3-4). The probe IS the call key, minted at
- * the one reification site ({@link Residues#about}). Delivery is uniform
- * across kinds and conditions: each answer forks per condition conjunct,
- * and one conjunct's delivery is {@link Residues#restate} at the query
- * anchor — the image half unifies the row, the factor half imposes the
- * constraints; a ground row is the corner where the condition is ONE and
- * restate is pure unification. The SYNC kind enumerates inline; the
- * ASYNC kind streams — emissions deliver as the cell grows, and the seal
- * ends the branch.
+ * A relation applied to arguments. ONE user-facing type: how the relation
+ * answers — an enumerating source, a streaming producer, or a rule tabled
+ * in the solve — is a {@link Reading} chosen by the builder's terminal and
+ * never visible above it. Bare in a conjunction the literal reads its
+ * relation; under {@code exclude} (or {@link #posted()}) it imposes; the
+ * probe IS the call key, minted at the one reification site
+ * ({@link Residues#about}); delivery forks per condition conjunct, each
+ * restated at the query anchor. Relation identity is by value (name plus
+ * columns): every mint of one definition is the same relation, so a rule
+ * literal's recursion is the method calling itself — an ordinary tabled
+ * consumer whose rings seal.
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.MODULE)
 public class Literal implements Goal, Bounded, Postable {
-	Either<AnswerSource, AnswerProducer> backend;
 	Relation rel;
 	Array<Unifiable<?>> args;
+	Reading reading;
+
+	public static Literal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
+		return new Literal(rel, args, new SourceReading(source));
+	}
+
+	public static Literal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
+		return new Literal(rel, args, new ProducerReading(producer));
+	}
+
+	/**
+	 * The one internal seam: how a literal answers. Three implementations,
+	 * one per builder terminal; the public type never branches on them.
+	 */
+	interface Reading {
+		Goal read(Literal lit);
+
+		Posting posted(Literal lit);
+
+		long estimate(Literal lit, Call<Relation> call);
+	}
+
+	/** The sync kind: the source's pairs enumerated inline. */
+	@RequiredArgsConstructor(access = AccessLevel.MODULE)
+	static final class SourceReading implements Reading {
+		private final AnswerSource source;
+
+		@Override
+		public Goal read(Literal lit) {
+			return lit.lookup((probe, anchor) ->
+					StreamSupport.stream(source.answers(probe).spliterator(), false)
+							.flatMap(answer -> answer._2.conjuncts().toJavaStream()
+									.map(conjunct -> (Goal) Residues.restate(answer._1, conjunct, anchor)))
+							.reduce(Goal::or)
+							.orElseGet(Goal::failure));
+		}
+
+		@Override
+		public Posting posted(Literal lit) {
+			return TableConstraints.posted(source, lit.rel, lit.args);
+		}
+
+		@Override
+		public long estimate(Literal lit, Call<Relation> call) {
+			return source.estimate(call);
+		}
+	}
+
+	/** The async kind: emissions deliver as the cell grows, the seal ends the branch. */
+	@RequiredArgsConstructor(access = AccessLevel.MODULE)
+	static final class ProducerReading implements Reading {
+		private final AnswerProducer producer;
+
+		@Override
+		public Goal read(Literal lit) {
+			return lit.lookup((probe, anchor) -> st -> k -> producer.produce(probe,
+					answer -> deliver(answer, anchor).apply(st).apply(k)));
+		}
+
+		@Override
+		public Posting posted(Literal lit) {
+			return TableConstraints.posted(producer, lit.rel, lit.args);
+		}
+
+		@Override
+		public long estimate(Literal lit, Call<Relation> call) {
+			return producer.estimate(call);
+		}
+	}
+
+	/**
+	 * The rule kind: the goal reading is an ordinary tabled call in the
+	 * SOLVE's table (recursion seals); the imposition reads the extension
+	 * through a {@link GoalProducer} over a per-posting private table — the
+	 * memo and the world it memoizes share one closure.
+	 */
+	@RequiredArgsConstructor(access = AccessLevel.MODULE)
+	static final class RuleReading implements Reading {
+		private final Goal body;
+
+		@Override
+		public Goal read(Literal lit) {
+			return Tabling.call(lit.rel, lit.args.map(Unifiable::getObjectUnifiable), () -> body);
+		}
+
+		@Override
+		public Posting posted(Literal lit) {
+			return TableConstraints.posted(
+					GoalProducer.of(lit.rel, body, lit.args, Table.empty()), lit.rel, lit.args);
+		}
+
+		@Override
+		public long estimate(Literal lit, Call<Relation> call) {
+			return Long.MAX_VALUE;
+		}
+	}
 
 	/**
 	 * The function-shaped front door: columns first, backend last. One
@@ -65,8 +163,7 @@ public class Literal implements Goal, Bounded, Postable {
 	 * {@link Builder#from} enumerates a source, {@link Builder#produced}
 	 * streams a producer, {@link Builder#solving} tables a rule in the
 	 * solve — and a half-built literal is not a goal, so applying one is
-	 * unrepresentable. Relation identity is by value (name plus columns):
-	 * every mint of one definition is the same relation.
+	 * unrepresentable.
 	 */
 	public static Builder relation(String name) {
 		return new Builder(name);
@@ -74,8 +171,8 @@ public class Literal implements Goal, Bounded, Postable {
 
 	public static final class Builder {
 		private final String name;
-		private final java.util.List<Property<?>> columns = new java.util.ArrayList<>();
-		private final java.util.List<Unifiable<?>> values = new java.util.ArrayList<>();
+		private final List<Property<?>> columns = new ArrayList<>();
+		private final List<Unifiable<?>> values = new ArrayList<>();
 
 		private Builder(String name) {
 			this.name = name;
@@ -101,7 +198,7 @@ public class Literal implements Goal, Bounded, Postable {
 			return modify(Property::ground);
 		}
 
-		private Builder modify(java.util.function.UnaryOperator<Property<?>> flag) {
+		private Builder modify(UnaryOperator<Property<?>> flag) {
 			if (columns.isEmpty()) {
 				throw new IllegalStateException(
 						"relation '" + name + "': a modifier needs a column — declare arg() first");
@@ -115,25 +212,22 @@ public class Literal implements Goal, Bounded, Postable {
 		}
 
 		public Literal from(AnswerSource source) {
-			return new Literal(Either.left(source), relation(), Array.ofAll(values));
+			return new Literal(relation(), Array.ofAll(values), new SourceReading(source));
 		}
 
 		public Literal produced(AnswerProducer producer) {
-			return new Literal(Either.right(producer), relation(), Array.ofAll(values));
+			return new Literal(relation(), Array.ofAll(values), new ProducerReading(producer));
 		}
 
-		public Rule solving(Goal body) {
-			return new Rule(relation(), Array.ofAll(values), body);
+		public Literal solving(Goal body) {
+			return new Literal(relation(), Array.ofAll(values), new RuleReading(body));
 		}
 	}
-
 
 	/** The imposition reading — under {@code exclude} this is the only one. */
 	@Override
 	public Posting posted() {
-		return backend.fold(
-				source -> TableConstraints.posted(source, rel, args),
-				producer -> TableConstraints.posted(producer, rel, args));
+		return reading.posted(this);
 	}
 
 	/**
@@ -155,12 +249,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
 		requireGroundColumns(s);
-		return Cont.defer(() -> substituteQueryItems(s.substitution(), args)
-				.flatMap(q -> {
-					Unifiable<?> anchor = lval(q.map(Unifiable::getObjectUnifiable));
-					return Residues.about(s, anchor)
-							.map(key -> dispatch(Call.of(rel, key._1, key._2), anchor).apply(s));
-				}));
+		return reading.read(this).apply(s);
 	}
 
 	/** A ground-marked column is an input: free at application is a caller error. */
@@ -174,20 +263,14 @@ public class Literal implements Goal, Bounded, Postable {
 		}
 	}
 
-	/** The sync kind enumerates inline; the async kind streams through produce. */
-	private Goal dispatch(Call<Relation> probe, Unifiable<?> anchor) {
-		return backend.fold(
-				source -> sync(probe, anchor, source),
-				producer -> st -> k -> producer.produce(probe,
-						answer -> deliver(answer, anchor).apply(st).apply(k)));
-	}
-
-	private Goal sync(Call<Relation> probe, Unifiable<?> anchor, AnswerSource source) {
-		return StreamSupport.stream(source.answers(probe).spliterator(), false)
-				.flatMap(answer -> answer._2.conjuncts().toJavaStream()
-						.map(conjunct -> (Goal) Residues.restate(answer._1, conjunct, anchor)))
-				.reduce(Goal::or)
-				.orElseGet(Goal::failure);
+	/** Mint the probe at apply, then hand it with its anchor to the reading. */
+	private Goal lookup(BiFunction<Call<Relation>, Unifiable<?>, Goal> dispatcher) {
+		return s -> Cont.defer(() -> substituteQueryItems(s.substitution(), args)
+				.flatMap(q -> {
+					Unifiable<?> anchor = lval(q.map(Unifiable::getObjectUnifiable));
+					return Residues.about(s, anchor)
+							.map(key -> dispatcher.apply(Call.of(rel, key._1, key._2), anchor).apply(s));
+				}));
 	}
 
 	/** One answer, forked per condition conjunct, each restated at the anchor. */
@@ -205,10 +288,7 @@ public class Literal implements Goal, Bounded, Postable {
 								.map(Unifiable::getObjectUnifiable))
 								.getObjectTerm())
 				.ground();
-		Call<Relation> call = Call.of(rel, image);
-		return backend.fold(
-				source -> source.estimate(call),
-				producer -> producer.estimate(call));
+		return reading.estimate(this, Call.of(rel, image));
 	}
 
 	private static Fiber<Array<Unifiable<?>>> substituteQueryItems(Substitutions s, Array<Unifiable<?>> query) {

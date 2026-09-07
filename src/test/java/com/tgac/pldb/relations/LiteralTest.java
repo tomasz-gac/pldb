@@ -149,7 +149,7 @@ public class LiteralTest {
 	@Test
 	public void aGroundColumnAdmitsABoundArg() {
 		Unifiable<Integer> k = lvar();
-		Rule lit = Literal.relation("strictOk")
+		Literal lit = Literal.relation("strictOk")
 				.arg("k", k).ground()
 				.solving(k.unifies(5));
 		assertThat(answers(k.unifies(5).and(lit), k)).containsExactly("{5}");

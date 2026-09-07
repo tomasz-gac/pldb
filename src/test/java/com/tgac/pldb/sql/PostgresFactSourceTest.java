@@ -17,7 +17,6 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Rule;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -188,7 +187,7 @@ public class PostgresFactSourceTest {
 	 * ground answers. On data whose recursive steps branch, the guard would
 	 * park and answers would go conditional.
 	 */
-	private static Rule reach(AnswerSource backing, Unifiable<Integer> x, Unifiable<Integer> y) {
+	private static Literal reach(AnswerSource backing, Unifiable<Integer> x, Unifiable<Integer> y) {
 		return Literal.relation("reachable")
 				.arg("src", x)
 				.arg("dst", y)
