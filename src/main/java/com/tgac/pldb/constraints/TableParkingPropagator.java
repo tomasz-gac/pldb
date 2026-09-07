@@ -19,21 +19,16 @@ import com.tgac.logic.lattice.Verdict;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
-import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.tabling.Table;
-import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
-import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
-import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import io.vavr.control.Either;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -65,29 +60,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * derivations of one row factor into a single entry by distributivity.
  */
 public class TableParkingPropagator extends ParkingPropagator<TableConstraints> {
-	private final Either<AnswerProducer, Tuple2<Goal, Array<Unifiable<?>>>> driver;
+	private final AnswerProducer producer;
 	private final Relation rel;
 
 	protected TableParkingPropagator(Relation rel, AnswerProducer producer, Array<? extends Term<?>> watchedTerms) {
 		super(watchedTerms);
-		this.driver = Either.left(producer);
+		this.producer = producer;
 		this.rel = rel;
-	}
-
-	private TableParkingPropagator(Relation rel, Goal rule, Array<Unifiable<?>> heads, Array<? extends Term<?>> watchedTerms) {
-		super(watchedTerms);
-		this.driver = Either.right(Tuple.of(rule, heads));
-		this.rel = rel;
-	}
-
-	/**
-	 * The rule-backed kind: the extension read from the SOLVE's shared
-	 * table. The heads are the variables the body SPEAKS — the production
-	 * anchor — carried separately from the watched terms because watching()
-	 * re-creations walk the watch list but must never disconnect the body.
-	 */
-	static TableParkingPropagator rule(Relation rel, Goal rule, Array<Unifiable<?>> heads) {
-		return new TableParkingPropagator(rel, rule, heads, heads);
 	}
 
 	@Override
@@ -114,29 +93,12 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	private Fiber<JoinMap<Reified<?>, Condition>> extension(Call<Relation> probe, Package pkg) {
 		Scope sub = Scope.scope("TableParkingPropagatorProduction");
 		Queue<Tuple2<Reified<?>, Condition>> delivered = new ConcurrentLinkedQueue<>();
-		return Fiber.claim(sub, producerFor(pkg).produce(probe, answer -> {
+		return Fiber.claim(sub, producer.produce(probe, answer -> {
 					delivered.add(answer);
 					return Fiber.done(Nothing.nothing());
 				}))
 				.flatMap(explored -> Fiber.sealed(sub))
 				.map(sealed -> Extension.fold(delivered));
-	}
-
-	/**
-	 * The one drain has one producer: the async kind as posted, or the rule
-	 * composed with the SOLVE's table at wake — the residence is the only
-	 * thing a rule was missing to be a producer, and it arrives with the
-	 * package.
-	 */
-	private AnswerProducer producerFor(Package pkg) {
-		return driver.fold(
-				producer -> producer,
-				rule -> GoalProducer.of(rel, rule._1, rule._2,
-						pkg.getStores().get(Table.class)
-								.map(Table.class::cast)
-								.getOrElseThrow(() -> new IllegalStateException(
-										"posted rule '" + rel.getName()
-												+ "' outside a solve: no table in the package"))));
 	}
 
 
@@ -171,10 +133,8 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * carries no region: the upper bound stays sound ignoring it.
 	 */
 	long estimate(Array<Term<?>> walked) {
-		return driver.fold(
-				producer -> producer.estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
-						lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground())),
-				goal -> Long.MAX_VALUE);
+		return producer.estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
+				lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground()));
 	}
 
 	/**
@@ -189,9 +149,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public ParkingPropagator<TableConstraints> watching(Array<? extends Term<?>> terms) {
-		return driver.fold(
-				producer -> new TableParkingPropagator(rel, producer, terms),
-				rule -> new TableParkingPropagator(rel, rule._1, rule._2, terms));
+		return new TableParkingPropagator(rel, producer, terms);
 	}
 
 	@Override
@@ -201,7 +159,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + driver.fold(AnswerProducer::id, rule -> "rule");
+		return rel.getName() + "@" + producer.id();
 	}
 
 	@Override

@@ -21,8 +21,10 @@ import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.logic.tabling.Table;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -115,7 +117,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public Posting posted() {
 		if (rule != null) {
-			return TableConstraints.posted(rel, rule, args);
+			return TableConstraints.posted(GoalProducer.of(rel, rule, args, Table.empty()), rel, args);
 		}
 		return backend.fold(
 				source -> TableConstraints.posted(source, rel, args),

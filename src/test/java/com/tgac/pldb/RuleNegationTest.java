@@ -88,8 +88,9 @@ public class RuleNegationTest {
 	}
 
 	@Test(timeout = 5000)
-	public void postedThenConsumedShareTheSolveTable() {
-		// cascade drives production first; the later goal consumption replays
+	public void postedThenConsumedAgree() {
+		// the posting produces into its private table; the goal consumption
+		// tables natively — two productions, one answer set
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 		Unifiable<Integer> a = lvar();
@@ -104,8 +105,8 @@ public class RuleNegationTest {
 	}
 
 	@Test(timeout = 5000)
-	public void consumedThenPostedShareTheSolveTable() {
-		// the search claims production first; the cascade's propagator awaits the seal
+	public void consumedThenPostedAgree() {
+		// order reversed: the two readings stay independent and agree
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 		Unifiable<Integer> a = lvar();
