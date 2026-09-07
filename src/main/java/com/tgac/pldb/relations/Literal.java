@@ -16,6 +16,7 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
@@ -54,13 +55,26 @@ public class Literal implements Goal, Bounded, Postable {
 	Either<AnswerSource, AnswerProducer> backend;
 	Relation rel;
 	Array<Unifiable<?>> args;
+	Goal rule;
 
 	public static Literal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(Either.left(source), rel, args);
+		return new Literal(Either.left(source), rel, args, null);
 	}
 
 	public static Literal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(Either.right(producer), rel, args);
+		return new Literal(Either.right(producer), rel, args, null);
+	}
+
+	/**
+	 * The rule-backed kind: a derived relation as an ordinary tabled goal in
+	 * the SOLVE's table, keyed by the relation value — every mint of one
+	 * definition names the same entries, recursion is the method calling
+	 * itself (an ordinary consumer completion detection seals), and the body
+	 * rides this mint (the claiming call's body runs; one definition per
+	 * name per solve is the discipline).
+	 */
+	public static Literal solving(String name, Goal body) {
+		return new Literal(null, RelationN.of(name), Array.empty(), body);
 	}
 
 	/**
@@ -71,11 +85,11 @@ public class Literal implements Goal, Bounded, Postable {
 	 * columns), so every mint of one definition is the same relation.
 	 */
 	public static Literal of(String name, AnswerSource source) {
-		return new Literal(Either.left(source), RelationN.of(name), Array.empty());
+		return new Literal(Either.left(source), RelationN.of(name), Array.empty(), null);
 	}
 
 	public static Literal of(String name, AnswerProducer producer) {
-		return new Literal(Either.right(producer), RelationN.of(name), Array.empty());
+		return new Literal(Either.right(producer), RelationN.of(name), Array.empty(), null);
 	}
 
 	public Literal arg(String column, Unifiable<?> value) {
@@ -94,12 +108,16 @@ public class Literal implements Goal, Bounded, Postable {
 		Property<?>[] existing = rel.getArgs();
 		Property<?>[] wider = Arrays.copyOf(existing, existing.length + 1);
 		wider[existing.length] = column;
-		return new Literal(backend, RelationN.of(rel.getName(), wider), args.append(value));
+		return new Literal(backend, RelationN.of(rel.getName(), wider), args.append(value), rule);
 	}
 
 	/** The imposition reading — under {@code exclude} this is the only one. */
 	@Override
 	public Posting posted() {
+		if (rule != null) {
+			throw new IllegalStateException("posted() over the rule literal '"
+					+ rel.getName() + "' is not wired yet (residence arc step 3)");
+		}
 		return backend.fold(
 				source -> TableConstraints.posted(source, rel, args),
 				producer -> TableConstraints.posted(producer, rel, args));
@@ -123,6 +141,9 @@ public class Literal implements Goal, Bounded, Postable {
 
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
+		if (rule != null) {
+			return Tabling.call(rel, args.map(Unifiable::getObjectUnifiable), () -> rule).apply(s);
+		}
 		return Cont.defer(() -> substituteQueryItems(s.substitution(), args)
 				.flatMap(q -> {
 					Unifiable<?> anchor = lval(q.map(Unifiable::getObjectUnifiable));
@@ -163,6 +184,9 @@ public class Literal implements Goal, Bounded, Postable {
 								.getObjectTerm())
 				.ground();
 		Call<Relation> call = Call.of(rel, image);
+		if (rule != null) {
+			return Long.MAX_VALUE;
+		}
 		return backend.fold(
 				source -> source.estimate(call),
 				producer -> producer.estimate(call));
