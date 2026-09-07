@@ -24,11 +24,8 @@ import org.junit.Test;
 public class RuleNegationTest {
 
 	private static Literal p(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.solving("p",
-						i.unifies(1).and(t.unifies("a"))
-								.or(i.unifies(2).and(t.unifies("b"))))
-				.arg("item", i)
-				.arg("tag", t);
+		return Literal.relation("p").arg("item", i).arg("tag", t).solving(i.unifies(1).and(t.unifies("a"))
+								.or(i.unifies(2).and(t.unifies("b"))));
 	}
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {
@@ -50,11 +47,11 @@ public class RuleNegationTest {
 	public void aWideRowNegatesToAStrongerExclusion() {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal wide = Literal.solving("wide", x.unifies(1)).arg("item", x).arg("tag", y);
+		Literal wide = Literal.relation("wide").arg("item", x).arg("tag", y).solving(x.unifies(1));
 		assertThat(answers(exclude(wide).and(x.unifies(1)).and(y.unifies("z")), x)).isEmpty();
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal wide2 = Literal.solving("wide", x2.unifies(1)).arg("item", x2).arg("tag", y2);
+		Literal wide2 = Literal.relation("wide").arg("item", x2).arg("tag", y2).solving(x2.unifies(1));
 		assertThat(answers(exclude(wide2).and(x2.unifies(2)).and(y2.unifies("z")), x2))
 				.containsExactly("{2}");
 	}
@@ -63,15 +60,11 @@ public class RuleNegationTest {
 	public void aConditionalRowNegatesAsAFilter() {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal guarded = Literal.solving("guarded",
-						x.unifies(1).and(exclude(y.unifies("q"))))
-				.arg("item", x).arg("tag", y);
+		Literal guarded = Literal.relation("guarded").arg("item", x).arg("tag", y).solving(x.unifies(1).and(exclude(y.unifies("q"))));
 		assertThat(answers(exclude(guarded).and(x.unifies(1)).and(y.unifies("z")), x)).isEmpty();
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal guarded2 = Literal.solving("guarded",
-						x2.unifies(1).and(exclude(y2.unifies("q"))))
-				.arg("item", x2).arg("tag", y2);
+		Literal guarded2 = Literal.relation("guarded").arg("item", x2).arg("tag", y2).solving(x2.unifies(1).and(exclude(y2.unifies("q"))));
 		assertThat(answers(exclude(guarded2).and(x2.unifies(1)).and(y2.unifies("q")), x2))
 				.containsExactly("{1}");
 	}
@@ -143,11 +136,11 @@ public class RuleNegationTest {
 		// the diagonal (Any0, Any0) negates to x != y
 		Unifiable<String> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal diagonal = Literal.solving("diag", x.unifies(y)).arg("l", x).arg("r", y);
+		Literal diagonal = Literal.relation("diag").arg("l", x).arg("r", y).solving(x.unifies(y));
 		assertThat(answers(exclude(diagonal).and(x.unifies("v")).and(y.unifies("v")), x)).isEmpty();
 		Unifiable<String> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal diagonal2 = Literal.solving("diag", x2.unifies(y2)).arg("l", x2).arg("r", y2);
+		Literal diagonal2 = Literal.relation("diag").arg("l", x2).arg("r", y2).solving(x2.unifies(y2));
 		assertThat(answers(exclude(diagonal2).and(x2.unifies("v")).and(y2.unifies("w")), x2))
 				.containsExactly("{v}");
 	}
@@ -166,22 +159,19 @@ public class RuleNegationTest {
 	@Test(timeout = 5000)
 	public void negatedAnyIsUnconditionalFailure() {
 		Unifiable<Integer> x = lvar();
-		Literal tautology = Literal.solving("taut", Goal.success()).arg("item", x);
+		Literal tautology = Literal.relation("taut").arg("item", x).solving(Goal.success());
 		assertThat(answers(exclude(tautology).and(x.unifies(2)), x)).isEmpty();
 	}
 
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-		return Literal.of("edge", db).indexed("src", src).indexed("dst", dst);
+		return Literal.relation("edge").arg("src", src).indexed().arg("dst", dst).indexed().from(db);
 	}
 
 	private static Literal reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.solving("reach",
-						edge(db, x, y)
+		return Literal.relation("reach").arg("from", x).arg("to", y).solving(edge(db, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return reach(db, x, z).and(edge(db, z, y));
-								})))
-				.arg("from", x)
-				.arg("to", y);
+								})));
 	}
 }

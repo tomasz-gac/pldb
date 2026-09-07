@@ -58,7 +58,7 @@ public class TableParkingPropagatorTest {
 
 	/** The reference relation as a rule: the body is the db lookup over the heads. */
 	private static Posting posted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.solving("rr", r.exists(db, i, t)).arg("item", i).arg("tag", t).posted();
+		return Literal.relation("rr").arg("item", i).arg("tag", t).solving(r.exists(db, i, t)).posted();
 	}
 
 	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
@@ -109,7 +109,7 @@ public class TableParkingPropagatorTest {
 
 	/** A rule ignoring its tag: one row under the guard item ≠ 2. */
 	private static Posting guardedPosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.solving("guardedR", exclude(i.unifies(2))).arg("item", i).arg("tag", t).posted();
+		return Literal.relation("guardedR").arg("item", i).arg("tag", t).solving(exclude(i.unifies(2))).posted();
 	}
 
 	@Test
@@ -142,8 +142,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting twoGuardsPosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.solving("twoGuardsR", exclude(i.unifies(2)).or(exclude(i.unifies(3))))
-				.arg("item", i).arg("tag", t).posted();
+		return Literal.relation("twoGuardsR").arg("item", i).arg("tag", t).solving(exclude(i.unifies(2)).or(exclude(i.unifies(3)))).posted();
 	}
 
 	@Test
@@ -158,7 +157,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting widePosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.solving("wideR", i.unifies(1)).arg("item", i).arg("tag", t).posted();
+		return Literal.relation("wideR").arg("item", i).arg("tag", t).solving(i.unifies(1)).posted();
 	}
 
 	@Test
@@ -173,7 +172,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting diagonalPosted(Unifiable<String> l, Unifiable<String> r) {
-		return Literal.solving("diagR", l.unifies(r)).arg("l", l).arg("r", r).posted();
+		return Literal.relation("diagR").arg("l", l).arg("r", r).solving(l.unifies(r)).posted();
 	}
 
 	@Test
@@ -183,9 +182,7 @@ public class TableParkingPropagatorTest {
 		// and all — instead of parking on the choice between two rows
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Posting tautology = Literal.solving("tautR",
-						Goal.success().or(x.unifies(1).and(y.unifies("b"))))
-				.arg("item", x).arg("tag", y).posted();
+		Posting tautology = Literal.relation("tautR").arg("item", x).arg("tag", y).solving(Goal.success().or(x.unifies(1).and(y.unifies("b")))).posted();
 		assertThat(answers(tautology, lvar())).containsExactly("_.0");
 	}
 
@@ -217,9 +214,7 @@ public class TableParkingPropagatorTest {
 		// re-woken record discharges by entailment — the tag stays open
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> t = lvar();
-		Posting mixed = Literal.solving("mixedR",
-						x.unifies(7).or(x.unifies(8).and(t.unifies("a"))))
-				.arg("item", x).arg("tag", t).posted();
+		Posting mixed = Literal.relation("mixedR").arg("item", x).arg("tag", t).solving(x.unifies(7).or(x.unifies(8).and(t.unifies("a")))).posted();
 		assertThat(answers(mixed, x)).containsExactlyInAnyOrder("{7}", "{8}");
 	}
 
@@ -230,10 +225,8 @@ public class TableParkingPropagatorTest {
 		// answer's residue
 		Unifiable<Integer> i = lvar();
 		Unifiable<String> y = lvar();
-		Posting guarded = Literal.solving("condR",
-						i.unifies(7).and(exclude(y.unifies("q")))
-								.or(i.unifies(8).and(y.unifies("a"))))
-				.arg("item", i).arg("tag", y).posted();
+		Posting guarded = Literal.relation("condR").arg("item", i).arg("tag", y).solving(i.unifies(7).and(exclude(y.unifies("q")))
+								.or(i.unifies(8).and(y.unifies("a")))).posted();
 		assertThat(answers(guarded, y))
 				.containsExactlyInAnyOrder("_.0 : ¬(_.0 ≡ {q})", "{a}");
 	}
@@ -270,9 +263,7 @@ public class TableParkingPropagatorTest {
 		// keeps reify (and enforcement, S3's stage) out of this receipt
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Posting mixed = Literal.solving("mixedTopR",
-						x.unifies(7).or(x.unifies(8).and(y.unifies("a"))))
-				.arg("item", x).arg("tag", y).posted();
+		Posting mixed = Literal.relation("mixedTopR").arg("item", x).arg("tag", y).solving(x.unifies(7).or(x.unifies(8).and(y.unifies("a")))).posted();
 		assertThat(answers((Goal) mixed
 				.and(probe(p -> {
 					Theory<TableConstraints> live =

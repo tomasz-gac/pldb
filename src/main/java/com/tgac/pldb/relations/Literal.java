@@ -20,6 +20,7 @@ import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.tabling.Table;
 import com.tgac.pldb.AnswerProducer;
@@ -68,50 +69,78 @@ public class Literal implements Goal, Bounded, Postable {
 	}
 
 	/**
-	 * The rule-backed kind: a derived relation as an ordinary tabled goal in
-	 * the SOLVE's table, keyed by the relation value — every mint of one
-	 * definition names the same entries, recursion is the method calling
-	 * itself (an ordinary consumer completion detection seals), and the body
-	 * rides this mint (the claiming call's body runs; one definition per
-	 * name per solve is the discipline).
+	 * The function-shaped front door: columns first, backend last. One
+	 * {@link Builder#arg} per column — names stated once, arity unbounded,
+	 * the defining method's signature the only typed surface — with
+	 * {@link Builder#indexed()}/{@link Builder#ground()} as TAIL modifiers
+	 * on the last column, freely composed. The terminal picks the reading:
+	 * {@link Builder#from} enumerates a source, {@link Builder#produced}
+	 * streams a producer, {@link Builder#solving} tables a rule in the
+	 * solve — and a half-built literal is not a goal, so applying one is
+	 * unrepresentable. Relation identity is by value (name plus columns):
+	 * every mint of one definition is the same relation.
 	 */
-	public static Literal solving(String name, Goal body) {
-		return new Literal(null, RelationN.of(name), Array.empty(), body);
+	public static Builder relation(String name) {
+		return new Builder(name);
 	}
 
-	/**
-	 * The function-shaped front door: relation and literal minted together,
-	 * one column per {@link #arg}/{@link #indexed}/{@link #ground} call —
-	 * names stated once, arity unbounded, the defining method's signature
-	 * the only typed surface. Relation identity is by value (name plus
-	 * columns), so every mint of one definition is the same relation.
-	 */
-	public static Literal of(String name, AnswerSource source) {
-		return new Literal(Either.left(source), RelationN.of(name), Array.empty(), null);
+	public static final class Builder {
+		private final String name;
+		private final java.util.List<Property<?>> columns = new java.util.ArrayList<>();
+		private final java.util.List<Unifiable<?>> values = new java.util.ArrayList<>();
+
+		private Builder(String name) {
+			this.name = name;
+		}
+
+		public Builder arg(String column, Unifiable<?> value) {
+			columns.add(Property.of(column));
+			values.add(value);
+			return this;
+		}
+
+		/** Marks the LAST declared column; refuses before any column. */
+		public Builder indexed() {
+			return modify(Property::indexed);
+		}
+
+		/**
+		 * Marks the LAST declared column as an input: its argument must walk
+		 * to a ground value when the literal applies, refused loudly
+		 * otherwise.
+		 */
+		public Builder ground() {
+			return modify(Property::ground);
+		}
+
+		private Builder modify(java.util.function.UnaryOperator<Property<?>> flag) {
+			if (columns.isEmpty()) {
+				throw new IllegalStateException(
+						"relation '" + name + "': a modifier needs a column — declare arg() first");
+			}
+			columns.set(columns.size() - 1, flag.apply(columns.get(columns.size() - 1)));
+			return this;
+		}
+
+		private Relation relation() {
+			return RelationN.of(name, columns.toArray(new Property<?>[0]));
+		}
+
+		public Literal from(AnswerSource source) {
+			return new Literal(Either.left(source), relation(), Array.ofAll(values), null);
+		}
+
+		public Literal produced(AnswerProducer producer) {
+			return new Literal(Either.right(producer), relation(), Array.ofAll(values), null);
+		}
+
+		public Literal solving(Goal body) {
+			return new Literal(null, relation(), Array.ofAll(values), body);
+		}
 	}
 
-	public static Literal of(String name, AnswerProducer producer) {
-		return new Literal(Either.right(producer), RelationN.of(name), Array.empty(), null);
-	}
 
-	public Literal arg(String column, Unifiable<?> value) {
-		return extended(Property.of(column), value);
-	}
 
-	public Literal indexed(String column, Unifiable<?> value) {
-		return extended(Property.of(column).indexed(), value);
-	}
-
-	public Literal ground(String column, Unifiable<?> value) {
-		return extended(Property.of(column).ground(), value);
-	}
-
-	private Literal extended(Property<?> column, Unifiable<?> value) {
-		Property<?>[] existing = rel.getArgs();
-		Property<?>[] wider = Arrays.copyOf(existing, existing.length + 1);
-		wider[existing.length] = column;
-		return new Literal(backend, RelationN.of(rel.getName(), wider), args.append(value), rule);
-	}
 
 	/** The imposition reading — under {@code exclude} this is the only one. */
 	@Override
@@ -142,6 +171,7 @@ public class Literal implements Goal, Bounded, Postable {
 
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
+		requireGroundColumns(s);
 		if (rule != null) {
 			return Tabling.call(rel, args.map(Unifiable::getObjectUnifiable), () -> rule).apply(s);
 		}
@@ -151,6 +181,17 @@ public class Literal implements Goal, Bounded, Postable {
 					return Residues.about(s, anchor)
 							.map(key -> dispatch(Call.of(rel, key._1, key._2), anchor).apply(s));
 				}));
+	}
+
+	/** A ground-marked column is an input: free at application is a caller error. */
+	private void requireGroundColumns(Package s) {
+		Property<?>[] cols = rel.getArgs();
+		for (int i = 0; i < cols.length; i++) {
+			if (cols[i].isGround() && !((Term<?>) s.walk(args.get(i))).asVal().isDefined()) {
+				throw new IllegalStateException(rel.getName()
+						+ ": ground column '" + cols[i].getName() + "' is unbound at application");
+			}
+		}
 	}
 
 	/** The sync kind enumerates inline; the async kind streams through produce. */

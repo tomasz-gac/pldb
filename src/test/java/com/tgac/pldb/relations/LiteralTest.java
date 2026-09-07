@@ -24,9 +24,7 @@ public class LiteralTest {
 
 	/** The function-shaped definition: one method, names once, no relation constant. */
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.of("person", db)
-				.indexed("id", id)
-				.arg("name", name);
+		return Literal.relation("person").arg("id", id).indexed().arg("name", name).from(db);
 	}
 
 	private static final Database db = ImmutableDatabase.empty()
@@ -99,10 +97,45 @@ public class LiteralTest {
 			Unifiable<String> c4, Unifiable<String> c5, Unifiable<String> c6,
 			Unifiable<String> c7, Unifiable<String> c8, Unifiable<String> c9,
 			Unifiable<String> c10, Unifiable<String> c11) {
-		return Literal.of("wide", db)
-				.indexed("k", k)
-				.arg("c1", c1).arg("c2", c2).arg("c3", c3).arg("c4", c4)
-				.arg("c5", c5).arg("c6", c6).arg("c7", c7).arg("c8", c8)
-				.arg("c9", c9).arg("c10", c10).arg("c11", c11);
+		return Literal.relation("wide").arg("k", k).indexed().arg("c1", c1).arg("c2", c2).arg("c3", c3).arg("c4", c4).arg("c5", c5).arg("c6", c6).arg("c7", c7).arg("c8", c8).arg("c9", c9).arg("c10", c10).arg("c11", c11).from(db);
+	}
+
+	@Test
+	public void tailModifiersComposeOnTheLastColumn() {
+		Literal lit = Literal.relation("flags")
+				.arg("k", lvar()).indexed().ground()
+				.arg("v", lvar())
+				.from(db);
+		Property<?>[] cols = lit.getRel().getArgs();
+		assertThat(cols[0].isIndexed()).isTrue();
+		assertThat(cols[0].isGround()).isTrue();
+		assertThat(cols[1].isIndexed()).isFalse();
+		assertThat(cols[1].isGround()).isFalse();
+	}
+
+	@Test
+	public void aModifierWithoutAColumnRefuses() {
+		assertThatThrownBy(() -> Literal.relation("early").indexed())
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("early");
+	}
+
+	@Test
+	public void aGroundColumnRefusesAnUnboundArgAtApplication() {
+		Literal lit = Literal.relation("strict")
+				.arg("k", lvar()).ground()
+				.from(db);
+		assertThatThrownBy(() -> lit.solve(lvar()).collect(Collectors.toList()))
+				.hasMessageContaining("strict")
+				.hasMessageContaining("k");
+	}
+
+	@Test
+	public void aGroundColumnAdmitsABoundArg() {
+		Unifiable<Integer> k = lvar();
+		Literal lit = Literal.relation("strictOk")
+				.arg("k", k).ground()
+				.solving(k.unifies(5));
+		assertThat(answers(k.unifies(5).and(lit), k)).containsExactly("{5}");
 	}
 }

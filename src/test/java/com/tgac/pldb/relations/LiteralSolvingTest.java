@@ -27,9 +27,7 @@ import org.junit.Test;
 public class LiteralSolvingTest {
 
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-		return Literal.of("edge", db)
-				.indexed("src", src)
-				.indexed("dst", dst);
+		return Literal.relation("edge").arg("src", src).indexed().arg("dst", dst).indexed().from(db);
 	}
 
 	private static Database edges(int[][] pairs) {
@@ -42,14 +40,11 @@ public class LiteralSolvingTest {
 
 	/** The residence arc's target: recursion by calling the METHOD. */
 	private static Literal reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.solving("reach",
-						edge(db, x, y)
+		return Literal.relation("reach").arg("from", x).arg("to", y).solving(edge(db, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return reach(db, x, z).and(edge(db, z, y));
-								})))
-				.arg("from", x)
-				.arg("to", y);
+								})));
 	}
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {
@@ -61,9 +56,7 @@ public class LiteralSolvingTest {
 		Database db = edges(new int[][]{{1, 2}, {1, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal direct = Literal.solving("direct", edge(db, x, y))
-				.arg("from", x)
-				.arg("to", y);
+		Literal direct = Literal.relation("direct").arg("from", x).arg("to", y).solving(edge(db, x, y));
 		assertThat(answers(x.unifies(1).and(direct), y)).containsExactlyInAnyOrder("{2}", "{3}");
 	}
 
@@ -89,12 +82,10 @@ public class LiteralSolvingTest {
 
 	private static Literal counted(AnswerSource db, AtomicInteger productions,
 			Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.solving("counted", defer(() -> {
+		return Literal.relation("counted").arg("from", x).arg("to", y).solving(defer(() -> {
 					productions.incrementAndGet();
 					return edge(db, x, y);
-				}))
-				.arg("from", x)
-				.arg("to", y);
+				}));
 	}
 
 	@Test(timeout = 5000)
@@ -188,8 +179,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> b = lvar();
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal viaRule = Literal.solving("viaRule", edge(db, x, y))
-				.arg("from", x).arg("to", y);
+		Literal viaRule = Literal.relation("viaRule").arg("from", x).arg("to", y).solving(edge(db, x, y));
 		assertThat(answers(x.unifies(1).and(viaRule), y))
 				.containsExactlyInAnyOrder("{2}", "{3}")
 				.isEqualTo(answers(a.unifies(1).and(edge(db, a, b)), b));
