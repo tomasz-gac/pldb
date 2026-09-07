@@ -97,8 +97,8 @@ public class RuleNegationTest {
 
 	@Test(timeout = 5000)
 	public void postedThenConsumedAgree() {
-		// the posting produces into its private table; the goal consumption
-		// tables natively — two productions, one answer set
+		// posted and bare share the solve's table: whichever driver arrives
+		// first produces, the other reads the same entries
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 		Unifiable<Integer> a = lvar();
@@ -114,7 +114,7 @@ public class RuleNegationTest {
 
 	@Test(timeout = 5000)
 	public void consumedThenPostedAgree() {
-		// order reversed: the two readings stay independent and agree
+		// order reversed: the search claims first, the propagator awaits the seal
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 		Unifiable<Integer> a = lvar();
