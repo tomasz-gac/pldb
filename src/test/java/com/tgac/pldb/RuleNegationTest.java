@@ -15,6 +15,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Rule;
 import io.vavr.Tuple;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +24,7 @@ import org.junit.Test;
 
 public class RuleNegationTest {
 
-	private static Literal p(Unifiable<Integer> i, Unifiable<String> t) {
+	private static Rule p(Unifiable<Integer> i, Unifiable<String> t) {
 		return Literal.relation("p")
 				.arg("item", i)
 				.arg("tag", t)
@@ -50,14 +51,14 @@ public class RuleNegationTest {
 	public void aWideRowNegatesToAStrongerExclusion() {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal wide = Literal.relation("wide")
+		Rule wide = Literal.relation("wide")
 				.arg("item", x)
 				.arg("tag", y)
 				.solving(x.unifies(1));
 		assertThat(answers(exclude(wide).and(x.unifies(1)).and(y.unifies("z")), x)).isEmpty();
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal wide2 = Literal.relation("wide")
+		Rule wide2 = Literal.relation("wide")
 				.arg("item", x2)
 				.arg("tag", y2)
 				.solving(x2.unifies(1));
@@ -69,14 +70,14 @@ public class RuleNegationTest {
 	public void aConditionalRowNegatesAsAFilter() {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal guarded = Literal.relation("guarded")
+		Rule guarded = Literal.relation("guarded")
 				.arg("item", x)
 				.arg("tag", y)
 				.solving(x.unifies(1).and(exclude(y.unifies("q"))));
 		assertThat(answers(exclude(guarded).and(x.unifies(1)).and(y.unifies("z")), x)).isEmpty();
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal guarded2 = Literal.relation("guarded")
+		Rule guarded2 = Literal.relation("guarded")
 				.arg("item", x2)
 				.arg("tag", y2)
 				.solving(x2.unifies(1).and(exclude(y2.unifies("q"))));
@@ -151,14 +152,14 @@ public class RuleNegationTest {
 		// the diagonal (Any0, Any0) negates to x != y
 		Unifiable<String> x = lvar();
 		Unifiable<String> y = lvar();
-		Literal diagonal = Literal.relation("diag")
+		Rule diagonal = Literal.relation("diag")
 				.arg("l", x)
 				.arg("r", y)
 				.solving(x.unifies(y));
 		assertThat(answers(exclude(diagonal).and(x.unifies("v")).and(y.unifies("v")), x)).isEmpty();
 		Unifiable<String> x2 = lvar();
 		Unifiable<String> y2 = lvar();
-		Literal diagonal2 = Literal.relation("diag")
+		Rule diagonal2 = Literal.relation("diag")
 				.arg("l", x2)
 				.arg("r", y2)
 				.solving(x2.unifies(y2));
@@ -180,7 +181,7 @@ public class RuleNegationTest {
 	@Test(timeout = 5000)
 	public void negatedAnyIsUnconditionalFailure() {
 		Unifiable<Integer> x = lvar();
-		Literal tautology = Literal.relation("taut")
+		Rule tautology = Literal.relation("taut")
 				.arg("item", x)
 				.solving(Goal.success());
 		assertThat(answers(exclude(tautology).and(x.unifies(2)), x)).isEmpty();
@@ -193,7 +194,7 @@ public class RuleNegationTest {
 				.from(db);
 	}
 
-	private static Literal reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
+	private static Rule reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
 		return Literal.relation("reach")
 				.arg("from", x)
 				.arg("to", y)

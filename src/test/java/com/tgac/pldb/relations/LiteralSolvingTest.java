@@ -42,7 +42,7 @@ public class LiteralSolvingTest {
 	}
 
 	/** The residence arc's target: recursion by calling the METHOD. */
-	private static Literal reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
+	private static Rule reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
 		return Literal.relation("reach")
 				.arg("from", x)
 				.arg("to", y)
@@ -62,7 +62,7 @@ public class LiteralSolvingTest {
 		Database db = edges(new int[][]{{1, 2}, {1, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal direct = Literal.relation("direct")
+		Rule direct = Literal.relation("direct")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y));
@@ -89,7 +89,7 @@ public class LiteralSolvingTest {
 		assertThat(productions.get()).isEqualTo(1);
 	}
 
-	private static Literal counted(AnswerSource db, AtomicInteger productions,
+	private static Rule counted(AnswerSource db, AtomicInteger productions,
 			Unifiable<Integer> x, Unifiable<Integer> y) {
 		return Literal.relation("counted")
 				.arg("from", x)
@@ -132,7 +132,7 @@ public class LiteralSolvingTest {
 		Database db = edges(new int[][]{{1, 2}, {2, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal hoisted = reach(db, x, y);
+		Rule hoisted = reach(db, x, y);
 		// one mint, two branches, different key bindings per branch
 		List<String> both = x.unifies(1).and(hoisted).and(y.unifies(2))
 				.or(x.unifies(2).and(hoisted).and(y.unifies(3)))
@@ -151,7 +151,7 @@ public class LiteralSolvingTest {
 		AtomicInteger productions = new AtomicInteger();
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal lit = counted(db, productions, x, y);
+		Rule lit = counted(db, productions, x, y);
 		assertThat(answers(x.unifies(1).and(lit), y)).containsExactly("{2}");
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<Integer> y2 = lvar();
@@ -191,7 +191,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> b = lvar();
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal viaRule = Literal.relation("viaRule")
+		Rule viaRule = Literal.relation("viaRule")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y));

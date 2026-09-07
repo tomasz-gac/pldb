@@ -16,16 +16,13 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
-import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.logic.tabling.Table;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.constraints.TableConstraints;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -125,10 +122,8 @@ public class Literal implements Goal, Bounded, Postable {
 			return new Literal(Either.right(producer), relation(), Array.ofAll(values));
 		}
 
-		public Literal solving(Goal body) {
-			Array<Unifiable<?>> heads = Array.ofAll(values);
-			Relation rek = relation();
-			return new Literal(Either.right(GoalProducer.of(rek, body, heads, Table.empty())), rek, heads);
+		public Rule solving(Goal body) {
+			return new Rule(relation(), Array.ofAll(values), body);
 		}
 	}
 
@@ -160,32 +155,12 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public Cont<Package, Nothing> apply(Package s) {
 		requireGroundColumns(s);
-		Goal rule = ownRule();
-		if (rule != null) {
-			return Tabling.call(rel, args.map(Unifiable::getObjectUnifiable), () -> rule).apply(s);
-		}
 		return Cont.defer(() -> substituteQueryItems(s.substitution(), args)
 				.flatMap(q -> {
 					Unifiable<?> anchor = lval(q.map(Unifiable::getObjectUnifiable));
 					return Residues.about(s, anchor)
 							.map(key -> dispatch(Call.of(rel, key._1, key._2), anchor).apply(s));
 				}));
-	}
-
-	/**
-	 * The native reading: when the backend is our own rule producer speaking
-	 * THESE variables (the builder's mint), the goal side consumes through
-	 * the solve's shared table — recursion is an ordinary reader and rings
-	 * seal. Any other producer, or a foreign pairing of this producer with
-	 * different args, streams through produce.
-	 */
-	private Goal ownRule() {
-		return backend.fold(
-				source -> null,
-				producer -> producer instanceof GoalProducer
-						&& ((GoalProducer) producer).getHeads().equals(args)
-						? ((GoalProducer) producer).getRule()
-						: null);
 	}
 
 	/** A ground-marked column is an input: free at application is a caller error. */
