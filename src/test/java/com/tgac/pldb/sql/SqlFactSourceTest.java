@@ -14,7 +14,7 @@ import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
+import com.tgac.pldb.relations.RelationN;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -33,8 +33,8 @@ public class SqlFactSourceTest {
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final Relations._2<Integer, String> person =
-			Relations.relation("person", id.indexed(), name);
+	private static final RelationN person =
+			RelationN.of("person", id.indexed(), name);
 
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -95,9 +95,9 @@ public class SqlFactSourceTest {
 		// the backend is the schema authority: no declared relation set —
 		// a missing table surfaces as the fetch's own loud failure, naming
 		// the SQL it tried
-		Relations._1<Integer> orphan = Relations.relation("orphan", id);
+		RelationN orphan = RelationN.of("orphan", id);
 		try (SqlFactSource source = source()) {
-			assertThatThrownBy(() -> orphan.exists(source, lvar()).solve(lvar()).count())
+			assertThatThrownBy(() -> orphan.apply(source, lvar()).solve(lvar()).count())
 					.isInstanceOf(IllegalStateException.class)
 					.hasMessageContaining("orphan");
 		}
@@ -130,7 +130,7 @@ public class SqlFactSourceTest {
 			int afterWide = statements.get();
 
 			Unifiable<String> narrow = lvar();
-			List<String> viaLanded = person.exists(source, lval(2), narrow)
+			List<String> viaLanded = person.apply(source, lval(2), narrow)
 					.solve(narrow)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -150,7 +150,7 @@ public class SqlFactSourceTest {
 		// answer by it
 		try (SqlFactSource source = source()) {
 			Unifiable<String> out = lvar();
-			List<String> answers = person.exists(source, lval(2), out)
+			List<String> answers = person.apply(source, lval(2), out)
 					.solve(out)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -164,12 +164,12 @@ public class SqlFactSourceTest {
 		// every position bound: the projection degenerates — no unbound
 		// columns to select — and must still compile to legal SQL
 		try (SqlFactSource source = source()) {
-			assertThat(person.exists(source,
+			assertThat(person.apply(source,
 					lval(3),
 					lval("Kurt"))
 					.solve(lvar())
 					.count()).isEqualTo(1);
-			assertThat(person.exists(source,
+			assertThat(person.apply(source,
 					lval(3),
 					lval("Ada"))
 					.solve(lvar())
@@ -179,7 +179,7 @@ public class SqlFactSourceTest {
 
 	private static List<String> solvedNames(AnswerSource source) {
 		Unifiable<String> out = lvar();
-		return person.exists(source, lvar(), out)
+		return person.apply(source, lvar(), out)
 				.solve(out)
 				.map(Object::toString)
 				.sorted()

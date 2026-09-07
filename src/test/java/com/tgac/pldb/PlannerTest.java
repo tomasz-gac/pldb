@@ -18,7 +18,7 @@ import com.tgac.pldb.inmemory.Trigger;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.Relations;
+import com.tgac.pldb.relations.RelationN;
 import io.vavr.collection.IndexedSeq;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -33,8 +33,8 @@ public class PlannerTest {
 	private static final int N = 40;
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
-	private static final Relations._2<Integer, Integer> parent =
-			Relations.relation("parentP", parentId.indexed(), childId.indexed());
+	private static final RelationN parent =
+			RelationN.of("parentP", parentId.indexed(), childId.indexed());
 
 	/** Counts facts the index yields — the probe metric of query-planning.md §Phase 2. */
 	private static final class CountingDb implements Database {
@@ -89,8 +89,8 @@ public class PlannerTest {
 	/** grandparent-of-39, deliberately mis-ordered: the unbound joins first. */
 	private static com.tgac.logic.goals.Goal misOrdered(Database db, Unifiable<Integer> gp) {
 		Unifiable<Integer> p = lvar();
-		return parent.exists(db, gp, p)
-				.and(parent.exists(db, p, lval(N - 1)));
+		return parent.apply(db, gp, p)
+				.and(parent.apply(db, p, lval(N - 1)));
 	}
 
 	@Test

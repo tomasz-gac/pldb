@@ -75,6 +75,11 @@ public class RelationN implements Relation {
 	}
 
 	public Fact apply(Object... vs) {
+		return fact(vs);
+	}
+
+	/** The relation's stored-row face: ground values in declared order. */
+	public Fact fact(Object... vs) {
 		return Fact.of(this, Array.of(vs));
 	}
 }

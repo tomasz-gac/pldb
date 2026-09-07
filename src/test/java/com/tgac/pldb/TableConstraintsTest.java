@@ -22,10 +22,10 @@ import com.tgac.pldb.constraints.Support;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple2;
 import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import java.util.Arrays;
 import java.util.List;
@@ -47,12 +47,12 @@ public class TableConstraintsTest {
 	private static final Property<String> label = Property.of("label");
 	private static final Property<Integer> price = Property.of("price");
 
-	private static final Relations._2<Integer, String> r =
-			Relations.relation("r", item.indexed(), tag.indexed());
-	private static final Relations._2<String, Integer> s =
-			Relations.relation("s", label.indexed(), price.indexed());
-	private static final Relations._2<Integer, String> t =
-			Relations.relation("t", item.indexed(), tag.indexed());
+	private static final RelationN r =
+			RelationN.of("r", item.indexed(), tag.indexed());
+	private static final RelationN s =
+			RelationN.of("s", label.indexed(), price.indexed());
+	private static final RelationN t =
+			RelationN.of("t", item.indexed(), tag.indexed());
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -326,8 +326,8 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x1 = lvar();
 		Unifiable<String> y1 = lvar();
 		Unifiable<Integer> z1 = lvar();
-		List<String> viaExists = r.exists(db, x1, y1)
-				.and(s.exists(db, y1, z1))
+		List<String> viaExists = r.apply(db, x1, y1)
+				.and(s.apply(db, y1, z1))
 				.solve(lval(Tuple.of(x1, y1, z1)))
 				.map(Object::toString)
 				.sorted()

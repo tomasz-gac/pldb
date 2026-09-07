@@ -10,7 +10,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
+import com.tgac.pldb.relations.RelationN;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -20,8 +20,8 @@ public class AnswerSourceTest {
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final Relations._2<Integer, String> person =
-			Relations.relation("person", id.indexed(), name);
+	private static final RelationN person =
+			RelationN.of("person", id.indexed(), name);
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -36,11 +36,11 @@ public class AnswerSourceTest {
 
 		Unifiable<String> viaSource = lvar();
 		Unifiable<String> viaDb = lvar();
-		assertThat(person.exists(source, lvar(), viaSource)
+		assertThat(person.apply(source, lvar(), viaSource)
 				.solve(viaSource)
 				.map(Object::toString)
 				.collect(Collectors.toList()))
-				.containsExactlyElementsOf(person.exists(db, lvar(), viaDb)
+				.containsExactlyElementsOf(person.apply(db, lvar(), viaDb)
 						.solve(viaDb)
 						.map(Object::toString)
 						.collect(Collectors.toList()));

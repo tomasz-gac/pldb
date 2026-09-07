@@ -10,7 +10,7 @@ import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
+import com.tgac.pldb.relations.RelationN;
 import io.vavr.control.Either;
 import java.util.Arrays;
 import java.util.List;
@@ -21,15 +21,15 @@ import org.junit.Test;
 public class ImmutableDatabaseTest {
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
-	private static final Relations._1<String> man = Relations.relation("man", name);
-	private static final Relations._1<String> woman = Relations.relation("woman", name);
-	private static final Relations._2<String, String> parent = Relations.relation("parent", name, child);
+	private static final RelationN man = RelationN.of("man", name);
+	private static final RelationN woman = RelationN.of("woman", name);
+	private static final RelationN parent = RelationN.of("parent", name, child);
 
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<String> data = Property.of("data");
 
-	private static final Relations._3<Integer, Integer, String> tree = Relations.relation("tree", id, parentId, data);
+	private static final RelationN tree = RelationN.of("tree", id, parentId, data);
 
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
@@ -86,8 +86,8 @@ public class ImmutableDatabaseTest {
 		System.out.println(db);
 
 		Assertions.assertThat(
-						parent.exists(db, par, lval("Tomek"))
-								.and(parent.exists(db, grandparent, par))
+						parent.apply(db, par, lval("Tomek"))
+								.and(parent.apply(db, grandparent, par))
 								.solve(grandparent)
 								.map(u -> u.asVal().get())
 								.collect(Collectors.toList()))
@@ -100,9 +100,9 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> child = lvar();
 
 		Assertions.assertThat(Goal.success().and(
-								parent.exists(db, lval("Wiesław"), child),
-								parent.exists(db, spouse, child),
-								woman.exists(db, spouse))
+								parent.apply(db, lval("Wiesław"), child),
+								parent.apply(db, spouse, child),
+								woman.apply(db, spouse))
 						.solve(spouse)
 						.map(u -> u.asVal().get())
 						.distinct()
@@ -113,7 +113,7 @@ public class ImmutableDatabaseTest {
 	static Goal ancestors(Unifiable<String> descendant, Unifiable<LList<String>> ancestors) {
 		Unifiable<String> p = lvar();
 		Unifiable<LList<String>> rest = lvar();
-		return parent.exists(db, p, descendant)
+		return parent.apply(db, p, descendant)
 				.and(ancestors.unifies(LList.of(p, rest)))
 				.and(condu(defer(() -> ancestors(p, rest)),
 						rest.unifies(LList.empty())));
@@ -141,8 +141,8 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> vh = lvar();
 		Unifiable<LList<String>> vd = lvar();
 
-		return line.unifies(LList.empty()).and(parent.exists(db, ancestor, descendant))
-				.or(parent.exists(db, ancestor, vh)
+		return line.unifies(LList.empty()).and(parent.apply(db, ancestor, descendant))
+				.or(parent.apply(db, ancestor, vh)
 						.and(line.unifies(LList.of(vh, vd)))
 						.and(defer(() -> line(vh, vd, descendant))));
 	}

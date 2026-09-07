@@ -16,8 +16,8 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.relations.RelationN;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.sql.Connection;
@@ -53,10 +53,10 @@ public class PostgresFactSourceTest {
 	private static final Property<Integer> src = Property.of("src");
 	private static final Property<Integer> dst = Property.of("dst");
 
-	private static final Relations._2<Integer, String> person =
-			Relations.relation("person", id.indexed(), name);
-	private static final Relations._2<Integer, Integer> edge =
-			Relations.relation("edge", src.indexed(), dst.indexed());
+	private static final RelationN person =
+			RelationN.of("person", id.indexed(), name);
+	private static final RelationN edge =
+			RelationN.of("edge", src.indexed(), dst.indexed());
 
 	private static final List<Fact> facts = Arrays.asList(
 			person.fact(1, "Ada"),
@@ -191,7 +191,7 @@ public class PostgresFactSourceTest {
 		return Literal.relation("reachable")
 				.arg("src", x)
 				.arg("dst", y)
-				.solving(edge.exists(backing, x, y)
+				.solving(edge.apply(backing, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return reach(backing, x, z)
@@ -205,9 +205,9 @@ public class PostgresFactSourceTest {
 		Unifiable<String> pgName = lvar();
 		Unifiable<Integer> viaMemory = lvar();
 		Unifiable<String> memoryName = lvar();
-		List<String> pg = answers(person.exists(source, viaPg, pgName),
+		List<String> pg = answers(person.apply(source, viaPg, pgName),
 				lval(Tuple.of(viaPg, pgName)));
-		List<String> memory = answers(person.exists(reference, viaMemory, memoryName),
+		List<String> memory = answers(person.apply(reference, viaMemory, memoryName),
 				lval(Tuple.of(viaMemory, memoryName)));
 		assertThat(pg).isNotEmpty().isEqualTo(memory);
 	}

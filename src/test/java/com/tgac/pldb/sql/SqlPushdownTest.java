@@ -18,7 +18,7 @@ import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
+import com.tgac.pldb.relations.RelationN;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -37,8 +37,8 @@ public class SqlPushdownTest {
 	private static final Property<Long> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final Relations._2<Long, String> person =
-			Relations.relation("person", id.indexed(), name);
+	private static final RelationN person =
+			RelationN.of("person", id.indexed(), name);
 
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -83,12 +83,12 @@ public class SqlPushdownTest {
 		SqlFactSource source = pushing();
 		Unifiable<Long> narrow = lvar();
 		assertThat(dom(narrow, EnumeratedDomain.range(1L, 3L))
-				.and(person.exists(source, narrow, lvar()))
+				.and(person.apply(source, narrow, lvar()))
 				.solve(narrow)
 				.count()).isEqualTo(2);
 
 		Unifiable<String> everyone = lvar();
-		assertThat(person.exists(source, lvar(), everyone)
+		assertThat(person.apply(source, lvar(), everyone)
 				.solve(everyone)
 				.count()).isEqualTo(3);
 	}
@@ -114,14 +114,14 @@ public class SqlPushdownTest {
 		SqlFactSource source = pushing();
 		Unifiable<Long> wide = lvar();
 		assertThat(dom(wide, EnumeratedDomain.range(1L, 4L))
-				.and(person.exists(source, wide, lvar()))
+				.and(person.apply(source, wide, lvar()))
 				.solve(wide)
 				.count()).isEqualTo(3);
 		int afterPushed = statements.get();
 
 		Unifiable<Long> narrower = lvar();
 		assertThat(dom(narrower, EnumeratedDomain.range(1L, 3L))
-				.and(person.exists(source, narrower, lvar()))
+				.and(person.apply(source, narrower, lvar()))
 				.solve(narrower)
 				.count()).isEqualTo(2);
 		assertThat(statements.get())
@@ -177,7 +177,7 @@ public class SqlPushdownTest {
 	private static List<String> fusedProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(x.unifies(2L))
 				.and(exclude(dom(x, range(1L, 3L))))
-				.and(person.exists(source, x, lvar()))
+				.and(person.apply(source, x, lvar()))
 				.solve(x)
 				.map(Object::toString)
 				.sorted()
@@ -206,7 +206,7 @@ public class SqlPushdownTest {
 
 	private static List<String> doubleNegationProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(exclude(x.unifies(3L)))
-				.and(person.exists(source, x, lvar()))
+				.and(person.apply(source, x, lvar()))
 				.solve(x)
 				.map(Object::toString)
 				.sorted()
@@ -231,7 +231,7 @@ public class SqlPushdownTest {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
 		return dom(x, EnumeratedDomain.range(1L, 3L))
-				.and(person.exists(source, x, out))
+				.and(person.apply(source, x, out))
 				.solve(out)
 				.map(Object::toString)
 				.sorted()
@@ -242,7 +242,7 @@ public class SqlPushdownTest {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
 		return FiniteDomain.leq(x, lval(2L))
-				.and(person.exists(source, x, out))
+				.and(person.apply(source, x, out))
 				.solve(out)
 				.map(Object::toString)
 				.sorted()
@@ -251,7 +251,7 @@ public class SqlPushdownTest {
 
 	private static List<String> exclusionProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(x.unifies(2L))
-				.and(person.exists(source, x, lvar()))
+				.and(person.apply(source, x, lvar()))
 				.solve(x)
 				.map(Object::toString)
 				.sorted()

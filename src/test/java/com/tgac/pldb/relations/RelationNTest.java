@@ -16,44 +16,44 @@ public class RelationNTest {
 
 	@Test
 	public void shouldBuildValidRelation(){
-		Relations.relation("test", P0);
-		Relations.relation("test", P0, P1);
-		Relations.relation("test", P0, P1, P2);
-		Relations.relation("test", P0, P1, P2, P3);
-		Relations.relation("test", P0, P1, P2, P3, P4);
-		Relations.relation("test", P0, P1, P2, P3, P4, P5);
-		Relations.relation("test", P0, P1, P2, P3, P4, P5, P6);
-		Relations.relation("test", P0, P1, P2, P3, P4, P5, P6, P7);
+		RelationN.of("test", P0);
+		RelationN.of("test", P0, P1);
+		RelationN.of("test", P0, P1, P2);
+		RelationN.of("test", P0, P1, P2, P3);
+		RelationN.of("test", P0, P1, P2, P3, P4);
+		RelationN.of("test", P0, P1, P2, P3, P4, P5);
+		RelationN.of("test", P0, P1, P2, P3, P4, P5, P6);
+		RelationN.of("test", P0, P1, P2, P3, P4, P5, P6, P7);
 	}
 
 	@Test
 	public void shouldThrowOnDuplicatedName(){
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, DUPLICATED))
+				RelationN.of("test", P0, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, DUPLICATED))
+				RelationN.of("test", P0, P1, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, P2, DUPLICATED))
+				RelationN.of("test", P0, P1, P2, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, P2, P3, DUPLICATED))
+				RelationN.of("test", P0, P1, P2, P3, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, P2, P3, P4, DUPLICATED))
+				RelationN.of("test", P0, P1, P2, P3, P4, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, P2, P3, P4, P5, DUPLICATED))
+				RelationN.of("test", P0, P1, P2, P3, P4, P5, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->
-				Relations.relation("test", P0, P1, P2, P3, P4, P5, P6, DUPLICATED))
+				RelationN.of("test", P0, P1, P2, P3, P4, P5, P6, DUPLICATED))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 		Assertions.assertThatThrownBy(() ->

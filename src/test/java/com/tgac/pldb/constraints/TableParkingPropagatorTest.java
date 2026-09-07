@@ -29,9 +29,9 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
@@ -46,8 +46,8 @@ public class TableParkingPropagatorTest {
 	private static final Property<Integer> item = Property.of("item");
 	private static final Property<String> tag = Property.of("tag");
 
-	private static final Relations._2<Integer, String> r =
-			Relations.relation("r", item.indexed(), tag.indexed());
+	private static final RelationN r =
+			RelationN.of("r", item.indexed(), tag.indexed());
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
@@ -61,7 +61,7 @@ public class TableParkingPropagatorTest {
 		return Literal.relation("rr")
 				.arg("item", i)
 				.arg("tag", t)
-				.solving(r.exists(db, i, t)).posted();
+				.solving(r.apply(db, i, t)).posted();
 	}
 
 	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
@@ -222,7 +222,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<Integer> ex = lvar();
 		Unifiable<String> ey = lvar();
 		assertThat(answers((Goal) posted(px, py), lval(Tuple.of(px, py))))
-				.isEqualTo(answers(r.exists(db, ex, ey), lval(Tuple.of(ex, ey))));
+				.isEqualTo(answers(r.apply(db, ex, ey), lval(Tuple.of(ex, ey))));
 	}
 
 	@Test
