@@ -81,6 +81,17 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 		return Propagation.activate(new TableParkingPropagator(rel, producer, args));
 	}
 
+	/**
+	 * Post a RULE: the propagator composes it with the SOLVE's table at
+	 * wake, so the extension it reads is the same entries every goal-side
+	 * consumer shares — and an unstratified negation becomes a genuine
+	 * cyclic wait the substrate can refuse, instead of a silent regress
+	 * through fresh worlds.
+	 */
+	public static Posting postedRule(Relation rel, Goal rule, Array<Unifiable<?>> args) {
+		return Propagation.activate(TableParkingPropagator.rule(rel, rule, args));
+	}
+
 
 	/**
 	 * The declared branch point: enumerate each variable's LIVE support, in

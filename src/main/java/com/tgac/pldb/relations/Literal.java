@@ -16,7 +16,6 @@ import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
-import com.tgac.logic.tabling.Table;
 import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
@@ -144,8 +143,7 @@ public class Literal implements Goal, Bounded, Postable {
 
 		@Override
 		public Posting posted(Literal lit) {
-			return TableConstraints.posted(
-					GoalProducer.of(lit.rel, body, lit.args, Table.empty()), lit.rel, lit.args);
+			return TableConstraints.postedRule(lit.rel, body, lit.args);
 		}
 
 		@Override

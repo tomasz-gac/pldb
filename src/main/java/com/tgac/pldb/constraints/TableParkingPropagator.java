@@ -24,7 +24,9 @@ import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
+import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -61,12 +63,26 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class TableParkingPropagator extends ParkingPropagator<TableConstraints> {
 	private final AnswerProducer producer;
+	private final Goal rule;
+	private final Array<Unifiable<?>> heads;
 	private final Relation rel;
 
 	protected TableParkingPropagator(Relation rel, AnswerProducer producer, Array<? extends Term<?>> watchedTerms) {
+		this(rel, producer, null, null, watchedTerms);
+	}
+
+	private TableParkingPropagator(Relation rel, AnswerProducer producer, Goal rule,
+			Array<Unifiable<?>> heads, Array<? extends Term<?>> watchedTerms) {
 		super(watchedTerms);
 		this.producer = producer;
+		this.rule = rule;
+		this.heads = heads;
 		this.rel = rel;
+	}
+
+	/** The rule kind: composed with the SOLVE's table at wake. */
+	static TableParkingPropagator rule(Relation rel, Goal rule, Array<Unifiable<?>> heads) {
+		return new TableParkingPropagator(rel, null, rule, heads, heads);
 	}
 
 	@Override
@@ -93,12 +109,29 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	private Fiber<JoinMap<Reified<?>, Condition>> extension(Call<Relation> probe, Package pkg) {
 		Scope sub = Scope.scope("TableParkingPropagatorProduction");
 		Queue<Tuple2<Reified<?>, Condition>> delivered = new ConcurrentLinkedQueue<>();
-		return Fiber.claim(sub, producer.produce(probe, answer -> {
+		return Fiber.claim(sub, producerFor(pkg).produce(probe, answer -> {
 					delivered.add(answer);
 					return Fiber.done(Nothing.nothing());
 				}))
 				.flatMap(explored -> Fiber.sealed(sub))
 				.map(sealed -> Extension.fold(delivered));
+	}
+
+	/**
+	 * The one drain has one producer: the async kind as posted, or the rule
+	 * composed with the SOLVE's table — residence arrives with the package,
+	 * so constraint and goal readings share entries, and a negation cycle
+	 * is a visible cyclic wait instead of a fresh-world regress.
+	 */
+	private AnswerProducer producerFor(Package pkg) {
+		if (rule == null) {
+			return producer;
+		}
+		Table table = pkg.getStores().get(Table.class)
+				.map(Table.class::cast)
+				.getOrElseThrow(() -> new IllegalStateException(
+						"posted rule '" + rel.getName() + "' outside a solve: no table in the package"));
+		return GoalProducer.of(rel, rule, heads, table);
 	}
 
 
@@ -133,6 +166,9 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * carries no region: the upper bound stays sound ignoring it.
 	 */
 	long estimate(Array<Term<?>> walked) {
+		if (rule != null) {
+			return Long.MAX_VALUE;
+		}
 		return producer.estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
 				lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground()));
 	}
@@ -149,7 +185,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public ParkingPropagator<TableConstraints> watching(Array<? extends Term<?>> terms) {
-		return new TableParkingPropagator(rel, producer, terms);
+		return new TableParkingPropagator(rel, producer, rule, heads, terms);
 	}
 
 	@Override
@@ -159,7 +195,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + producer.id();
+		return rel.getName() + "@" + (producer != null ? producer.id() : "rule");
 	}
 
 	@Override
