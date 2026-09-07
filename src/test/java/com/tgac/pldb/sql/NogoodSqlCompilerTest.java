@@ -27,7 +27,8 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,7 +93,7 @@ public class NogoodSqlCompilerTest {
 		// a literal of a family with no compiler (the posted table): pushing
 		// the REST of the disjunction would strengthen — whole or not at all
 		Property<Long> id = Property.of("id");
-		RelationN r = RelationN.of("r", id);
+		Relation r = Literal.relation("r").arg("id", lvar()).from(null).getRel();
 		Posting posted = TableConstraints.posted(ImmutableDatabase.empty(), r, Array.of(x));
 		assertThat(compiled(exclude(Posting.all(x.unifies(2L), posted)))).isEmpty();
 	}
@@ -145,7 +146,7 @@ public class NogoodSqlCompilerTest {
 		// oneUncompilableLiteralRefusesTheWholeConjunct forbids. Negation
 		// flips the direction ONCE, at the conjunct boundary.
 		Property<Long> id = Property.of("id");
-		RelationN r = RelationN.of("r", id);
+		Relation r = Literal.relation("r").arg("id", lvar()).from(null).getRel();
 		Posting posted = TableConstraints.posted(ImmutableDatabase.empty(), r, Array.of(x));
 		Nogood refused = (Nogood) ((Posting.Activation) exclude(posted)).getItem();
 		Optional<SqlPredicate> partial = compiler().compile(first.combine(refused), this::column);

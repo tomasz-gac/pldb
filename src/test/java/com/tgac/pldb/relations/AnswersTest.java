@@ -3,6 +3,8 @@ package com.tgac.pldb.relations;
 // ABOUTME: The answer codec: a Fact encodes as (ground reified row, ONE); the image
 // ABOUTME: decodes per position — values for rows, a pattern for probes.
 
+import static com.tgac.logic.unification.LVar.lvar;
+
 import static com.tgac.logic.unification.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,8 +18,8 @@ import org.junit.Test;
 
 public class AnswersTest {
 
-	private final Relation person = RelationN.of("person",
-			Property.of("id"), Property.of("name"));
+	private final Relation person = Literal.relation("person")
+			.arg("id", lvar()).arg("name", lvar()).from(null).getRel();
 
 	@Test
 	public void aFactEncodesAsAGroundRowAtOne() {

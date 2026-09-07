@@ -3,12 +3,16 @@ package com.tgac.pldb;
 // ABOUTME: Pins the AnswerSource seam: lookups and posted constraints constructed
 // ABOUTME: against the read face answer identically to the Database-typed path.
 
+import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import java.util.Arrays;
@@ -17,17 +21,27 @@ import org.junit.Test;
 
 public class AnswerSourceTest {
 
+	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
+		return Literal.relation("person")
+				.arg("id", id).indexed()
+				.arg("name", name)
+				.from(db);
+	}
+
+	private static Relation personRel() {
+		return person(null, lvar(), lvar()).getRel();
+	}
+
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final RelationN person =
-			RelationN.of("person", id.indexed(), name);
+
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person.fact(1, "Ada"),
-					person.fact(2, "Alan"),
-					person.fact(3, "Kurt")))
+					person(null, lval(1), lval("Ada")).fact(),
+					person(null, lval(2), lval("Alan")).fact(),
+					person(null, lval(3), lval("Kurt")).fact()))
 			.get();
 
 	@Test
@@ -36,11 +50,11 @@ public class AnswerSourceTest {
 
 		Unifiable<String> viaSource = lvar();
 		Unifiable<String> viaDb = lvar();
-		assertThat(person.apply(source, lvar(), viaSource)
+		assertThat(person(source, lvar(), viaSource)
 				.solve(viaSource)
 				.map(Object::toString)
 				.collect(Collectors.toList()))
-				.containsExactlyElementsOf(person.apply(db, lvar(), viaDb)
+				.containsExactlyElementsOf(person(db, lvar(), viaDb)
 						.solve(viaDb)
 						.map(Object::toString)
 						.collect(Collectors.toList()));
@@ -52,11 +66,11 @@ public class AnswerSourceTest {
 
 		Unifiable<Integer> keyViaSource = lvar();
 		Unifiable<Integer> keyViaDb = lvar();
-		assertThat(person.posted(source, keyViaSource, lvar())
+		assertThat(person(source, keyViaSource, lvar()).posted()
 				.solve(keyViaSource)
 				.map(Object::toString)
 				.collect(Collectors.toList()))
-				.containsExactlyElementsOf(person.posted(db, keyViaDb, lvar())
+				.containsExactlyElementsOf(person(db, keyViaDb, lvar()).posted()
 						.solve(keyViaDb)
 						.map(Object::toString)
 						.collect(Collectors.toList()));

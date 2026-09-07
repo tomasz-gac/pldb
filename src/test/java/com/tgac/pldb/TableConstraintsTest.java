@@ -25,6 +25,8 @@ import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple2;
 import com.tgac.pldb.constraints.TableConstraints;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import io.vavr.Tuple;
 import java.util.Arrays;
@@ -42,28 +44,58 @@ import org.junit.Test;
  */
 public class TableConstraintsTest {
 
+	private static Literal r(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
+		return Literal.relation("r")
+				.arg("item", item).indexed()
+				.arg("tag", tag).indexed()
+				.from(db);
+	}
+
+	private static Relation rRel() {
+		return r(null, lvar(), lvar()).getRel();
+	}
+
+	private static Literal s(AnswerSource db, Unifiable<String> label, Unifiable<Integer> price) {
+		return Literal.relation("s")
+				.arg("label", label).indexed()
+				.arg("price", price).indexed()
+				.from(db);
+	}
+
+	private static Relation sRel() {
+		return s(null, lvar(), lvar()).getRel();
+	}
+
+	private static Literal t(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
+		return Literal.relation("t")
+				.arg("item", item).indexed()
+				.arg("tag", tag).indexed()
+				.from(db);
+	}
+
+	private static Relation tRel() {
+		return t(null, lvar(), lvar()).getRel();
+	}
+
 	private static final Property<Integer> item = Property.of("item");
 	private static final Property<String> tag = Property.of("tag");
 	private static final Property<String> label = Property.of("label");
 	private static final Property<Integer> price = Property.of("price");
 
-	private static final RelationN r =
-			RelationN.of("r", item.indexed(), tag.indexed());
-	private static final RelationN s =
-			RelationN.of("s", label.indexed(), price.indexed());
-	private static final RelationN t =
-			RelationN.of("t", item.indexed(), tag.indexed());
+
+
+
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					r.fact(1, "a"),
-					r.fact(2, "b"),
-					r.fact(3, "c"),
-					s.fact("a", 10),
-					s.fact("b", 20),
-					s.fact("d", 40),
-					t.fact(7, "u"),
-					t.fact(7, "v")))
+					r(null, lval(1), lval("a")).fact(),
+					r(null, lval(2), lval("b")).fact(),
+					r(null, lval(3), lval("c")).fact(),
+					s(null, lval("a"), lval(10)).fact(),
+					s(null, lval("b"), lval(20)).fact(),
+					s(null, lval("d"), lval(40)).fact(),
+					t(null, lval(7), lval("u")).fact(),
+					t(null, lval(7), lval("v")).fact()))
 			.get();
 
 	/** A goal that runs assertions against the live package and succeeds. */
@@ -94,12 +126,12 @@ public class TableConstraintsTest {
 		};
 		Unifiable<String> viaBarrier = lvar();
 		Unifiable<String> viaDb = lvar();
-		List<String> barrierAnswers = r.posted(barrier, lvar(), viaBarrier)
+		List<String> barrierAnswers = r(barrier, lvar(), viaBarrier).posted()
 				.solve(viaBarrier)
 				.map(Object::toString)
 				.sorted()
 				.collect(Collectors.toList());
-		List<String> dbAnswers = r.posted(db, lvar(), viaDb)
+		List<String> dbAnswers = r(db, lvar(), viaDb).posted()
 				.solve(viaDb)
 				.map(Object::toString)
 				.sorted()
@@ -114,8 +146,8 @@ public class TableConstraintsTest {
 		Unifiable<String> y = lvar();
 		Unifiable<Integer> z = lvar();
 
-		List<String> answers = r.posted(db, x, y)
-				.and(s.posted(db, y, z))
+		List<String> answers = r(db, x, y).posted()
+				.and(s(db, y, z).posted())
 				.and(probe(p -> {
 					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
 					// y is the SHARED column: r's tags met with s's labels,
@@ -139,7 +171,7 @@ public class TableConstraintsTest {
 	public void aSingletonCandidateSetCollapsesToBindingsWithoutBranching() {
 		Unifiable<String> y = lvar();
 
-		long count = r.posted(db, lval(2), y)
+		long count = r(db, lval(2), y).posted()
 				.and(probe(p -> assertThat(p.walk(y).get()).isEqualTo("b")))
 				.solve(y)
 				.count();
@@ -151,7 +183,7 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
-		long count = r.posted(db, x, y)
+		long count = r(db, x, y).posted()
 				.and(x.unifies(3))
 				.and(probe(p -> assertThat(p.walk(y).get()).isEqualTo("c")))
 				.solve(y)
@@ -162,15 +194,15 @@ public class TableConstraintsTest {
 	@Test
 	public void anEmptyCandidateSetFails() {
 		Unifiable<String> y = lvar();
-		assertThat(r.posted(db, lval(99), y).solve(y).count()).isZero();
+		assertThat(r(db, lval(99), y).posted().solve(y).count()).isZero();
 	}
 
 	@Test
 	public void aGroundPostIsAMembershipCheck() {
 		Unifiable<String> out = lvar();
-		assertThat(r.posted(db, lval(1), lval("a")).and(out.unifies("yes")).solve(out).count())
+		assertThat(r(db, lval(1), lval("a")).posted().and(out.unifies("yes")).solve(out).count())
 				.isEqualTo(1);
-		assertThat(r.posted(db, lval(1), lval("b")).and(out.unifies("yes")).solve(out).count())
+		assertThat(r(db, lval(1), lval("b")).posted().and(out.unifies("yes")).solve(out).count())
 				.isZero();
 	}
 
@@ -180,8 +212,8 @@ public class TableConstraintsTest {
 		Unifiable<String> y = lvar();
 
 		// labelling the SHARED column: each y branch collapses both records
-		List<Integer> items = r.posted(db, x, y)
-				.and(s.posted(db, y, lvar()))
+		List<Integer> items = r(db, x, y).posted()
+				.and(s(db, y, lvar()).posted())
 				.and(TableConstraints.labelo(y))
 				.solve(x)
 				.map(Term::get)
@@ -194,7 +226,7 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
-		long count = r.posted(db, x, y)
+		long count = r(db, x, y).posted()
 				.and(probe(p -> {
 					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
 					assertThat(TableConstraints.empty().getValue(store, p.walk(x)).isDefined()).isFalse();
@@ -215,7 +247,7 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
-		List<String> rows = r.posted(db, x, y)
+		List<String> rows = r(db, x, y).posted()
 				.solve(lval(Tuple.of(x, y)))
 				.map(Term::get)
 				.map(p -> p._1.get() + "," + p._2.get())
@@ -230,7 +262,7 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
 
-		long count = t.posted(db, x, y)
+		long count = t(db, x, y).posted()
 				.and(probe(p -> {
 					assertThat(p.walk(x).get()).isEqualTo(7);
 					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
@@ -246,13 +278,13 @@ public class TableConstraintsTest {
 	public void aPostedGoalPricesZeroWhenDeadAndOneOtherwise() {
 		Unifiable<String> y = lvar();
 		// bound arg with an empty bucket: no candidate can ever appear
-		assertThat(((Bounded) r.posted(db, lval(99), y)).answers(Package.empty()))
+		assertThat(((Bounded) r(db, lval(99), y).posted()).answers(Package.empty()))
 				.isZero();
 		// a live post is a constraint statement: one success, ever
-		assertThat(((Bounded) r.posted(db, lval(1), y)).answers(Package.empty()))
+		assertThat(((Bounded) r(db, lval(1), y).posted()).answers(Package.empty()))
 				.isEqualTo(1);
 		Unifiable<Integer> x = lvar();
-		assertThat(((Bounded) r.posted(db, x, y)).answers(Package.empty()))
+		assertThat(((Bounded) r(db, x, y).posted()).answers(Package.empty()))
 				.isEqualTo(1);
 	}
 
@@ -263,8 +295,8 @@ public class TableConstraintsTest {
 		Unifiable<Integer> z = lvar();
 		Package[] captured = new Package[1];
 
-		long answers = r.posted(db, x, y)
-				.and(s.posted(db, y, z))
+		long answers = r(db, x, y).posted()
+				.and(s(db, y, z).posted())
 				.and(probe(p -> captured[0] = p))
 				.solve(lval(Tuple.of(x, y, z)))
 				.count();
@@ -287,8 +319,8 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
 
-		long count = r.posted(db, x1, y1)
-				.and(t.posted(db, x2, y2))
+		long count = r(db, x1, y1).posted()
+				.and(t(db, x2, y2).posted())
 				.solve(lval(Tuple.of(x1, y1, x2, y2)))
 				.count();
 		assertThat(count).isEqualTo(6);
@@ -303,8 +335,8 @@ public class TableConstraintsTest {
 
 		// posted apart: no sharing, nothing stored; the alias welds y~l and
 		// both records materialize the column and meet
-		long count = r.posted(db, x, y)
-				.and(s.posted(db, l, z))
+		long count = r(db, x, y).posted()
+				.and(s(db, l, z).posted())
 				.and(probe(p -> {
 					Theory<TableConstraints> store = Constraint.in(p, TableConstraints.class).get().getTheory();
 					assertThat(TableConstraints.empty().getValue(store, p.walk(y)).isDefined()).isFalse();
@@ -326,8 +358,8 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x1 = lvar();
 		Unifiable<String> y1 = lvar();
 		Unifiable<Integer> z1 = lvar();
-		List<String> viaExists = r.apply(db, x1, y1)
-				.and(s.apply(db, y1, z1))
+		List<String> viaExists = r(db, x1, y1)
+				.and(s(db, y1, z1))
 				.solve(lval(Tuple.of(x1, y1, z1)))
 				.map(Object::toString)
 				.sorted()
@@ -336,8 +368,8 @@ public class TableConstraintsTest {
 		Unifiable<Integer> x2 = lvar();
 		Unifiable<String> y2 = lvar();
 		Unifiable<Integer> z2 = lvar();
-		List<String> viaPosted = r.posted(db, x2, y2)
-				.and(s.posted(db, y2, z2))
+		List<String> viaPosted = r(db, x2, y2).posted()
+				.and(s(db, y2, z2).posted())
 				.solve(lval(Tuple.of(x2, y2, z2)))
 				.map(Object::toString)
 				.sorted()

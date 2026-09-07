@@ -48,24 +48,44 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 public class PostgresFactSourceTest {
 
+	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
+		return Literal.relation("person")
+				.arg("id", id).indexed()
+				.arg("name", name)
+				.from(db);
+	}
+
+	private static Relation personRel() {
+		return person(null, lvar(), lvar()).getRel();
+	}
+
+	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
+		return Literal.relation("edge")
+				.arg("src", src).indexed()
+				.arg("dst", dst).indexed()
+				.from(db);
+	}
+
+	private static Relation edgeRel() {
+		return edge(null, lvar(), lvar()).getRel();
+	}
+
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 	private static final Property<Integer> src = Property.of("src");
 	private static final Property<Integer> dst = Property.of("dst");
 
-	private static final RelationN person =
-			RelationN.of("person", id.indexed(), name);
-	private static final RelationN edge =
-			RelationN.of("edge", src.indexed(), dst.indexed());
+
+
 
 	private static final List<Fact> facts = Arrays.asList(
-			person.fact(1, "Ada"),
-			person.fact(2, "Alan"),
-			person.fact(3, "Kurt"),
-			edge.fact(1, 2),
-			edge.fact(1, 3),
-			edge.fact(2, 4),
-			edge.fact(3, 4));
+			person(null, lval(1), lval("Ada")).fact(),
+			person(null, lval(2), lval("Alan")).fact(),
+			person(null, lval(3), lval("Kurt")).fact(),
+			edge(null, lval(1), lval(2)).fact(),
+			edge(null, lval(1), lval(3)).fact(),
+			edge(null, lval(2), lval(4)).fact(),
+			edge(null, lval(3), lval(4)).fact());
 
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(facts)
@@ -191,11 +211,11 @@ public class PostgresFactSourceTest {
 		return Literal.relation("reachable")
 				.arg("src", x)
 				.arg("dst", y)
-				.solving(edge.apply(backing, x, y)
+				.solving(edge(backing, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
 									return reach(backing, x, z)
-											.and(edge.posted(backing, z, y));
+											.and(edge(backing, z, y).posted());
 								})));
 	}
 
@@ -205,9 +225,9 @@ public class PostgresFactSourceTest {
 		Unifiable<String> pgName = lvar();
 		Unifiable<Integer> viaMemory = lvar();
 		Unifiable<String> memoryName = lvar();
-		List<String> pg = answers(person.apply(source, viaPg, pgName),
+		List<String> pg = answers(person(source, viaPg, pgName),
 				lval(Tuple.of(viaPg, pgName)));
-		List<String> memory = answers(person.apply(reference, viaMemory, memoryName),
+		List<String> memory = answers(person(reference, viaMemory, memoryName),
 				lval(Tuple.of(viaMemory, memoryName)));
 		assertThat(pg).isNotEmpty().isEqualTo(memory);
 	}
@@ -218,9 +238,9 @@ public class PostgresFactSourceTest {
 		Unifiable<String> pgName = lvar();
 		Unifiable<Integer> viaMemory = lvar();
 		Unifiable<String> memoryName = lvar();
-		List<String> pg = answers(person.posted(source, viaPg, pgName),
+		List<String> pg = answers(person(source, viaPg, pgName).posted(),
 				lval(Tuple.of(viaPg, pgName)));
-		List<String> memory = answers(person.posted(reference, viaMemory, memoryName),
+		List<String> memory = answers(person(reference, viaMemory, memoryName).posted(),
 				lval(Tuple.of(viaMemory, memoryName)));
 		assertThat(pg).isNotEmpty().isEqualTo(memory);
 	}

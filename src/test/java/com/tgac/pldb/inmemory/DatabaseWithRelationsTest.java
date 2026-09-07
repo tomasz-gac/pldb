@@ -16,6 +16,9 @@ import com.tgac.logic.goals.Logic;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple;
@@ -31,6 +34,30 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class DatabaseWithRelationsTest {
+
+	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name, Unifiable<String> surname, Unifiable<Gender> gender) {
+		return Literal.relation("person")
+				.arg("id", id).indexed()
+				.arg("name", name).indexed()
+				.arg("surname", surname)
+				.arg("gender", gender)
+				.from(db);
+	}
+
+	private static Relation personRel() {
+		return person(null, lvar(), lvar(), lvar(), lvar()).getRel();
+	}
+
+	private static Literal parent(AnswerSource db, Unifiable<Integer> parentId, Unifiable<Integer> childId) {
+		return Literal.relation("parent")
+				.arg("parentId", parentId).indexed()
+				.arg("childId", childId).indexed()
+				.from(db);
+	}
+
+	private static Relation parentRel() {
+		return parent(null, lvar(), lvar()).getRel();
+	}
 	private enum Gender {
 		MALE, FEMALE
 	}
@@ -40,61 +67,59 @@ public class DatabaseWithRelationsTest {
 	private static final Property<String> surname = Property.of("surname");
 	private static final Property<Gender> gender = Property.of("gender");
 
-	private static final RelationN person =
-			RelationN.of("person", id.indexed(), name.indexed(), surname, gender);
+
 
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
 
-	private static final RelationN parent =
-			RelationN.of("parent", parentId.indexed(), childId.indexed());
+
 
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
-						person.fact(1, "Michał", "Gac", Gender.MALE),
-						person.fact(2, "Franciszek", "Żyduch", Gender.MALE),
-						person.fact(3, "Czesław", "Kroc", Gender.MALE),
-						person.fact(4, "Wacław", "Wiercioch", Gender.MALE),
-						person.fact(5, "Wiesław", "Gac", Gender.MALE),
-						person.fact(6, "Ireneusz", "Kroc", Gender.MALE),
-						person.fact(7, "Michał", "Gac", Gender.MALE),
-						person.fact(8, "Tomek", "Gac", Gender.MALE),
-						person.fact(10, "Aniela", "X", Gender.FEMALE),
-						person.fact(11, "Honorata", "Żyduch", Gender.FEMALE),
-						person.fact(12, "Helena", "Gac", Gender.FEMALE),
-						person.fact(13, "Ewa", "Kroc", Gender.FEMALE),
-						person.fact(14, "Janina", "Wiercioch", Gender.FEMALE),
-						person.fact(15, "Arletta", "Gac", Gender.FEMALE),
-						person.fact(16, "Jolanta", "Kroc", Gender.FEMALE),
-						person.fact(17, "Henryka", "Gac", Gender.FEMALE),
-						person.fact(18, "Kasia", "Gac", Gender.FEMALE),
-						person.fact(19, "Marta", "Gac", Gender.FEMALE),
-						person.fact(20, "Magda", "Gac", Gender.FEMALE),
-						person.fact(21, "Weronika", "Kroc", Gender.FEMALE),
-						person.fact(22, "Monika", "Kroc", Gender.FEMALE)))
+						person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact(),
+						person(null, lval(2), lval("Franciszek"), lval("Żyduch"), lval(Gender.MALE)).fact(),
+						person(null, lval(3), lval("Czesław"), lval("Kroc"), lval(Gender.MALE)).fact(),
+						person(null, lval(4), lval("Wacław"), lval("Wiercioch"), lval(Gender.MALE)).fact(),
+						person(null, lval(5), lval("Wiesław"), lval("Gac"), lval(Gender.MALE)).fact(),
+						person(null, lval(6), lval("Ireneusz"), lval("Kroc"), lval(Gender.MALE)).fact(),
+						person(null, lval(7), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact(),
+						person(null, lval(8), lval("Tomek"), lval("Gac"), lval(Gender.MALE)).fact(),
+						person(null, lval(10), lval("Aniela"), lval("X"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(11), lval("Honorata"), lval("Żyduch"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(12), lval("Helena"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(13), lval("Ewa"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(14), lval("Janina"), lval("Wiercioch"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(15), lval("Arletta"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(16), lval("Jolanta"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(17), lval("Henryka"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(18), lval("Kasia"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(19), lval("Marta"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(20), lval("Magda"), lval("Gac"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(21), lval("Weronika"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
+						person(null, lval(22), lval("Monika"), lval("Kroc"), lval(Gender.FEMALE)).fact()))
 				.get()
 				.withFacts(Arrays.asList(
-						parent.fact(10, 11),
-						parent.fact(1, 5),
-						parent.fact(12, 5),
-						parent.fact(5, 7),
-						parent.fact(5, 18),
-						parent.fact(5, 20),
-						parent.fact(17, 18),
-						parent.fact(17, 7),
-						parent.fact(5, 8),
-						parent.fact(16, 19),
-						parent.fact(11, 15),
-						parent.fact(2, 15),
-						parent.fact(15, 8),
-						parent.fact(15, 20),
-						parent.fact(3, 6),
-						parent.fact(13, 6),
-						parent.fact(14, 16),
-						parent.fact(4, 16),
-						parent.fact(6, 19),
-						parent.fact(6, 22),
-						parent.fact(22, 21)))
+						parent(null, lval(10), lval(11)).fact(),
+						parent(null, lval(1), lval(5)).fact(),
+						parent(null, lval(12), lval(5)).fact(),
+						parent(null, lval(5), lval(7)).fact(),
+						parent(null, lval(5), lval(18)).fact(),
+						parent(null, lval(5), lval(20)).fact(),
+						parent(null, lval(17), lval(18)).fact(),
+						parent(null, lval(17), lval(7)).fact(),
+						parent(null, lval(5), lval(8)).fact(),
+						parent(null, lval(16), lval(19)).fact(),
+						parent(null, lval(11), lval(15)).fact(),
+						parent(null, lval(2), lval(15)).fact(),
+						parent(null, lval(15), lval(8)).fact(),
+						parent(null, lval(15), lval(20)).fact(),
+						parent(null, lval(3), lval(6)).fact(),
+						parent(null, lval(13), lval(6)).fact(),
+						parent(null, lval(14), lval(16)).fact(),
+						parent(null, lval(4), lval(16)).fact(),
+						parent(null, lval(6), lval(19)).fact(),
+						parent(null, lval(6), lval(22)).fact(),
+						parent(null, lval(22), lval(21)).fact()))
 				.get();
 	}
 
@@ -107,10 +132,10 @@ public class DatabaseWithRelationsTest {
 
 		List<String> result =
 				Logic.<Integer, Integer, Integer> exist((gpId, parentId, childId) ->
-								person.apply(db, childId, lval("Tomek"), lvar(), lvar())
-										.and(parent.apply(db, parentId, childId))
-										.and(parent.apply(db, gpId, parentId))
-										.and(person.apply(db, gpId, gpName, gpSurname, lvar())))
+								person(db, childId, lval("Tomek"), lvar(), lvar())
+										.and(parent(db, parentId, childId))
+										.and(parent(db, gpId, parentId))
+										.and(person(db, gpId, gpName, gpSurname, lvar())))
 						.solve(lval(Tuple.of(gpName, gpSurname)))
 						.map(Term::get)
 						.map(DatabaseWithRelationsTest::concatNameAndSurname)
@@ -133,10 +158,10 @@ public class DatabaseWithRelationsTest {
 		assertThat(
 				Logic.<Integer, Integer, Integer> exist(
 								(fatherId, childId, motherId) ->
-										person.apply(db, fatherId, lval("Wiesław"), lvar(), lval(Gender.MALE))
-												.and(parent.apply(db, fatherId, childId),
-														parent.apply(db, motherId, childId),
-														person.apply(db, motherId, spouseName, spouseSurname, lval(Gender.FEMALE))))
+										person(db, fatherId, lval("Wiesław"), lvar(), lval(Gender.MALE))
+												.and(parent(db, fatherId, childId),
+														parent(db, motherId, childId),
+														person(db, motherId, spouseName, spouseSurname, lval(Gender.FEMALE))))
 						.solve(lval(Tuple.of(spouseName, spouseSurname)))
 						.distinct()
 						.map(Term::get)
@@ -146,7 +171,7 @@ public class DatabaseWithRelationsTest {
 
 	static Goal ancestors(Unifiable<Integer> descendant, Unifiable<LList<Integer>> ancestors) {
 		return Logic.<Integer, LList<Integer>> exist((parentId, rest) ->
-				parent.apply(db, parentId, descendant)
+				parent(db, parentId, descendant)
 						.and(ancestors.unifies(LList.of(parentId, rest)))
 						.and(condu(defer(() -> ancestors(parentId, rest)),
 								rest.unifies(LList.empty()))));
@@ -157,7 +182,7 @@ public class DatabaseWithRelationsTest {
 			Goal> personWithIdNameAndSurname(Database db) {
 		return (id, data) -> Logic.<String, String> exist((name, surname) ->
 				data.unifies(Tuple.of(name, surname))
-						.and(person.apply(db, id, name, surname, lvar())));
+						.and(person(db, id, name, surname, lvar())));
 	}
 
 	@Test
@@ -165,7 +190,7 @@ public class DatabaseWithRelationsTest {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> ancestorNames = lvar();
 
 		List<List<String>> result = Logic.<Integer, LList<Integer>> exist((descendantId, l) ->
-						person.apply(db, descendantId, lval("Tomek"), lvar(), lvar())
+						person(db, descendantId, lval("Tomek"), lvar(), lvar())
 								.and(ancestors(descendantId, l))
 								.and(LList.map(l, ancestorNames, personWithIdNameAndSurname(db))))
 				.solve(ancestorNames)
@@ -184,9 +209,9 @@ public class DatabaseWithRelationsTest {
 
 	static Goal line(Unifiable<Integer> ancestor, Unifiable<LList<Integer>> line, Unifiable<Integer> descendant) {
 		return matche(line,
-				llist(() -> parent.apply(db, ancestor, descendant)),
+				llist(() -> parent(db, ancestor, descendant)),
 				llist((head, tail) ->
-						parent.apply(db, ancestor, head)
+						parent(db, ancestor, head)
 								.and(defer(() -> line(head, tail, descendant)))));
 	}
 
@@ -195,8 +220,8 @@ public class DatabaseWithRelationsTest {
 		Unifiable<LList<Tuple2<Unifiable<String>, Unifiable<String>>>> line = lvar();
 		List<List<String>> result = Logic.<LList<Integer>, Integer, Integer> exist(
 						(l, descendantId, ancestorId) ->
-								person.apply(db, ancestorId, lval("Aniela"), lvar(), lvar())
-										.and(person.apply(db, descendantId, lval("Tomek"), lvar(), lvar()),
+								person(db, ancestorId, lval("Aniela"), lvar(), lvar())
+										.and(person(db, descendantId, lval("Tomek"), lvar(), lvar()),
 												line(ancestorId, l, descendantId),
 												LList.map(l, line, personWithIdNameAndSurname(db))))
 				.solve(line)
@@ -213,10 +238,10 @@ public class DatabaseWithRelationsTest {
 			Unifiable<LList<Integer>> checked) {
 		return distincto(checked)
 				.and(matche(line,
-						llist(() -> parent.apply(db, lhs, rhs)),
+						llist(() -> parent(db, lhs, rhs)),
 						llist((lineHead, lineTail) ->
-								parent.apply(db, lhs, lineHead)
-										.or(parent.apply(db, lineHead, lhs))
+								parent(db, lhs, lineHead)
+										.or(parent(db, lineHead, lhs))
 										.and(defer(() -> relativesImpl(lineHead, rhs, lineTail,
 												LList.of(rhs, LList.of(lineHead, checked)))))
 										.and(distincto(line)))));
@@ -232,8 +257,8 @@ public class DatabaseWithRelationsTest {
 		List<List<String>> result = Logic.<LList<Integer>, Integer, Integer> exist(
 						(l, lhsId, rhsId) ->
 								exclude(lhsId.unifies(rhsId))
-										.and(person.apply(db, rhsId, lval("Tomek"), lvar(), lvar()))
-										.and(person.apply(db, lhsId, lval("Magda"), lvar(), lvar()),
+										.and(person(db, rhsId, lval("Tomek"), lvar(), lvar()))
+										.and(person(db, lhsId, lval("Magda"), lvar(), lvar()),
 												relatives(rhsId, lhsId, l),
 												Logic.<LList<Integer>> exist(res ->
 														Logic.appendo(LList.of(rhsId, l),
@@ -257,8 +282,8 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldThrowOnUniqueConstraintViolation() {
 		Try<Database> database = DatabaseWithRelationsTest.db
-				.withConstraint(Constraint.unique(person, id))
-				.withFacts(Collections.singletonList(person.fact(1, "NAME", "SURNAME", Gender.MALE)));
+				.withConstraint(Constraint.unique(personRel(), id))
+				.withFacts(Collections.singletonList(person(null, lval(1), lval("NAME"), lval("SURNAME"), lval(Gender.MALE)).fact()));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);
@@ -267,8 +292,8 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldThrowOnForeignKeyViolationOnAdd() {
 		Try<Database> database = DatabaseWithRelationsTest.db
-				.withConstraint(Constraint.foreignKey(parent, parentId, person, id))
-				.withFacts(Collections.singletonList(parent.fact(-1, 1)));
+				.withConstraint(Constraint.foreignKey(parentRel(), parentId, personRel(), id))
+				.withFacts(Collections.singletonList(parent(null, lval(-1), lval(1)).fact()));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);
@@ -277,8 +302,8 @@ public class DatabaseWithRelationsTest {
 	@Test
 	public void shouldThrowOnForeignKeyViolationOnRemove() {
 		Try<Database> database = DatabaseWithRelationsTest.db
-				.withConstraint(Constraint.foreignKey(parent, parentId, person, id))
-				.withoutFacts(Collections.singletonList(person.fact(1, "Michał", "Gac", Gender.MALE)));
+				.withConstraint(Constraint.foreignKey(parentRel(), parentId, personRel(), id))
+				.withoutFacts(Collections.singletonList(person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact()));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);

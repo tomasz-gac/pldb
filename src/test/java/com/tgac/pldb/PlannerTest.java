@@ -16,6 +16,8 @@ import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.inmemory.Trigger;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.RelationN;
@@ -30,11 +32,21 @@ import org.junit.Test;
 
 public class PlannerTest {
 
+	private static Literal parent(AnswerSource db, Unifiable<Integer> parentId, Unifiable<Integer> childId) {
+		return Literal.relation("parentP")
+				.arg("parentId", parentId).indexed()
+				.arg("childId", childId).indexed()
+				.from(db);
+	}
+
+	private static Relation parentRel() {
+		return parent(null, lvar(), lvar()).getRel();
+	}
+
 	private static final int N = 40;
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
-	private static final RelationN parent =
-			RelationN.of("parentP", parentId.indexed(), childId.indexed());
+
 
 	/** Counts facts the index yields — the probe metric of query-planning.md §Phase 2. */
 	private static final class CountingDb implements Database {
@@ -81,7 +93,7 @@ public class PlannerTest {
 	private static Database chain(AtomicLong counter) {
 		List<Fact> facts = new ArrayList<>();
 		for (int i = 0; i < N; i++) {
-			facts.add(parent.fact(i, i + 1));
+			facts.add(parent(null, lval(i), lval(i + 1)).fact());
 		}
 		return new CountingDb(ImmutableDatabase.empty(), counter).withFacts(facts).get();
 	}
@@ -89,8 +101,8 @@ public class PlannerTest {
 	/** grandparent-of-39, deliberately mis-ordered: the unbound joins first. */
 	private static com.tgac.logic.goals.Goal misOrdered(Database db, Unifiable<Integer> gp) {
 		Unifiable<Integer> p = lvar();
-		return parent.apply(db, gp, p)
-				.and(parent.apply(db, p, lval(N - 1)));
+		return parent(db, gp, p)
+				.and(parent(db, p, lval(N - 1)));
 	}
 
 	@Test

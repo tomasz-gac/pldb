@@ -21,8 +21,8 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
@@ -34,14 +34,23 @@ import org.junit.Test;
 
 public class GoalProducerTest {
 
-	private final RelationN person = RelationN.of("person",
-			Property.of("id"), Property.of("name"));
+	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
+		return Literal.relation("person").arg("id", id).arg("name", name).from(db);
+	}
+
+	private static Literal person(AnswerProducer p, Unifiable<Long> id, Unifiable<String> name) {
+		return Literal.relation("person").arg("id", id).arg("name", name).produced(p);
+	}
+
+	private static Relation personRel() {
+		return person((AnswerSource) null, lvar(), lvar()).getRel();
+	}
 
 	private final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person.apply(1L, "Ada"),
-					person.apply(2L, "Alan"),
-					person.apply(3L, "Kurt")))
+					person((AnswerSource) null, lval(1L), lval("Ada")).fact(),
+					person((AnswerSource) null, lval(2L), lval("Alan")).fact(),
+					person((AnswerSource) null, lval(3L), lval("Kurt")).fact()))
 			.get();
 
 	private final AtomicInteger hits = new AtomicInteger();
@@ -58,8 +67,8 @@ public class GoalProducerTest {
 	private GoalProducer producer() {
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();
-		return GoalProducer.of(person,
-				RelationN.relation(counting(), person, id, name),
+		return GoalProducer.of(personRel(),
+				person(counting(), id, name),
 				Array.of(id, name), Table.empty());
 	}
 
@@ -70,7 +79,7 @@ public class GoalProducerTest {
 		for (Object slot : slots) {
 			members.add(slot == null ? Any.of(frees++) : lval(slot));
 		}
-		return Call.of(person, (Reified<?>) lval(Array.ofAll(members)));
+		return Call.of(personRel(), (Reified<?>) lval(Array.ofAll(members)));
 	}
 
 	/** Drive produce to completion, collecting the emissions. */
@@ -113,8 +122,8 @@ public class GoalProducerTest {
 		AnswerSource stuttering = probe -> Arrays.asList(row, row, row);
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();
-		GoalProducer source = GoalProducer.of(person,
-				RelationN.relation(stuttering, person, id, name),
+		GoalProducer source = GoalProducer.of(personRel(),
+				person(stuttering, id, name),
 				Array.of(id, name), Table.empty());
 		assertThat(drain(source, probe(2L, null))).hasSize(1);
 	}
@@ -133,13 +142,13 @@ public class GoalProducerTest {
 		// and delivery restates it at the consumer, where it decides
 		Unifiable<Long> gid = lvar();
 		Unifiable<String> gname = lvar();
-		GoalProducer guarded = GoalProducer.of(person,
+		GoalProducer guarded = GoalProducer.of(personRel(),
 				exclude(gid.unifies(2L)), Array.of(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
-		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(1L)), id)).containsExactly("{1}");
 		Unifiable<Long> refused = lvar();
-		assertThat(answers(RelationN.relation(guarded, person, refused, lvar())
+		assertThat(answers(person(guarded, refused, lvar())
 				.and(refused.unifies(2L)), refused)).isEmpty();
 	}
 
@@ -150,11 +159,11 @@ public class GoalProducerTest {
 		// delivers exactly once whatever the arrival order
 		Unifiable<Long> gid = lvar();
 		Unifiable<String> gname = lvar();
-		GoalProducer guarded = GoalProducer.of(person,
+		GoalProducer guarded = GoalProducer.of(personRel(),
 				exclude(gid.unifies(2L)).or(exclude(gid.unifies(3L))),
 				Array.of(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
-		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(4L)), id)).containsExactlyInAnyOrder("{4}", "{4}");
 	}
 
@@ -164,11 +173,11 @@ public class GoalProducerTest {
 		// conditions join to 1 by absorption — one branch, not two
 		Unifiable<Long> gid = lvar();
 		Unifiable<String> gname = lvar();
-		GoalProducer guarded = GoalProducer.of(person,
+		GoalProducer guarded = GoalProducer.of(personRel(),
 				exclude(gid.unifies(2L)).or(Goal.success()),
 				Array.of(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
-		assertThat(answers(RelationN.relation(guarded, person, id, lvar())
+		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(4L)), id)).containsExactly("{4}");
 	}
 }

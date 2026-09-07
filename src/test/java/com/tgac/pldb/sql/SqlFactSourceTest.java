@@ -13,6 +13,8 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import java.lang.reflect.Proxy;
@@ -30,17 +32,27 @@ import org.junit.Test;
 
 public class SqlFactSourceTest {
 
+	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
+		return Literal.relation("person")
+				.arg("id", id).indexed()
+				.arg("name", name)
+				.from(db);
+	}
+
+	private static Relation personRel() {
+		return person(null, lvar(), lvar()).getRel();
+	}
+
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final RelationN person =
-			RelationN.of("person", id.indexed(), name);
+
 
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person.fact(1, "Ada"),
-					person.fact(2, "Alan"),
-					person.fact(3, "Kurt")))
+					person(null, lval(1), lval("Ada")).fact(),
+					person(null, lval(2), lval("Alan")).fact(),
+					person(null, lval(3), lval("Kurt")).fact()))
 			.get();
 
 	private Connection connection;
@@ -77,12 +89,12 @@ public class SqlFactSourceTest {
 			Unifiable<Integer> viaSql = lvar();
 			Unifiable<Integer> viaDb = lvar();
 			// answer SETS agree; enumeration order is the carrier's own
-			assertThat(person.posted(source, viaSql, lvar())
+			assertThat(person(source, viaSql, lvar()).posted()
 					.solve(viaSql)
 					.map(Object::toString)
 					.sorted()
 					.collect(Collectors.toList()))
-					.isEqualTo(person.posted(reference, viaDb, lvar())
+					.isEqualTo(person(reference, viaDb, lvar()).posted()
 							.solve(viaDb)
 							.map(Object::toString)
 							.sorted()
@@ -111,7 +123,7 @@ public class SqlFactSourceTest {
 		// existence checks
 		try (SqlFactSource source = source()) {
 			Unifiable<String> out = lvar();
-			assertThat(person.posted(source, lvar(), out)
+			assertThat(person(source, lvar(), out).posted()
 					.solve(out)
 					.map(Object::toString)
 					.sorted()
@@ -130,7 +142,7 @@ public class SqlFactSourceTest {
 			int afterWide = statements.get();
 
 			Unifiable<String> narrow = lvar();
-			List<String> viaLanded = person.apply(source, lval(2), narrow)
+			List<String> viaLanded = person(source, lval(2), narrow)
 					.solve(narrow)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -150,7 +162,7 @@ public class SqlFactSourceTest {
 		// answer by it
 		try (SqlFactSource source = source()) {
 			Unifiable<String> out = lvar();
-			List<String> answers = person.apply(source, lval(2), out)
+			List<String> answers = person(source, lval(2), out)
 					.solve(out)
 					.map(Object::toString)
 					.collect(Collectors.toList());
@@ -164,12 +176,12 @@ public class SqlFactSourceTest {
 		// every position bound: the projection degenerates — no unbound
 		// columns to select — and must still compile to legal SQL
 		try (SqlFactSource source = source()) {
-			assertThat(person.apply(source,
+			assertThat(person(source,
 					lval(3),
 					lval("Kurt"))
 					.solve(lvar())
 					.count()).isEqualTo(1);
-			assertThat(person.apply(source,
+			assertThat(person(source,
 					lval(3),
 					lval("Ada"))
 					.solve(lvar())
@@ -179,7 +191,7 @@ public class SqlFactSourceTest {
 
 	private static List<String> solvedNames(AnswerSource source) {
 		Unifiable<String> out = lvar();
-		return person.apply(source, lvar(), out)
+		return person(source, lvar(), out)
 				.solve(out)
 				.map(Object::toString)
 				.sorted()

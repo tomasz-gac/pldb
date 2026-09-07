@@ -9,6 +9,9 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.RelationN;
 import io.vavr.control.Either;
@@ -19,61 +22,104 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class ImmutableDatabaseTest {
+
+	private static Literal man(AnswerSource db, Unifiable<String> name) {
+		return Literal.relation("man")
+				.arg("name", name)
+				.from(db);
+	}
+
+	private static Relation manRel() {
+		return man(null, lvar()).getRel();
+	}
+
+	private static Literal woman(AnswerSource db, Unifiable<String> name) {
+		return Literal.relation("woman")
+				.arg("name", name)
+				.from(db);
+	}
+
+	private static Relation womanRel() {
+		return woman(null, lvar()).getRel();
+	}
+
+	private static Literal parent(AnswerSource db, Unifiable<String> name, Unifiable<String> child) {
+		return Literal.relation("parent")
+				.arg("name", name)
+				.arg("child", child)
+				.from(db);
+	}
+
+	private static Relation parentRel() {
+		return parent(null, lvar(), lvar()).getRel();
+	}
+
+	private static Literal tree(AnswerSource db, Unifiable<Integer> id, Unifiable<Integer> parentId, Unifiable<String> data) {
+		return Literal.relation("tree")
+				.arg("id", id)
+				.arg("parentId", parentId)
+				.arg("data", data)
+				.from(db);
+	}
+
+	private static Relation treeRel() {
+		return tree(null, lvar(), lvar(), lvar()).getRel();
+	}
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
-	private static final RelationN man = RelationN.of("man", name);
-	private static final RelationN woman = RelationN.of("woman", name);
-	private static final RelationN parent = RelationN.of("parent", name, child);
+
+
+
 
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<String> data = Property.of("data");
 
-	private static final RelationN tree = RelationN.of("tree", id, parentId, data);
+
 
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
-						tree.fact(0, 0, "1"),
+						tree(null, lval(0), lval(0), lval("1")).fact(),
 
-						man.fact("Michał"),
-						man.fact("Franciszek"),
-						man.fact("Czesław"),
-						man.fact("Wacław"),
-						man.fact("Wiesław"),
-						man.fact("MichałW"),
-						man.fact("Ireneusz"),
-						man.fact("Wacław"),
-						man.fact("Tomek"),
-						woman.fact("Honorata"),
-						woman.fact("Helena"),
-						woman.fact("Ewa"),
-						woman.fact("Janina"),
-						woman.fact("Arletta"),
-						woman.fact("Jolanta"),
-						woman.fact("Henia"),
-						woman.fact("Marta"),
-						woman.fact("Weronika"),
-						woman.fact("Aniela"),
-						parent.fact("Aniela", "Honorata"),
-						parent.fact("Michał", "Wiesław"),
-						parent.fact("Helena", "Wiesław"),
-						parent.fact("Wiesław", "MichałW"),
-						parent.fact("Wiesław", "Kasia"),
-						parent.fact("Henia", "Kasia"),
-						parent.fact("Henia", "MichałW"),
-						parent.fact("Wiesław", "Tomek"),
-						parent.fact("Wiesław", "Magda"),
-						parent.fact("Honorata", "Arletta"),
-						parent.fact("Franciszek", "Arletta"),
-						parent.fact("Arletta", "Tomek"),
-						parent.fact("Arletta", "Magda"),
-						parent.fact("Czesław", "Ireneusz"),
-						parent.fact("Ewa", "Ireneusz"),
-						parent.fact("Janina", "Jolanta"),
-						parent.fact("WacławM", "Jolanta"),
-						parent.fact("Ireneusz", "Marta"),
-						parent.fact("Ireneusz", "Weronika->Michał"),
-						parent.fact("Jolanta", "Marta")))
+						man(null, lval("Michał")).fact(),
+						man(null, lval("Franciszek")).fact(),
+						man(null, lval("Czesław")).fact(),
+						man(null, lval("Wacław")).fact(),
+						man(null, lval("Wiesław")).fact(),
+						man(null, lval("MichałW")).fact(),
+						man(null, lval("Ireneusz")).fact(),
+						man(null, lval("Wacław")).fact(),
+						man(null, lval("Tomek")).fact(),
+						woman(null, lval("Honorata")).fact(),
+						woman(null, lval("Helena")).fact(),
+						woman(null, lval("Ewa")).fact(),
+						woman(null, lval("Janina")).fact(),
+						woman(null, lval("Arletta")).fact(),
+						woman(null, lval("Jolanta")).fact(),
+						woman(null, lval("Henia")).fact(),
+						woman(null, lval("Marta")).fact(),
+						woman(null, lval("Weronika")).fact(),
+						woman(null, lval("Aniela")).fact(),
+						parent(null, lval("Aniela"), lval("Honorata")).fact(),
+						parent(null, lval("Michał"), lval("Wiesław")).fact(),
+						parent(null, lval("Helena"), lval("Wiesław")).fact(),
+						parent(null, lval("Wiesław"), lval("MichałW")).fact(),
+						parent(null, lval("Wiesław"), lval("Kasia")).fact(),
+						parent(null, lval("Henia"), lval("Kasia")).fact(),
+						parent(null, lval("Henia"), lval("MichałW")).fact(),
+						parent(null, lval("Wiesław"), lval("Tomek")).fact(),
+						parent(null, lval("Wiesław"), lval("Magda")).fact(),
+						parent(null, lval("Honorata"), lval("Arletta")).fact(),
+						parent(null, lval("Franciszek"), lval("Arletta")).fact(),
+						parent(null, lval("Arletta"), lval("Tomek")).fact(),
+						parent(null, lval("Arletta"), lval("Magda")).fact(),
+						parent(null, lval("Czesław"), lval("Ireneusz")).fact(),
+						parent(null, lval("Ewa"), lval("Ireneusz")).fact(),
+						parent(null, lval("Janina"), lval("Jolanta")).fact(),
+						parent(null, lval("WacławM"), lval("Jolanta")).fact(),
+						parent(null, lval("Ireneusz"), lval("Marta")).fact(),
+						parent(null, lval("Ireneusz"), lval("Weronika->Michał")).fact(),
+						parent(null, lval("Jolanta"), lval("Marta")).fact()))
 				.get();
 	}
 
@@ -86,8 +132,8 @@ public class ImmutableDatabaseTest {
 		System.out.println(db);
 
 		Assertions.assertThat(
-						parent.apply(db, par, lval("Tomek"))
-								.and(parent.apply(db, grandparent, par))
+						parent(db, par, lval("Tomek"))
+								.and(parent(db, grandparent, par))
 								.solve(grandparent)
 								.map(u -> u.asVal().get())
 								.collect(Collectors.toList()))
@@ -100,9 +146,9 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> child = lvar();
 
 		Assertions.assertThat(Goal.success().and(
-								parent.apply(db, lval("Wiesław"), child),
-								parent.apply(db, spouse, child),
-								woman.apply(db, spouse))
+								parent(db, lval("Wiesław"), child),
+								parent(db, spouse, child),
+								woman(db, spouse))
 						.solve(spouse)
 						.map(u -> u.asVal().get())
 						.distinct()
@@ -113,7 +159,7 @@ public class ImmutableDatabaseTest {
 	static Goal ancestors(Unifiable<String> descendant, Unifiable<LList<String>> ancestors) {
 		Unifiable<String> p = lvar();
 		Unifiable<LList<String>> rest = lvar();
-		return parent.apply(db, p, descendant)
+		return parent(db, p, descendant)
 				.and(ancestors.unifies(LList.of(p, rest)))
 				.and(condu(defer(() -> ancestors(p, rest)),
 						rest.unifies(LList.empty())));
@@ -141,8 +187,8 @@ public class ImmutableDatabaseTest {
 		Unifiable<String> vh = lvar();
 		Unifiable<LList<String>> vd = lvar();
 
-		return line.unifies(LList.empty()).and(parent.apply(db, ancestor, descendant))
-				.or(parent.apply(db, ancestor, vh)
+		return line.unifies(LList.empty()).and(parent(db, ancestor, descendant))
+				.or(parent(db, ancestor, vh)
 						.and(line.unifies(LList.of(vh, vd)))
 						.and(defer(() -> line(vh, vd, descendant))));
 	}

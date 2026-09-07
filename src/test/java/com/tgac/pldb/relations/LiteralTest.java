@@ -154,4 +154,14 @@ public class LiteralTest {
 				.solving(k.unifies(5));
 		assertThat(answers(k.unifies(5).and(lit), k)).containsExactly("{5}");
 	}
+
+	@Test
+	public void aDuplicateColumnRefusesByName() {
+		assertThatThrownBy(() -> Literal.relation("dup")
+				.arg("k", lvar())
+				.arg("k", lvar())
+				.from(db))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("Duplicated");
+	}
 }

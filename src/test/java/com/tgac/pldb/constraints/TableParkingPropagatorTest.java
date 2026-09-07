@@ -43,17 +43,27 @@ import org.junit.Test;
 
 public class TableParkingPropagatorTest {
 
+	private static Literal r(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
+		return Literal.relation("r")
+				.arg("item", item).indexed()
+				.arg("tag", tag).indexed()
+				.from(db);
+	}
+
+	private static Relation rRel() {
+		return r(null, lvar(), lvar()).getRel();
+	}
+
 	private static final Property<Integer> item = Property.of("item");
 	private static final Property<String> tag = Property.of("tag");
 
-	private static final RelationN r =
-			RelationN.of("r", item.indexed(), tag.indexed());
+
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					r.fact(1, "a"),
-					r.fact(2, "b"),
-					r.fact(3, "c")))
+					r(null, lval(1), lval("a")).fact(),
+					r(null, lval(2), lval("b")).fact(),
+					r(null, lval(3), lval("c")).fact()))
 			.get();
 
 	/** The reference relation as a rule: the body is the db lookup over the heads. */
@@ -61,7 +71,7 @@ public class TableParkingPropagatorTest {
 		return Literal.relation("rr")
 				.arg("item", i)
 				.arg("tag", t)
-				.solving(r.apply(db, i, t)).posted();
+				.solving(r(db, i, t)).posted();
 	}
 
 	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
@@ -96,7 +106,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<String> viaParking = lvar();
 		Unifiable<String> viaSync = lvar();
 		assertThat(answers((Goal) posted(lval(2), viaParking), viaParking))
-				.isEqualTo(answers(r.posted(db, lval(2), viaSync), viaSync))
+				.isEqualTo(answers(r(db, lval(2), viaSync).posted(), viaSync))
 				.containsExactly("{b}");
 	}
 
@@ -222,7 +232,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<Integer> ex = lvar();
 		Unifiable<String> ey = lvar();
 		assertThat(answers((Goal) posted(px, py), lval(Tuple.of(px, py))))
-				.isEqualTo(answers(r.apply(db, ex, ey), lval(Tuple.of(ex, ey))));
+				.isEqualTo(answers(r(db, ex, ey), lval(Tuple.of(ex, ey))));
 	}
 
 	@Test
@@ -263,9 +273,9 @@ public class TableParkingPropagatorTest {
 		// a derived produce once and canning the emission
 		Unifiable<Integer> gi = lvar();
 		Unifiable<String> gt = lvar();
-		GoalProducer producing = GoalProducer.of(r,
+		GoalProducer producing = GoalProducer.of(rRel(),
 				exclude(gi.unifies(2)), Array.of(gi, gt), Table.empty());
-		Call<Relation> wide = Call.of(r, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+		Call<Relation> wide = Call.of(rRel(), (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
 		List<Tuple2<Reified<?>, Condition>> canned = new ArrayList<>();
 		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {
 			canned.add(answer);
@@ -273,10 +283,10 @@ public class TableParkingPropagatorTest {
 		})).get();
 		AnswerSource sync = probe -> canned;
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(r.posted(sync, x, lvar()), x))
+		assertThat(answers(r(sync, x, lvar()).posted(), x))
 				.containsExactly("_.0 : ¬(_.0 ≡ {2})");
-		assertThat(answers(r.posted(sync, lval(2), lval("q")), lvar())).isEmpty();
-		assertThat(answers(r.posted(sync, lval(1), lval("q")), lvar())).containsExactly("_.0");
+		assertThat(answers(r(sync, lval(2), lval("q")).posted(), lvar())).isEmpty();
+		assertThat(answers(r(sync, lval(1), lval("q")).posted(), lvar())).containsExactly("_.0");
 	}
 
 	@Test

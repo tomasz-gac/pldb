@@ -3,6 +3,7 @@ package com.tgac.pldb.relations;
 // ABOUTME: Property flags: ground() and indexed() are chainable metadata copies;
 // ABOUTME: lookup identity stays the NAME, so flagged copies never break reads.
 
+import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -32,8 +33,10 @@ public class PropertyTest {
 	@Test
 	public void lookupIdentityIsTheNameRegardlessOfFlags() {
 		Property<Integer> id = Property.of("id");
-		Property<String> tag = Property.of("tag");
-		RelationN rel = RelationN.of("r", id.indexed().ground(), tag);
+		Relation rel = Literal.relation("r")
+				.arg("id", lvar()).indexed().ground()
+				.arg("tag", lvar())
+				.from(null).getRel();
 
 		// the bare constant finds the flagged copy's column
 		assertThat(rel.indexOf(id)).contains(0);
@@ -43,8 +46,10 @@ public class PropertyTest {
 
 	@Test
 	public void flaggedCopiesOfOneNameAreStillDuplicatesInARelation() {
-		Property<Integer> id = Property.of("id");
-		assertThatThrownBy(() -> RelationN.of("r", id.indexed(), id.ground()))
+		assertThatThrownBy(() -> Literal.relation("r")
+				.arg("id", lvar()).indexed()
+				.arg("id", lvar()).ground()
+				.from(null))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 	}
