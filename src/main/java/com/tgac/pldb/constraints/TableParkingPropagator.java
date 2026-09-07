@@ -32,6 +32,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.Queue;
+import java.util.function.Function;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -62,27 +63,37 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * derivations of one row factor into a single entry by distributivity.
  */
 public class TableParkingPropagator extends ParkingPropagator<TableConstraints> {
-	private final AnswerProducer producer;
-	private final Goal rule;
-	private final Array<Unifiable<?>> heads;
 	private final Relation rel;
+	private final String label;
+	private final Function<Package, AnswerProducer> producer;
 
 	protected TableParkingPropagator(Relation rel, AnswerProducer producer, Array<? extends Term<?>> watchedTerms) {
-		this(rel, producer, null, null, watchedTerms);
+		this(rel, producer.id(), pkg -> producer, watchedTerms);
 	}
 
-	private TableParkingPropagator(Relation rel, AnswerProducer producer, Goal rule,
-			Array<Unifiable<?>> heads, Array<? extends Term<?>> watchedTerms) {
+	private TableParkingPropagator(Relation rel, String label,
+			Function<Package, AnswerProducer> producer, Array<? extends Term<?>> watchedTerms) {
 		super(watchedTerms);
-		this.producer = producer;
-		this.rule = rule;
-		this.heads = heads;
 		this.rel = rel;
+		this.label = label;
+		this.producer = producer;
 	}
 
-	/** The rule kind: composed with the SOLVE's table at wake. */
+	/**
+	 * The rule kind: the producer is COMPOSED at wake — the rule with the
+	 * SOLVE's table, extracted from whichever package the examination
+	 * arrives in. One field, one question: given a package, what do I drain?
+	 */
 	static TableParkingPropagator rule(Relation rel, Goal rule, Array<Unifiable<?>> heads) {
-		return new TableParkingPropagator(rel, null, rule, heads, heads);
+		return new TableParkingPropagator(rel, "rule",
+				pkg -> GoalProducer.of(rel, rule, heads, tableOf(pkg, rel)), heads);
+	}
+
+	private static Table tableOf(Package pkg, Relation rel) {
+		return pkg.getStores().get(Table.class)
+				.map(Table.class::cast)
+				.getOrElseThrow(() -> new IllegalStateException(
+						"posted rule '" + rel.getName() + "' outside a solve: no table in the package"));
 	}
 
 	@Override
@@ -109,29 +120,12 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	private Fiber<JoinMap<Reified<?>, Condition>> extension(Call<Relation> probe, Package pkg) {
 		Scope sub = Scope.scope("TableParkingPropagatorProduction");
 		Queue<Tuple2<Reified<?>, Condition>> delivered = new ConcurrentLinkedQueue<>();
-		return Fiber.claim(sub, producerFor(pkg).produce(probe, answer -> {
+		return Fiber.claim(sub, producer.apply(pkg).produce(probe, answer -> {
 					delivered.add(answer);
 					return Fiber.done(Nothing.nothing());
 				}))
 				.flatMap(explored -> Fiber.sealed(sub))
 				.map(sealed -> Extension.fold(delivered));
-	}
-
-	/**
-	 * The one drain has one producer: the async kind as posted, or the rule
-	 * composed with the SOLVE's table — residence arrives with the package,
-	 * so constraint and goal readings share entries, and a negation cycle
-	 * is a visible cyclic wait instead of a fresh-world regress.
-	 */
-	private AnswerProducer producerFor(Package pkg) {
-		if (rule == null) {
-			return producer;
-		}
-		Table table = pkg.getStores().get(Table.class)
-				.map(Table.class::cast)
-				.getOrElseThrow(() -> new IllegalStateException(
-						"posted rule '" + rel.getName() + "' outside a solve: no table in the package"));
-		return GoalProducer.of(rel, rule, heads, table);
 	}
 
 
@@ -165,11 +159,8 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 * knowledge where it prices, the optimizer barrier otherwise. Pricing
 	 * carries no region: the upper bound stays sound ignoring it.
 	 */
-	long estimate(Array<Term<?>> walked) {
-		if (rule != null) {
-			return Long.MAX_VALUE;
-		}
-		return producer.estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
+	long estimate(Array<Term<?>> walked, Package pkg) {
+		return producer.apply(pkg).estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
 				lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground()));
 	}
 
@@ -180,12 +171,12 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 */
 	@Override
 	public boolean doomed(Package p) {
-		return estimate(watchedTerms().map(t -> (Term<?>) p.substitution().walk(t))) == 0;
+		return estimate(watchedTerms().map(t -> (Term<?>) p.substitution().walk(t)), p) == 0;
 	}
 
 	@Override
 	public ParkingPropagator<TableConstraints> watching(Array<? extends Term<?>> terms) {
-		return new TableParkingPropagator(rel, producer, rule, heads, terms);
+		return new TableParkingPropagator(rel, label, producer, terms);
 	}
 
 	@Override
@@ -195,7 +186,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 
 	@Override
 	public String name() {
-		return rel.getName() + "@" + (producer != null ? producer.id() : "rule");
+		return rel.getName() + "@" + label;
 	}
 
 	@Override

@@ -163,7 +163,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 			if (walked.forAll(w -> w.asVal().isDefined())) {
 				continue;
 			}
-			survivors.add(Tuple.of(((TableParkingPropagator) p).estimate(walked),
+			survivors.add(Tuple.of(((TableParkingPropagator) p).estimate(walked, s),
 					((TableParkingPropagator) p).enumerate(p.watchedTerms())));
 		}
 		return survivors;
