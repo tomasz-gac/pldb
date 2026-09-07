@@ -115,8 +115,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public Posting posted() {
 		if (rule != null) {
-			throw new IllegalStateException("posted() over the rule literal '"
-					+ rel.getName() + "' is not wired yet (residence arc step 3)");
+			return TableConstraints.posted(rel, rule, args);
 		}
 		return backend.fold(
 				source -> TableConstraints.posted(source, rel, args),

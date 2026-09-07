@@ -82,6 +82,15 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	}
 
 	/**
+	 * Post a RULE literal: the parking propagator reads its extension from
+	 * the solve's shared table — the same entries every goal-side consumer
+	 * of the relation reads, produced once whichever driver arrives first.
+	 */
+	public static Posting posted(Relation rel, Goal rule, Array<Unifiable<?>> args) {
+		return Propagation.activate(TableParkingPropagator.rule(rel, rule, args));
+	}
+
+	/**
 	 * The declared branch point: enumerate each variable's LIVE support, in
 	 * the given order — collapses cascade between labellings, so later
 	 * variables usually bind without branching. Each labelling is priced at
