@@ -16,6 +16,7 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -186,15 +187,16 @@ public class PostgresFactSourceTest {
 	 * ground answers. On data whose recursive steps branch, the guard would
 	 * park and answers would go conditional.
 	 */
-	private static Relations._2<Integer, Integer>.Derived reach(AnswerSource backing) {
-		return Relations.relation("reachable", src, dst)
-				.solvingRecursive(self -> (x, y) ->
+	private static Literal reach(AnswerSource backing, Unifiable<Integer> x, Unifiable<Integer> y) {
+		return Literal.solving("reachable",
 						edge.exists(backing, x, y)
 								.or(defer(() -> {
 									Unifiable<Integer> z = lvar();
-									return self.apply(x, z)
+									return reach(backing, x, z)
 											.and(edge.posted(backing, z, y));
-								})));
+								})))
+				.arg("src", x)
+				.arg("dst", y);
 	}
 
 	@Test
@@ -231,9 +233,9 @@ public class PostgresFactSourceTest {
 		Unifiable<Integer> pgTo = lvar();
 		Unifiable<Integer> memoryFrom = lvar();
 		Unifiable<Integer> memoryTo = lvar();
-		List<String> pg = answers(reach(source).posted(pgFrom, pgTo),
+		List<String> pg = answers(reach(source, pgFrom, pgTo).posted(),
 				lval(Tuple.of(pgFrom, pgTo)));
-		List<String> memory = answers(reach(reference).posted(memoryFrom, memoryTo),
+		List<String> memory = answers(reach(reference, memoryFrom, memoryTo).posted(),
 				lval(Tuple.of(memoryFrom, memoryTo)));
 		assertThat(pg).isNotEmpty().isEqualTo(memory);
 	}

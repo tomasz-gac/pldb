@@ -138,6 +138,38 @@ public class RuleNegationTest {
 				.and(x2.unifies(2)).and(y2.unifies(1)), x2)).containsExactly("{2}");
 	}
 
+	@Test(timeout = 5000)
+	public void aCoupledRowNegatesToADisequality() {
+		// the diagonal (Any0, Any0) negates to x != y
+		Unifiable<String> x = lvar();
+		Unifiable<String> y = lvar();
+		Literal diagonal = Literal.solving("diag", x.unifies(y)).arg("l", x).arg("r", y);
+		assertThat(answers(exclude(diagonal).and(x.unifies("v")).and(y.unifies("v")), x)).isEmpty();
+		Unifiable<String> x2 = lvar();
+		Unifiable<String> y2 = lvar();
+		Literal diagonal2 = Literal.solving("diag", x2.unifies(y2)).arg("l", x2).arg("r", y2);
+		assertThat(answers(exclude(diagonal2).and(x2.unifies("v")).and(y2.unifies("w")), x2))
+				.containsExactly("{v}");
+	}
+
+	@Test(timeout = 5000)
+	public void negationIsConstructiveOverFreeVariables() {
+		// with y bound and x free the negation survives as the answer's
+		// residue — the complement described, not enumerated
+		Unifiable<Integer> x = lvar();
+		Unifiable<String> y = lvar();
+		List<String> free = answers(exclude(p(x, y)).and(y.unifies("a")), x);
+		assertThat(free).hasSize(1);
+		assertThat(free.get(0)).startsWith("_.0 : ");
+	}
+
+	@Test(timeout = 5000)
+	public void negatedAnyIsUnconditionalFailure() {
+		Unifiable<Integer> x = lvar();
+		Literal tautology = Literal.solving("taut", Goal.success()).arg("item", x);
+		assertThat(answers(exclude(tautology).and(x.unifies(2)), x)).isEmpty();
+	}
+
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
 		return Literal.of("edge", db).indexed("src", src).indexed("dst", dst);
 	}

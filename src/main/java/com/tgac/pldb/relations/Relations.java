@@ -22,12 +22,8 @@ import io.vavr.Function8;
 import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.logic.tabling.Table;
-import com.tgac.logic.tabling.Tabled;
-import com.tgac.logic.tabling.Tabling;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.TabledSource;
 import io.vavr.collection.Array;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -107,40 +103,6 @@ public class Relations {
 			return RelationN.posted(producer, this);
 		}
 
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function0<Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply()));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists() {
-				return RelationN.relation(source, _0.this);
-			}
-
-			public Posting posted() {
-				return RelationN.posted(source, _0.this);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
-		}
-
 		public Fact fact() {
 			return Fact.of(this, Array.of());
 		}
@@ -178,56 +140,6 @@ public class Relations {
 
 		public Posting posted(AnswerProducer producer, Unifiable<T0> v0) {
 			return RelationN.posted(producer, this, v0);
-		}
-
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function1<Unifiable<T0>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function1<Unifiable<T0>, Goal>, Function1<Unifiable<T0>, Goal>> body) {
-			Tabled<Tuple1<Unifiable<T0>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							v0 -> self.apply(Tuple.of(v0)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0) {
-				return RelationN.relation(source, _1.this, v0);
-			}
-
-			public Posting posted(Unifiable<T0> v0) {
-				return RelationN.posted(source, _1.this, v0);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
 		}
 
 		public Fact fact(T0 v0) {
@@ -270,56 +182,6 @@ public class Relations {
 			return RelationN.posted(producer, this, v0, v1);
 		}
 
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function2<Unifiable<T0>, Unifiable<T1>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function2<Unifiable<T0>, Unifiable<T1>, Goal>, Function2<Unifiable<T0>, Unifiable<T1>, Goal>> body) {
-			Tabled<Tuple2<Unifiable<T0>, Unifiable<T1>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1) -> self.apply(Tuple.of(v0, v1)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1) {
-				return RelationN.relation(source, _2.this, v0, v1);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1) {
-				return RelationN.posted(source, _2.this, v0, v1);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
-		}
-
 		public Fact fact(T0 v0, T1 v1) {
 			return Fact.of(this, Array.of(v0, v1));
 		}
@@ -358,56 +220,6 @@ public class Relations {
 
 		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
 			return RelationN.posted(producer, this, v0, v1, v2);
-		}
-
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal>, Function3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Goal>> body) {
-			Tabled<Tuple3<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2) -> self.apply(Tuple.of(v0, v1, v2)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
-				return RelationN.relation(source, _3.this, v0, v1, v2);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2) {
-				return RelationN.posted(source, _3.this, v0, v1, v2);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2) {
@@ -450,56 +262,6 @@ public class Relations {
 			return RelationN.posted(producer, this, v0, v1, v2, v3);
 		}
 
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal>, Function4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Goal>> body) {
-			Tabled<Tuple4<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2, v3) -> self.apply(Tuple.of(v0, v1, v2, v3)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
-				return RelationN.relation(source, _4.this, v0, v1, v2, v3);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3) {
-				return RelationN.posted(source, _4.this, v0, v1, v2, v3);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
-		}
-
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3));
 		}
@@ -540,56 +302,6 @@ public class Relations {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4);
 		}
 
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal>, Function5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Goal>> body) {
-			Tabled<Tuple5<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2, v3, v4) -> self.apply(Tuple.of(v0, v1, v2, v3, v4)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
-				return RelationN.relation(source, _5.this, v0, v1, v2, v3, v4);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4) {
-				return RelationN.posted(source, _5.this, v0, v1, v2, v3, v4);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
-		}
-
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3, v4));
 		}
@@ -628,56 +340,6 @@ public class Relations {
 
 		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5);
-		}
-
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal>, Function6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Goal>> body) {
-			Tabled<Tuple6<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2, v3, v4, v5) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
-				return RelationN.relation(source, _6.this, v0, v1, v2, v3, v4, v5);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5) {
-				return RelationN.posted(source, _6.this, v0, v1, v2, v3, v4, v5);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5) {
@@ -721,56 +383,6 @@ public class Relations {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5, v6);
 		}
 
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal>, Function7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Goal>> body) {
-			Tabled<Tuple7<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2, v3, v4, v5, v6) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5, v6)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
-				return RelationN.relation(source, _7.this, v0, v1, v2, v3, v4, v5, v6);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6) {
-				return RelationN.posted(source, _7.this, v0, v1, v2, v3, v4, v5, v6);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
-		}
-
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5, T6 v6) {
 			return Fact.of(this, Array.of(v0, v1, v2, v3, v4, v5, v6));
 		}
@@ -810,56 +422,6 @@ public class Relations {
 
 		public Posting posted(AnswerProducer producer, Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
 			return RelationN.posted(producer, this, v0, v1, v2, v3, v4, v5, v6, v7);
-		}
-
-		/**
-		 * The derived relation: this relation with intrinsic storage — the
-		 * goal body compressed by tabling into the handle's owned table. The
-		 * pairing of producer and relation is sealed at construction: the
-		 * handle's faces take no relation and no source, so a foreign
-		 * pairing cannot be written.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solving(Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal> body) {
-			return new Derived(TabledSource.solving(args -> body.apply((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6), (Unifiable<T7>) args.get(7))));
-		}
-
-		/**
-		 * The recursive derived relation: {@code self} is wired to the
-		 * INNER fixpoint tabling — a recursive call is an inside reader the
-		 * group seal can close — while the handle wraps once at the
-		 * boundary. The body never sees the Derived, so recursing through
-		 * produce (the ring that cannot terminate) stays unwritable.
-		 */
-		@SuppressWarnings("unchecked")
-		public Derived solvingRecursive(Function1<Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal>, Function8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>, Goal>> body) {
-			Tabled<Tuple8<Unifiable<T0>, Unifiable<T1>, Unifiable<T2>, Unifiable<T3>, Unifiable<T4>, Unifiable<T5>, Unifiable<T6>, Unifiable<T7>>> fixpoint = Tabling.defineRecursive(self ->
-					args -> args.apply(body.apply(
-							(v0, v1, v2, v3, v4, v5, v6, v7) -> self.apply(Tuple.of(v0, v1, v2, v3, v4, v5, v6, v7)))));
-			return new Derived(TabledSource.solving(args ->
-					fixpoint.apply(Tuple.of((Unifiable<T0>) args.get(0), (Unifiable<T1>) args.get(1), (Unifiable<T2>) args.get(2), (Unifiable<T3>) args.get(3), (Unifiable<T4>) args.get(4), (Unifiable<T5>) args.get(5), (Unifiable<T6>) args.get(6), (Unifiable<T7>) args.get(7)))));
-		}
-
-		/** A relation with intrinsic storage: the token and its producer, inseparable. */
-		public class Derived {
-			private final TabledSource source;
-
-			private Derived(TabledSource source) {
-				this.source = source;
-			}
-
-			public Literal exists(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
-				return RelationN.relation(source, _8.this, v0, v1, v2, v3, v4, v5, v6, v7);
-			}
-
-			public Posting posted(Unifiable<T0> v0, Unifiable<T1> v1, Unifiable<T2> v2, Unifiable<T3> v3, Unifiable<T4> v4, Unifiable<T5> v5, Unifiable<T6> v6, Unifiable<T7> v7) {
-				return RelationN.posted(source, _8.this, v0, v1, v2, v3, v4, v5, v6, v7);
-			}
-
-			/** The owned table: portable sealed entries — the warm-start and marshal door. */
-			public Table table() {
-				return source.table();
-			}
 		}
 
 		public Fact fact(T0 v0, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5, T6 v6, T7 v7) {

@@ -12,19 +12,22 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.functional.monad.Cont;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.TabledSource;
+import com.tgac.pldb.GoalProducer;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import com.tgac.pldb.relations.Property;
@@ -53,9 +56,9 @@ public class TableParkingPropagatorTest {
 					r.fact(3, "c")))
 			.get();
 
-	/** The reference relation derived: the typed body is the db lookup, no casts. */
-	private static Relations._2<Integer, String>.Derived derived() {
-		return r.solving((i, t) -> r.exists(db, i, t));
+	/** The reference relation as a rule: the body is the db lookup over the heads. */
+	private static Posting posted(Unifiable<Integer> i, Unifiable<String> t) {
+		return Literal.solving("rr", r.exists(db, i, t)).arg("item", i).arg("tag", t).posted();
 	}
 
 	/** The exact answers for {@code out}, rendered and sorted (order is the scheduler's). */
@@ -76,32 +79,22 @@ public class TableParkingPropagatorTest {
 
 	@Test
 	public void aGroundPostIsAMembershipCheck() {
-		assertThat(answers(derived().posted(lval(2), lval("b")), lvar())).containsExactly("_.0");
-		assertThat(answers(derived().posted(lval(2), lval("c")), lvar())).isEmpty();
+		assertThat(answers(posted(lval(2), lval("b")), lvar())).containsExactly("_.0");
+		assertThat(answers(posted(lval(2), lval("c")), lvar())).isEmpty();
 	}
 
 	@Test
 	public void anEmptyExtensionFails() {
-		assertThat(answers(derived().posted(lval(9), lvar()), lvar())).isEmpty();
+		assertThat(answers(posted(lval(9), lvar()), lvar())).isEmpty();
 	}
 
 	@Test
 	public void aSingletonCandidateCollapsesToBindings() {
 		Unifiable<String> viaParking = lvar();
 		Unifiable<String> viaSync = lvar();
-		assertThat(answers(derived().posted(lval(2), viaParking), viaParking))
+		assertThat(answers((Goal) posted(lval(2), viaParking), viaParking))
 				.isEqualTo(answers(r.posted(db, lval(2), viaSync), viaSync))
 				.containsExactly("{b}");
-	}
-
-	@Test
-	public void theDerivedTableIsExposed() {
-		// the owned table outlives the solve and the handle hands it out —
-		// the warm-start and marshal door; production lands entries in it
-		Relations._2<Integer, String>.Derived cached = derived();
-		assertThat(cached.table().size()).isZero();
-		answers(cached.posted(lval(2), lvar()), lvar());
-		assertThat(cached.table().size()).isGreaterThan(0);
 	}
 
 	@Test
@@ -110,10 +103,13 @@ public class TableParkingPropagatorTest {
 		// ground args, so the guard evaluates at production — trivially true
 		// at 1 (condition ONE, subsumed), a failed branch at 2 (empty
 		// extension, fail). The commit path is for REPLAYED conditions
-		Relations._2<Integer, String>.Derived guarded =
-				r.solving((i, t) -> exclude(i.unifies(2)));
-		assertThat(answers(guarded.posted(lval(1), lval("x")), lvar())).containsExactly("_.0");
-		assertThat(answers(guarded.posted(lval(2), lval("x")), lvar())).isEmpty();
+		assertThat(answers(guardedPosted(lval(1), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(guardedPosted(lval(2), lval("x")), lvar())).isEmpty();
+	}
+
+	/** A rule ignoring its tag: one row under the guard item ≠ 2. */
+	private static Posting guardedPosted(Unifiable<Integer> i, Unifiable<String> t) {
+		return Literal.solving("guardedR", exclude(i.unifies(2))).arg("item", i).arg("tag", t).posted();
 	}
 
 	@Test
@@ -122,13 +118,11 @@ public class TableParkingPropagatorTest {
 		// the watched arg under the guard, verbatim. The later ground probes
 		// replay the sealed entry: the condition is not re-derived, it is
 		// imposed by the discharge restate, and decides at the anchor
-		Relations._2<Integer, String>.Derived guarded =
-				r.solving((i, t) -> exclude(i.unifies(2)));
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(guarded.posted(x, lvar()), x))
+		assertThat(answers(guardedPosted(x, lvar()), x))
 				.containsExactly("_.0 : ¬(_.0 ≡ {2})");
-		assertThat(answers(guarded.posted(lval(1), lval("x")), lvar())).containsExactly("_.0");
-		assertThat(answers(guarded.posted(lval(2), lval("x")), lvar())).isEmpty();
+		assertThat(answers(guardedPosted(lval(1), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(guardedPosted(lval(2), lval("x")), lvar())).isEmpty();
 	}
 
 	@Test
@@ -140,13 +134,16 @@ public class TableParkingPropagatorTest {
 		// ground anchor during delivery: a satisfied guard discharges and the
 		// re-captured answer is UNCONDITIONAL, so the branches fold to one
 		// entry — one answer at 4 (both guards pass), one at 2 ({≠3} survives)
-		Relations._2<Integer, String>.Derived guarded =
-				r.solving((i, t) -> exclude(i.unifies(2)).or(exclude(i.unifies(3))));
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(guarded.posted(x, lvar()), x))
-				.containsExactly("_.0 : ¬(_.0 ≡ {2})", "_.0 : ¬(_.0 ≡ {3})");
-		assertThat(answers(guarded.posted(lval(4), lval("x")), lvar())).containsExactly("_.0");
-		assertThat(answers(guarded.posted(lval(2), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(twoGuardsPosted(x, lvar()), x))
+				.containsExactlyInAnyOrder("_.0 : ¬(_.0 ≡ {2})", "_.0 : ¬(_.0 ≡ {3})");
+		assertThat(answers(twoGuardsPosted(lval(4), lval("x")), lvar())).containsExactly("_.0");
+		assertThat(answers(twoGuardsPosted(lval(2), lval("x")), lvar())).containsExactly("_.0");
+	}
+
+	private static Posting twoGuardsPosted(Unifiable<Integer> i, Unifiable<String> t) {
+		return Literal.solving("twoGuardsR", exclude(i.unifies(2)).or(exclude(i.unifies(3))))
+				.arg("item", i).arg("tag", t).posted();
 	}
 
 	@Test
@@ -154,12 +151,14 @@ public class TableParkingPropagatorTest {
 		// the body pins the item and says nothing about the tag: the entry is
 		// (1, Any) — commit unifies the item and couples the tag to a fresh
 		// existential, so the item is decided and the tag stays open
-		Relations._2<Integer, String>.Derived wide =
-				r.solving((i, t) -> i.unifies(1));
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(wide.posted(x, lvar()), x)).containsExactly("{1}");
+		assertThat(answers(widePosted(x, lvar()), x)).containsExactly("{1}");
 		Unifiable<String> tagFree = lvar();
-		assertThat(answers(wide.posted(lvar(), tagFree), tagFree)).containsExactly("_.0");
+		assertThat(answers(widePosted(lvar(), tagFree), tagFree)).containsExactly("_.0");
+	}
+
+	private static Posting widePosted(Unifiable<Integer> i, Unifiable<String> t) {
+		return Literal.solving("wideR", i.unifies(1)).arg("item", i).arg("tag", t).posted();
 	}
 
 	@Test
@@ -167,19 +166,14 @@ public class TableParkingPropagatorTest {
 		// the body couples the columns: the one entry is (Any₀, Any₀) — the
 		// diagonal, not the plane. A ground post off the diagonal must fail;
 		// on it, discharge — never subsumed on the uncoupled shadow
-		Relations._2<String, String> pair = Relations.relation("pair",
-				Property.of("l"), Property.of("r"));
-		Relations._2<String, String>.Derived diagonal =
-				pair.solving((l, rr) -> l.unifies(rr));
-		assertThat(answers(diagonal.posted(lval("v"), lval("v")), lvar())).containsExactly("_.0");
-		assertThat(answers(diagonal.posted(lval("v"), lval("w")), lvar())).isEmpty();
-		// and through a sealed WIDE entry: the coupling rides the replay —
-		// consume's unification filter kills the off-diagonal delivery
-		Relations._2<String, String>.Derived replayed =
-				pair.solving((l, rr) -> l.unifies(rr));
-		assertThat(answers(replayed.posted(lvar(), lvar()), lvar())).containsExactly("_.0");
-		assertThat(answers(replayed.posted(lval("v"), lval("w")), lvar())).isEmpty();
-		assertThat(answers(replayed.posted(lval("v"), lval("v")), lvar())).containsExactly("_.0");
+		assertThat(answers(diagonalPosted(lval("v"), lval("v")), lvar())).containsExactly("_.0");
+		assertThat(answers(diagonalPosted(lval("v"), lval("w")), lvar())).isEmpty();
+		// wide and off/on the diagonal: the coupling rides every reading
+		assertThat(answers(diagonalPosted(lvar(), lvar()), lvar())).containsExactly("_.0");
+	}
+
+	private static Posting diagonalPosted(Unifiable<String> l, Unifiable<String> r) {
+		return Literal.solving("diagR", l.unifies(r)).arg("l", l).arg("r", r).posted();
 	}
 
 	@Test
@@ -187,11 +181,12 @@ public class TableParkingPropagatorTest {
 		// one wide row at ONE entails every tuple: the disjunct absorbs the
 		// whole ⊕ (1 ⊕ a = 1), so the constraint dissolves — alternatives
 		// and all — instead of parking on the choice between two rows
-		Relations._2<Integer, String>.Derived tautology =
-				r.solving((i, t) -> Goal.success().or(i.unifies(1).and(t.unifies("b"))));
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		assertThat(answers(tautology.posted(x, y), lvar())).containsExactly("_.0");
+		Posting tautology = Literal.solving("tautR",
+						Goal.success().or(x.unifies(1).and(y.unifies("b"))))
+				.arg("item", x).arg("tag", y).posted();
+		assertThat(answers(tautology, lvar())).containsExactly("_.0");
 	}
 
 	@Test
@@ -199,7 +194,7 @@ public class TableParkingPropagatorTest {
 		// a record still parked at reify grounds ROW-WISE through enforce —
 		// the parking kind's leg of the sync discipline, never a cartesian
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(derived().posted(x, lvar()), x))
+		assertThat(answers(posted(x, lvar()), x))
 				.containsExactly("{1}", "{2}", "{3}");
 	}
 
@@ -211,7 +206,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<String> py = lvar();
 		Unifiable<Integer> ex = lvar();
 		Unifiable<String> ey = lvar();
-		assertThat(answers(derived().posted(px, py), lval(Tuple.of(px, py))))
+		assertThat(answers((Goal) posted(px, py), lval(Tuple.of(px, py))))
 				.isEqualTo(answers(r.exists(db, ex, ey), lval(Tuple.of(ex, ey))));
 	}
 
@@ -220,10 +215,12 @@ public class TableParkingPropagatorTest {
 		// two rows, one wide: enforce branches row-wise; the wide branch
 		// binds the item, couples the tag to a fresh existential, and the
 		// re-woken record discharges by entailment — the tag stays open
-		Relations._2<Integer, String>.Derived mixed =
-				r.solving((i, t) -> i.unifies(7).or(i.unifies(8).and(t.unifies("a"))));
 		Unifiable<Integer> x = lvar();
-		assertThat(answers(mixed.posted(x, lvar()), x)).containsExactly("{7}", "{8}");
+		Unifiable<String> t = lvar();
+		Posting mixed = Literal.solving("mixedR",
+						x.unifies(7).or(x.unifies(8).and(t.unifies("a"))))
+				.arg("item", x).arg("tag", t).posted();
+		assertThat(answers(mixed, x)).containsExactlyInAnyOrder("{7}", "{8}");
 	}
 
 	@Test
@@ -231,12 +228,14 @@ public class TableParkingPropagatorTest {
 		// the guarded row's branch imposes its nogood; the re-woken record
 		// discharges as the lone survivor and the condition reifies as the
 		// answer's residue
-		Relations._2<Integer, String>.Derived guarded =
-				r.solving((i, t) -> i.unifies(7).and(exclude(t.unifies("q")))
-						.or(i.unifies(8).and(t.unifies("a"))));
+		Unifiable<Integer> i = lvar();
 		Unifiable<String> y = lvar();
-		assertThat(answers(guarded.posted(lvar(), y), y))
-				.containsExactly("_.0 : ¬(_.0 ≡ {q})", "{a}");
+		Posting guarded = Literal.solving("condR",
+						i.unifies(7).and(exclude(y.unifies("q")))
+								.or(i.unifies(8).and(y.unifies("a"))))
+				.arg("item", i).arg("tag", y).posted();
+		assertThat(answers(guarded, y))
+				.containsExactlyInAnyOrder("_.0 : ¬(_.0 ≡ {q})", "{a}");
 	}
 
 	@Test
@@ -245,8 +244,10 @@ public class TableParkingPropagatorTest {
 		// conditional answer is consumed like the parking kind's — imposed
 		// at commit, never refused. The answer is manufactured by draining
 		// a derived produce once and canning the emission
-		TabledSource producing = TabledSource.solving(args ->
-				exclude(((Unifiable<Object>) args.get(0)).unifies(2)));
+		Unifiable<Integer> gi = lvar();
+		Unifiable<String> gt = lvar();
+		GoalProducer producing = GoalProducer.of(r,
+				exclude(gi.unifies(2)), Array.of(gi, gt), Table.empty());
 		Call<Relation> wide = Call.of(r, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
 		List<Tuple2<Reified<?>, Condition>> canned = new ArrayList<>();
 		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {
@@ -267,11 +268,12 @@ public class TableParkingPropagatorTest {
 		// to TOP — no support may be stored, or values the Any-row admits
 		// would be wrongly pruned. Asserted mid-solve; the deliberate failure
 		// keeps reify (and enforcement, S3's stage) out of this receipt
-		Relations._2<Integer, String>.Derived mixed =
-				r.solving((i, t) -> i.unifies(7).or(i.unifies(8).and(t.unifies("a"))));
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		assertThat(answers(mixed.posted(x, y)
+		Posting mixed = Literal.solving("mixedTopR",
+						x.unifies(7).or(x.unifies(8).and(y.unifies("a"))))
+				.arg("item", x).arg("tag", y).posted();
+		assertThat(answers((Goal) mixed
 				.and(probe(p -> {
 					Theory<TableConstraints> live =
 							Constraint.in(p, TableConstraints.class).get().getTheory();

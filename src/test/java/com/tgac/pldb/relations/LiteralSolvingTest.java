@@ -8,7 +8,10 @@ import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.goals.Package;
+import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
@@ -138,12 +141,49 @@ public class LiteralSolvingTest {
 	}
 
 	@Test(timeout = 5000)
-	public void ruleAnswersAgreeWithDerivedSolving() {
+	public void tablesAreFreshPerSolve() {
+		// the residence doctrine: a solve roots its own table, so nothing is
+		// memoized across solves unless the caller threads a table forward
+		Database db = edges(new int[][]{{1, 2}});
+		AtomicInteger productions = new AtomicInteger();
+		Unifiable<Integer> x = lvar();
+		Unifiable<Integer> y = lvar();
+		Literal lit = counted(db, productions, x, y);
+		assertThat(answers(x.unifies(1).and(lit), y)).containsExactly("{2}");
+		Unifiable<Integer> x2 = lvar();
+		Unifiable<Integer> y2 = lvar();
+		assertThat(answers(x2.unifies(1).and(counted(db, productions, x2, y2)), y2))
+				.containsExactly("{2}");
+		assertThat(productions.get()).isEqualTo(2);
+	}
+
+	@Test(timeout = 5000)
+	public void aSeededSolveReplaysTheRetainedTable() {
+		// warm start as the caller's explicit act: thread the same table into
+		// a second solve and the rule never re-derives — the capability the
+		// owned table used to provide, now a value the caller holds
+		Database db = edges(new int[][]{{1, 2}});
+		AtomicInteger productions = new AtomicInteger();
+		Table retained = Table.empty();
+		Unifiable<Integer> x = lvar();
+		Unifiable<Integer> y = lvar();
+		List<String> first = x.unifies(1).and(counted(db, productions, x, y))
+				.solveFrom(Package.empty().withStore(retained), y, BreadthFirstScheduler::new)
+				.map(Object::toString).collect(Collectors.toList());
+		Unifiable<Integer> x2 = lvar();
+		Unifiable<Integer> y2 = lvar();
+		List<String> second = x2.unifies(1).and(counted(db, productions, x2, y2))
+				.solveFrom(Package.empty().withStore(retained), y2, BreadthFirstScheduler::new)
+				.map(Object::toString).collect(Collectors.toList());
+		assertThat(second).isEqualTo(first).containsExactly("{2}");
+		assertThat(productions.get())
+				.describedAs("the second solve replays the seeded table")
+				.isEqualTo(1);
+	}
+
+	@Test(timeout = 5000)
+	public void ruleAnswersAgreeWithTheBareLookup() {
 		Database db = edges(new int[][]{{1, 2}, {1, 3}, {2, 4}});
-		Relations._2<Integer, Integer> rel = Relations.relation("oracle",
-				Property.<Integer>of("from"), Property.<Integer>of("to"));
-		Relations._2<Integer, Integer>.Derived oracle = rel.solving((x, y) ->
-				edge(db, x, y));
 		Unifiable<Integer> a = lvar();
 		Unifiable<Integer> b = lvar();
 		Unifiable<Integer> x = lvar();
@@ -152,6 +192,6 @@ public class LiteralSolvingTest {
 				.arg("from", x).arg("to", y);
 		assertThat(answers(x.unifies(1).and(viaRule), y))
 				.containsExactlyInAnyOrder("{2}", "{3}")
-				.isEqualTo(answers(a.unifies(1).and(oracle.exists(a, b)), b));
+				.isEqualTo(answers(a.unifies(1).and(edge(db, a, b)), b));
 	}
 }
