@@ -3,8 +3,10 @@ package com.tgac.pldb;
 // ABOUTME: A frozen base plus a private staged delta, read as one source — the
 // ABOUTME: value semantics of an immutable store over a base that is merely shared.
 
+import com.tgac.functional.Exceptions;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
@@ -13,9 +15,11 @@ import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -52,16 +56,18 @@ public final class Overlay implements AnswerSource {
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
 		// TODO : There should be subsumption detection here if delta answers subsume base.
-		// Equal rows (a staged duplicate of a committed fact) fold here; wide or
-		// conditional delta rows shadowing base rows are the subsumption case above.
-		Set<Tuple2<Reified<?>, Condition>> rows = new LinkedHashSet<>();
-		for (Tuple2<Reified<?>, Condition> answer : base.answers(probe)) {
-			rows.add(answer);
-		}
-		for (Tuple2<Reified<?>, Condition> answer : delta.answers(probe)) {
-			rows.add(answer);
-		}
-		return rows;
+		// Same-key rows ⊕-fold in the cell (a staged duplicate is inert, conditions
+		// join by absorption); a wide delta row shadowing a DIFFERENT base key is
+		// the open subsumption case above.
+		JoinMap<Reified<?>, Condition> folded = Stream.concat(
+						StreamSupport.stream(base.answers(probe).spliterator(), false),
+						StreamSupport.stream(delta.answers(probe).spliterator(), false))
+				.reduce(JoinMap.empty(Condition.RING),
+						(map, answer) -> answer.apply(map::append).getOrElse(map),
+						Exceptions.throwingBiOp(UnsupportedOperationException::new));
+		return IntStream.range(0, folded.size())
+				.mapToObj(folded::get)
+				.collect(Collectors.toList());
 	}
 
 	@Override
