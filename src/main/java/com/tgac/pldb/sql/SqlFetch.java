@@ -58,7 +58,10 @@ final class SqlFetch implements AnswerSource {
 	static SqlFetch pinned(String id, Connection connection) {
 		try {
 			connection.setAutoCommit(false);
-			if (connection.getMetaData().supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ)) {
+			// the pin promises AT LEAST a repeatable snapshot: raise a weaker
+			// level, keep a stronger one (SERIALIZABLE is the rented certify)
+			if (connection.getTransactionIsolation() < Connection.TRANSACTION_REPEATABLE_READ
+					&& connection.getMetaData().supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ)) {
 				connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
 			}
 			// an MVCC snapshot begins at the transaction's FIRST READ, not at

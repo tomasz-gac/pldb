@@ -77,6 +77,16 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
+	public void pinningKeepsAStrongerIsolationLevel() throws SQLException {
+		// the pin promises AT LEAST a repeatable snapshot; a caller that
+		// already granted SERIALIZABLE (the rented certify) must keep it
+		connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+		try (SqlFactSource pinned = SqlFactSource.pinned("h2-serializable", connection)) {
+			assertThat(pinned.isolation()).isEqualTo(Connection.TRANSACTION_SERIALIZABLE);
+		}
+	}
+
+	@Test
 	public void answersLikeTheInMemoryReference() {
 		try (SqlFactSource source = source()) {
 			assertThat(solvedNames(source)).isEqualTo(solvedNames(reference));
