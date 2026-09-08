@@ -18,7 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SerializedDatabasePredicateTest {
+public class TransactionPredicateTest {
 
 	private Connection connection;
 
@@ -37,22 +37,22 @@ public class SerializedDatabasePredicateTest {
 	}
 
 	/** No orphan table exists, so the flush inside commit fails for real. */
-	private Try<?> commitFailure(SerializedDatabase db) {
+	private Try<?> commitFailure(Transaction db) {
 		return db.withFacts(Collections.singletonList(orphan(null, lval(1)).fact()))
 				.get().commit();
 	}
 
 	@Test
 	public void aRecognizedCommitFailureMapsToConflict() {
-		Try<?> refused = commitFailure(SerializedDatabase.open("h2", connection, e -> true));
+		Try<?> refused = commitFailure(Transaction.over(connection, SerializableSource.pinned("h2", connection, e -> true)));
 		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(SerializedDatabase.Conflict.class);
+		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test
 	public void anUnrecognizedFailureSurfacesAsItself() {
-		Try<?> refused = commitFailure(SerializedDatabase.open("h2", connection, e -> false));
+		Try<?> refused = commitFailure(Transaction.over(connection, SerializableSource.pinned("h2", connection, e -> false)));
 		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isNotInstanceOf(SerializedDatabase.Conflict.class);
+		assertThat(refused.getCause()).isNotInstanceOf(Transaction.Conflict.class);
 	}
 }

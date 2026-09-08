@@ -1,7 +1,7 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The transactional store value over PostgreSQL: staged facts land at
-// ABOUTME: commit, abandonment leaves no trace, and SSI maps write skew to Conflict.
+// ABOUTME: The Transaction over the rented certify tier on real PostgreSQL: staged
+// ABOUTME: facts land at commit, abandonment leaves no trace, SSI maps skew to Conflict.
 
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class SerializedDatabaseTest {
+public class TransactionPostgresTest {
 
 	private static PostgreSQLContainer<?> postgres;
 
@@ -77,10 +77,14 @@ public class SerializedDatabaseTest {
 				.collect(Collectors.toList());
 	}
 
+	private static Transaction transaction(String id, Connection connection) {
+		return Transaction.over(connection, SerializableSource.postgres(id, connection));
+	}
+
 	@Test
 	public void openGrantsSerializable() throws SQLException {
 		Connection connection = connect();
-		try (SerializedDatabase db = SerializedDatabase.open("pg", connection)) {
+		try (Transaction db = transaction("pg", connection)) {
 			assertThat(connection.getTransactionIsolation())
 					.isEqualTo(Connection.TRANSACTION_SERIALIZABLE);
 		}
@@ -88,7 +92,7 @@ public class SerializedDatabaseTest {
 
 	@Test
 	public void commitLandsStagedFactsForTheNextTransaction() throws SQLException {
-		SerializedDatabase writer = SerializedDatabase.open("pg", connect())
+		Transaction writer = transaction("pg", connect())
 				.withFacts(Arrays.asList(
 						person(null, lval(1), lval("Ada")).fact(),
 						person(null, lval(2), lval("Alan")).fact())).get();
@@ -97,18 +101,18 @@ public class SerializedDatabaseTest {
 				.containsExactly("{Ada}", "{Alan}");
 		assertThat(writer.commit().isSuccess()).isTrue();
 
-		try (SerializedDatabase reader = SerializedDatabase.open("pg", connect())) {
+		try (Transaction reader = transaction("pg", connect())) {
 			assertThat(names(reader)).containsExactly("{Ada}", "{Alan}");
 		}
 	}
 
 	@Test
 	public void anAbandonedValueLeavesNoTrace() throws SQLException {
-		try (SerializedDatabase abandoned = SerializedDatabase.open("pg", connect())
+		try (Transaction abandoned = transaction("pg", connect())
 				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
-		try (SerializedDatabase reader = SerializedDatabase.open("pg", connect())) {
+		try (Transaction reader = transaction("pg", connect())) {
 			assertThat(names(reader)).isEmpty();
 		}
 	}
@@ -118,8 +122,8 @@ public class SerializedDatabaseTest {
 		// write skew, certified by rented SSI: both values read the person
 		// region their sibling writes; the first commit wins, the second maps
 		// to Conflict — the caller's move is an ordinary re-solve
-		SerializedDatabase first = SerializedDatabase.open("pg-first", connect());
-		SerializedDatabase second = SerializedDatabase.open("pg-second", connect());
+		Transaction first = transaction("pg-first", connect());
+		Transaction second = transaction("pg-second", connect());
 		assertThat(names(first)).isEmpty();
 		assertThat(names(second)).isEmpty();
 
@@ -131,9 +135,9 @@ public class SerializedDatabaseTest {
 		assertThat(first.commit().isSuccess()).isTrue();
 		Try<?> refused = second.commit();
 		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(SerializedDatabase.Conflict.class);
+		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
 
-		try (SerializedDatabase reader = SerializedDatabase.open("pg", connect())) {
+		try (Transaction reader = transaction("pg", connect())) {
 			assertThat(names(reader))
 					.describedAs("only the winner's row landed")
 					.containsExactly("{Ada}");
