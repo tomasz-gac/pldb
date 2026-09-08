@@ -75,6 +75,13 @@ public class OverlayTest {
 	}
 
 	@Test
+	public void aStagedDuplicateOfACommittedFactDeliversOnce() {
+		Overlay lib = Overlay.over(base())
+				.withFacts(Collections.singletonList(personFact(1, "Ada"))).get();
+		assertThat(ids(lib)).containsExactly("{1}", "{2}");
+	}
+
+	@Test
 	public void aFreshOverlayStagesNothing() {
 		assertThat(Overlay.over(base()).staged()).isEmpty();
 	}

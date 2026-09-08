@@ -13,8 +13,9 @@ import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -50,7 +51,10 @@ public final class Overlay implements AnswerSource {
 
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		List<Tuple2<Reified<?>, Condition>> rows = new ArrayList<>();
+		// TODO : There should be subsumption detection here if delta answers subsume base.
+		// Equal rows (a staged duplicate of a committed fact) fold here; wide or
+		// conditional delta rows shadowing base rows are the subsumption case above.
+		Set<Tuple2<Reified<?>, Condition>> rows = new LinkedHashSet<>();
 		for (Tuple2<Reified<?>, Condition> answer : base.answers(probe)) {
 			rows.add(answer);
 		}
