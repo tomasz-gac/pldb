@@ -1,4 +1,4 @@
-package com.tgac.pldb;
+package com.tgac.pldb.sql.transaction;
 
 // ABOUTME: The regions a body of work read: EVERYTHING, or a set of probes —
 // ABOUTME: the certify question's scope, never interpreted by its carrier.
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * The read scope a certify question ranges over: {@link #EVERYTHING} when
  * the reads were not recorded (maximally conservative), or the set of
- * probe regions that were. A coarse {@link Certifiable} ignores it; a
+ * probe regions that were. A coarse {@link SimulatedSerialization} ignores it; a
  * finer one narrows its answer to the named relations or regions.
  */
 public final class Footprint {

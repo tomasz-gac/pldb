@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: One adapter-side predicate value: a WHERE fragment with its parameters
 // ABOUTME: bound positionally — what a registered compiler produces from an atom.

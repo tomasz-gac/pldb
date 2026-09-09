@@ -1,10 +1,11 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The adapter-side compiler a user registers per constraint family:
 // ABOUTME: one atom in, optionally one WHERE predicate out — weaker or equal.
 
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.sql.source.compiler.SqlPredicate;
 import java.util.Optional;
 
 /**

@@ -1,41 +1,25 @@
 package com.tgac.pldb.sql.transaction;
 
-import com.tgac.functional.category.Nothing;
-import com.tgac.pldb.CertifiedReads;
-import com.tgac.pldb.WriteBuffer;
+// ABOUTME: Native serialization: the backend validates read sets at commit
+// ABOUTME: itself; the source owns the whole commit door and its dialect.
+
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.sql.Transaction;
-import io.vavr.control.Try;
 import java.util.List;
 
 /**
- * The RENTED tier: the backend tracks every read it serves, so this
- * transaction records nothing — it buffers writes and hands the flush
- * to the source's {@link CertifiedReads} door.
+ * A source whose backend serializes transactions itself — an
+ * isolation that actually validates read sets (PostgreSQL's SSI, the
+ * two-phase-locking implementations). {@link #commit} lands the flush
+ * and commits the source's own snapshot transaction; a refusal in the
+ * backend's conflict dialect answers {@code false} (the world moved —
+ * re-solve), any other failure throws. No pin and no footprint: the
+ * backend tracked the reads itself. The implementor is the adapter
+ * that KNOWS its backend keeps that promise; a backend whose
+ * SERIALIZABLE is snapshot isolation in costume must not wear this
+ * interface.
  */
-public class NativeSerialization extends AbstractTransaction {
+public interface NativeSerialization extends AnswerSource, AutoCloseable {
 
-	private final CertifiedReads certified;
-
-	NativeSerialization(WriteBuffer writeBuffer, CertifiedReads certified) {
-		super(writeBuffer);
-		this.certified = certified;
-	}
-
-	@Override
-	public Try<Transaction> withFacts(List<Fact> facts) {
-		return writeBuffer.withFacts(facts)
-				.map(grown -> new NativeSerialization(grown, certified));
-	}
-
-	@Override
-	public Try<Nothing> commit() {
-		return through(() -> certified.commit(writeBuffer.staged().asJava()));
-	}
-
-	/** Ends the snapshot (the source's close rolls its read transaction back). */
-	@Override
-	public void close() throws Exception {
-		certified.close();
-	}
+	boolean commit(List<Fact> flush);
 }

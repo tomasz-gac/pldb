@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: The FD family's WHERE compiler: domain impositions become in/between/eq,
 // ABOUTME: leq and separate propagators become comparisons — by name, the sanctioned identity.
@@ -14,6 +14,7 @@ import com.tgac.logic.finitedomain.domains.Union;
 import com.tgac.logic.lattice.Imposition;
 import com.tgac.logic.lattice.Propagator;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.sql.source.SqlCompiler;
 import io.vavr.collection.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

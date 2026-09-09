@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: An AnswerSource that caches its delegate subsumptively: answers land in a
 // ABOUTME: pool, the ledger records probes as calls, Call.subsumes proves coverage.

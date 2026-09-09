@@ -1,13 +1,14 @@
-package com.tgac.pldb;
+package com.tgac.pldb.sql.transaction;
 
-// ABOUTME: The OWNED certify capability: a source that proves its reads unmoved
-// ABOUTME: and lands the flush in one short transaction of its own.
+// ABOUTME: Simulated serialization: a source that proves its reads unmoved and
+// ABOUTME: lands the flush in one short transaction of its own.
 
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Fact;
 import java.util.List;
 
 /**
- * A source that certifies its own reads. {@link #pin()} names the
+ * A source that serializes by proof: {@link #pin()} names the
  * snapshot at open. {@link #commit} runs ONE short transaction of the
  * source's own: take the commit lock, prove that the current world
  * still covers what the pin's world said about the footprint, land
@@ -20,7 +21,7 @@ import java.util.List;
  * region-aware source matches delta rows. Conservative refusal is
  * always sound.
  */
-public interface Certifiable extends AnswerSource, AutoCloseable {
+public interface SimulatedSerialization extends AnswerSource, AutoCloseable {
 
 	Pin pin();
 

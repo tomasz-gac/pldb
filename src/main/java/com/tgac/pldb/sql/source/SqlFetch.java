@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The SQL polling source: one pinned connection, the compiler registry,
 // ABOUTME: the probe's pattern+region compiled to SELECT..WHERE — every answer a round trip.
@@ -15,6 +15,8 @@ import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.JdbcSource;
+import com.tgac.pldb.sql.source.compiler.SqlPredicate;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;

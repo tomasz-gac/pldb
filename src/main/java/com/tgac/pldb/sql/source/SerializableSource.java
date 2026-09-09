@@ -1,14 +1,16 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
-// ABOUTME: The rented certify tier: a source under honest SERIALIZABLE isolation,
-// ABOUTME: declaring its backend's conflict dialect through CertifiedReads.
+// ABOUTME: Native serialization over JDBC: a source under honest SERIALIZABLE
+// ABOUTME: isolation, its backend's conflict dialect recognized at the commit door.
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.CertifiedReads;
+import com.tgac.pldb.sql.transaction.NativeSerialization;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.JdbcSource;
+import com.tgac.pldb.sql.transaction.SqlFlush;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -24,7 +26,7 @@ import java.util.function.Predicate;
  * SERIALIZABLE is snapshot isolation in costume must not come through
  * here — no dialect predicate can make it honest.
  */
-public final class SerializableSource implements JdbcSource, CertifiedReads {
+public final class SerializableSource implements JdbcSource, NativeSerialization {
 
 	private final CachingSqlFetch inner;
 	private final Predicate<SQLException> dialect;
@@ -53,7 +55,7 @@ public final class SerializableSource implements JdbcSource, CertifiedReads {
 	/**
 	 * The rented commit door: flush and commit on the snapshot's own
 	 * transaction — the backend has been tracking every read it served,
-	 * and a refusal in this source's dialect means certify failed.
+	 * and a refusal in this source's dialect means the world moved.
 	 */
 	@Override
 	public boolean commit(List<Fact> flush) {

@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: The nogood family's WHERE compiler: De Morgan over the registry —
 // ABOUTME: each literal negates through its own family, whole disjunctions or nothing.
@@ -8,6 +8,7 @@ import com.tgac.logic.constraints.UnifyGoal;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.nogoods.Nogood;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.sql.source.SqlCompiler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: Direct receipts for the nogood compiler: De Morgan over the registry —
 // ABOUTME: literals negate via their families, disjunctions push whole or not at all.
@@ -29,6 +29,7 @@ import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.source.SqlCompiler;
 import io.vavr.collection.Array;
 import java.util.Collections;
 import java.util.HashMap;

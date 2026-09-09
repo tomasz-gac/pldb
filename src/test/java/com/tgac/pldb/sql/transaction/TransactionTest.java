@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.transaction;
 
 // ABOUTME: The Transaction over the owned certify tier: watermark receipts on H2 —
 // ABOUTME: refusal without a capability, write skew refused, disjoint relations pass.
@@ -10,7 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.sql.transaction.AbstractTransaction;
+import com.tgac.pldb.sql.Transaction;
+import com.tgac.pldb.sql.source.Watermark;
+import com.tgac.pldb.sql.source.CachingSqlFetch;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;

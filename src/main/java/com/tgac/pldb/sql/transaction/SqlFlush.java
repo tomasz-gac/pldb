@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.transaction;
 
 // ABOUTME: The JDBC write face: facts land as INSERTs by the schema convention —
 // ABOUTME: relation name is the table, property names are the columns, atoms only.

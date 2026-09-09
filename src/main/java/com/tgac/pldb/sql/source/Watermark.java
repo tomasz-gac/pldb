@@ -1,17 +1,18 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
-// ABOUTME: The owned certify tier over standard SQL: per-relation marks in one
+// ABOUTME: Simulated serialization over standard SQL: per-relation marks in one
 // ABOUTME: private table; commit = one short lock-compare-flush-advance transaction.
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.Certifiable;
-import com.tgac.pldb.Footprint;
-import com.tgac.pldb.Pin;
+import com.tgac.pldb.sql.transaction.SimulatedSerialization;
+import com.tgac.pldb.sql.transaction.Footprint;
+import com.tgac.pldb.sql.transaction.Pin;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.JdbcSource;
+import com.tgac.pldb.sql.transaction.SqlFlush;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,11 +29,11 @@ import lombok.AllArgsConstructor;
 import lombok.Value;
 
 /**
- * Equips a source with the OWNED certify in plain standard SQL: a
+ * Equips a source with SIMULATED serialization in plain standard SQL: a
  * private {@code watermark(relation, mark)} table with one lock row.
  * {@link #pin()} reads the snapshot's marks through the snapshot
  * connection. {@link #commit} runs on a FRESH connection from the
- * supplier — a snapshot cannot see the current world, and certify is
+ * supplier — a snapshot cannot see the current world, and the proof is
  * exactly a question about the current world: lock the lock row
  * {@code FOR UPDATE} (serializing committers), compare the footprints'
  * relations against current marks, land the facts, bump the moved
@@ -44,7 +45,7 @@ import lombok.Value;
  */
 @Value
 @AllArgsConstructor
-public class Watermark implements JdbcSource, Certifiable {
+public class Watermark implements JdbcSource, SimulatedSerialization {
 	private static final String LOCK_ROW = "*";
 
 	JdbcSource source;
@@ -116,7 +117,7 @@ public class Watermark implements JdbcSource, Certifiable {
 				throw e;
 			}
 		} catch (SQLException e) {
-			throw new IllegalStateException(id() + ": certify failed", e);
+			throw new IllegalStateException(id() + ": simulated serialization failed", e);
 		}
 	}
 

@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: Pins the SQL adapter: an H2-backed AnswerSource answers identically to
 // ABOUTME: the in-memory reference, refuses unserved relations, and lands fetches

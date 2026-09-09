@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: Direct receipts for the FD compiler: each domain kind's compiled
 // ABOUTME: predicate, including the Union hull — weaker than the union, lawful.
@@ -12,7 +12,6 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.finitedomain.Domain;
 import com.tgac.logic.finitedomain.FiniteDomain;
-import com.tgac.logic.unification.Term;
 import com.tgac.logic.finitedomain.domains.Arithmetic;
 import com.tgac.logic.finitedomain.domains.Interval;
 import com.tgac.logic.finitedomain.domains.Singleton;

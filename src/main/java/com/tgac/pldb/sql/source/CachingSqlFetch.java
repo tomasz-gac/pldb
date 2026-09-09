@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The JDBC-backed AnswerSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
@@ -9,6 +9,9 @@ import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.source.compiler.FiniteDomainSqlCompiler;
+import com.tgac.pldb.sql.JdbcSource;
+import com.tgac.pldb.sql.source.compiler.NogoodSqlCompiler;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import lombok.AccessLevel;

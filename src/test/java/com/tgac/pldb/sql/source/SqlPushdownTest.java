@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: Pins the pushdown core: the coverage trap (a pushed fetch must not serve
 // ABOUTME: a wider probe), answer identity vs the unpushed source, locality receipts.

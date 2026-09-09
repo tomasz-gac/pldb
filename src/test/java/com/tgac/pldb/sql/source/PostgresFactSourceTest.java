@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The north star's Phase 2 proof against real PostgreSQL (testcontainers):
 // ABOUTME: a nonrecursive and a recursive relation answer identically over memory and PG.

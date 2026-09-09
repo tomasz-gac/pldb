@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: Pins the adapter-side predicate values: fragment text and parameter
 // ABOUTME: binding, receipted by running each rendered WHERE against H2.

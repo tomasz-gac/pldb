@@ -1,15 +1,13 @@
 package com.tgac.pldb.sql.transaction;
 
 // ABOUTME: The transaction: a read face, a write face staging facts, and a commit
-// ABOUTME: proven by the source's certify — one subtype per certify capability.
+// ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.Certifiable;
-import com.tgac.pldb.CertifiedReads;
 import com.tgac.pldb.WriteBuffer;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.Transaction;
@@ -21,12 +19,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
- * One transaction over one certified source: an {@link AnswerSource}
+ * One transaction over one serialized source: an {@link AnswerSource}
  * read face, a write face staging facts, and a {@link #commit()} proven
- * through the source's own certify door. The certify capability decides
- * the SUBTYPE at {@link #over}: an {@link CertifiedSerialization} transaction records
+ * through the source's own serialization door. The serialization kind decides
+ * the SUBTYPE at {@link #over}: an {@link Simulated} transaction records
  * every probe and certifies the whole log at commit (an
- * over-approximation — retries, never unsoundness); a {@link NativeSerialization}
+ * over-approximation — retries, never unsoundness); a {@link Native}
  * transaction records nothing, because its backend tracks the reads
  * itself. A source with neither capability has no {@code over} to call:
  * a transaction exists FOR its write face — reads alone never need one.
@@ -35,13 +33,13 @@ import lombok.RequiredArgsConstructor;
 public abstract class AbstractTransaction implements Transaction {
 	final WriteBuffer writeBuffer;
 
-	public static AbstractTransaction over(Certifiable source) {
-		return new CertifiedSerialization(WriteBuffer.over(source), source,
+	public static AbstractTransaction over(SimulatedSerialization source) {
+		return new Simulated(WriteBuffer.over(source), source,
 				new ConcurrentLinkedQueue<>(), source.pin());
 	}
 
-	public static AbstractTransaction over(CertifiedReads source) {
-		return new NativeSerialization(WriteBuffer.over(source), source);
+	public static AbstractTransaction over(NativeSerialization source) {
+		return new Native(WriteBuffer.over(source), source);
 	}
 
 	/** The shared verdict mapping: refused = Conflict, anything thrown surfaces. */

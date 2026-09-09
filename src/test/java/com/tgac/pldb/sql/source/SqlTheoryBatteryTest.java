@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The end-to-end theory battery: each constraint theory solved three ways
 // ABOUTME: — pushed SQL, unpushed SQL, in-memory reference — and all must agree.

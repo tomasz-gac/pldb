@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.transaction;
 
 // ABOUTME: The Transaction over the rented certify tier on real PostgreSQL: staged
 // ABOUTME: facts land at commit, abandonment leaves no trace, SSI maps skew to Conflict.
@@ -10,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.sql.transaction.AbstractTransaction;
+import com.tgac.pldb.sql.Transaction;
+import com.tgac.pldb.sql.source.SerializableSource;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;

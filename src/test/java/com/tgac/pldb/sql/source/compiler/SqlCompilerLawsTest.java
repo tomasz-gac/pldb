@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source.compiler;
 
 // ABOUTME: The compiler law harness: admission judged engine-true per row, selection
 // ABOUTME: judged by H2 — superset always, equality when exact, complement when negated.
@@ -29,6 +29,7 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Name;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.sql.source.SqlCompiler;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;

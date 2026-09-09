@@ -1,4 +1,4 @@
-package com.tgac.pldb.sql;
+package com.tgac.pldb.sql.source;
 
 // ABOUTME: The write face: facts land as INSERTs by the schema convention, and a
 // ABOUTME: structural column value refuses by relation and column before any row lands.
@@ -12,6 +12,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.sql.transaction.SqlFlush;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;

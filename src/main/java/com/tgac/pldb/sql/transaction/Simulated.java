@@ -4,9 +4,6 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.Certifiable;
-import com.tgac.pldb.Footprint;
-import com.tgac.pldb.Pin;
 import com.tgac.pldb.WriteBuffer;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
@@ -18,20 +15,20 @@ import java.util.List;
 import java.util.Queue;
 
 /**
- * The OWNED tier: this transaction is the read-tracker — every probe
+ * SIMULATED serialization: this transaction is the read-tracker — every probe
  * lands in the log, and commit hands the pin, the log's footprint and
- * the flush to the source's {@link Certifiable} door.
+ * the flush to the source's {@link SimulatedSerialization} door.
  */
-public class CertifiedSerialization extends AbstractTransaction {
+public class Simulated extends AbstractTransaction {
 
-	private final Certifiable certify;
+	private final SimulatedSerialization serialization;
 	private final Queue<Call<Relation>> reads;
 	private final Pin pinAtOpen;
 
-	CertifiedSerialization(WriteBuffer writeBuffer, Certifiable certify,
+	Simulated(WriteBuffer writeBuffer, SimulatedSerialization serialization,
 			Queue<Call<Relation>> reads, Pin pinAtOpen) {
 		super(writeBuffer);
-		this.certify = certify;
+		this.serialization = serialization;
 		this.reads = reads;
 		this.pinAtOpen = pinAtOpen;
 	}
@@ -45,12 +42,12 @@ public class CertifiedSerialization extends AbstractTransaction {
 	@Override
 	public Try<Transaction> withFacts(List<Fact> facts) {
 		return writeBuffer.withFacts(facts)
-				.map(grown -> new CertifiedSerialization(grown, certify, reads, pinAtOpen));
+				.map(grown -> new Simulated(grown, serialization, reads, pinAtOpen));
 	}
 
 	@Override
 	public Try<Nothing> commit() {
-		return through(() -> certify.commit(pinAtOpen,
+		return through(() -> serialization.commit(pinAtOpen,
 				Footprint.of(new ArrayList<>(reads)),
 				writeBuffer.staged().asJava()));
 	}
@@ -58,6 +55,6 @@ public class CertifiedSerialization extends AbstractTransaction {
 	/** Ends the snapshot (the source's close rolls its read transaction back). */
 	@Override
 	public void close() throws Exception {
-		certify.close();
+		serialization.close();
 	}
 }
