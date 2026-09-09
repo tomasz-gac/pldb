@@ -12,6 +12,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.transaction.WriteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

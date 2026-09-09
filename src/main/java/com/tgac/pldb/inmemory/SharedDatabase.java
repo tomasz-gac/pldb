@@ -1,0 +1,139 @@
+package com.tgac.pldb.inmemory;
+
+// ABOUTME: The shared in-memory store: one mutable cell of persistent Database
+// ABOUTME: values, opened as snapshots with simulated serialization per relation.
+
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.transaction.Footprint;
+import com.tgac.pldb.transaction.Pin;
+import com.tgac.pldb.transaction.SimulatedSerialization;
+import io.vavr.Tuple2;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import lombok.Value;
+
+/**
+ * The one history of an in-memory world: a mutable cell holding a
+ * persistent {@link Database} value plus per-relation generations.
+ * {@link #open} takes a snapshot — free, the value IS the snapshot —
+ * and hands it out as a {@link SimulatedSerialization} source: reads
+ * come from the captured value forever (stable by construction), the
+ * pin is the captured generations, and commit is the memory tier's
+ * whole protocol in one synchronized block — prove the footprint's
+ * relations unmoved, grow the current value by the flush, bump the
+ * moved generations. The degenerate ideal of the simulated ladder:
+ * exact marks, a free snapshot, and the monitor as the commit lock.
+ */
+public final class SharedDatabase {
+
+	@Value
+	private static class Versioned {
+		Database value;
+		Map<String, Long> marks;
+		long global;
+	}
+
+	private Versioned current;
+
+	private SharedDatabase(Database initial) {
+		this.current = new Versioned(initial, new HashMap<>(), 0);
+	}
+
+	public static SharedDatabase empty() {
+		return new SharedDatabase(ImmutableDatabase.empty());
+	}
+
+	public static SharedDatabase of(Database initial) {
+		return new SharedDatabase(initial);
+	}
+
+	public SimulatedSerialization open(String id) {
+		return new Snapshot(id, read());
+	}
+
+	private synchronized Versioned read() {
+		return current;
+	}
+
+	/**
+	 * The commit protocol, whole: the monitor is the commit lock, the
+	 * generation compare is the proof, the persistent grow is the flush.
+	 */
+	private synchronized boolean commit(Versioned pinned, Footprint read, java.util.List<Fact> flush) {
+		if (current.getGlobal() != pinned.getGlobal() && !covers(pinned, read)) {
+			return false;
+		}
+		Database grown = current.getValue().withFacts(flush).get();
+		Map<String, Long> marks = new HashMap<>(current.getMarks());
+		for (Fact fact : flush) {
+			marks.merge(fact.getRelation().getName(), 1L, Long::sum);
+		}
+		current = new Versioned(grown, marks, current.getGlobal() + 1);
+		return true;
+	}
+
+	/** Exact per-relation marks: unlike SQL's, absence here is knowledge. */
+	private boolean covers(Versioned pinned, Footprint read) {
+		if (read.isEverything()) {
+			return false;
+		}
+		for (String relation : read.relationNames()) {
+			if (!Objects.equals(current.getMarks().get(relation), pinned.getMarks().get(relation))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** A snapshot of the cell: reads from the captured value, commits to the cell. */
+	private final class Snapshot implements SimulatedSerialization {
+
+		private final String id;
+		private final Versioned captured;
+
+		private Snapshot(String id, Versioned captured) {
+			this.id = id;
+			this.captured = captured;
+		}
+
+		@Override
+		public Pin pin() {
+			return new MarksPin(captured);
+		}
+
+		@Override
+		public boolean commit(Pin pin, Footprint read, java.util.List<Fact> flush) {
+			return SharedDatabase.this.commit(((MarksPin) pin).getVersioned(), read, flush);
+		}
+
+		@Override
+		public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+			return captured.getValue().answers(probe);
+		}
+
+		@Override
+		public long estimate(Call<Relation> probe) {
+			return captured.getValue().estimate(probe);
+		}
+
+		@Override
+		public String id() {
+			return id;
+		}
+
+		@Override
+		public void close() {
+			// a snapshot holds no resources: abandonment is garbage collection
+		}
+	}
+
+	@Value
+	private static class MarksPin implements Pin {
+		Versioned versioned;
+	}
+}
