@@ -6,12 +6,13 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.CertifiedReads;
+import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -23,12 +24,12 @@ import java.util.function.Predicate;
  * SERIALIZABLE is snapshot isolation in costume must not come through
  * here — no dialect predicate can make it honest.
  */
-public final class SerializableSource implements AnswerSource, CertifiedReads, AutoCloseable {
+public final class SerializableSource implements JdbcSource, CertifiedReads {
 
-	private final SqlFactSource inner;
+	private final CachingSqlFetch inner;
 	private final Predicate<SQLException> dialect;
 
-	private SerializableSource(SqlFactSource inner, Predicate<SQLException> dialect) {
+	private SerializableSource(CachingSqlFetch inner, Predicate<SQLException> dialect) {
 		this.inner = inner;
 		this.dialect = dialect;
 	}
@@ -46,12 +47,50 @@ public final class SerializableSource implements AnswerSource, CertifiedReads, A
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not open " + id + " serializable", e);
 		}
-		return new SerializableSource(SqlFactSource.pinned(id, connection), dialect);
+		return new SerializableSource(CachingSqlFetch.pinned(id, connection), dialect);
 	}
 
+	/**
+	 * The rented commit door: flush and commit on the snapshot's own
+	 * transaction — the backend has been tracking every read it served,
+	 * and a refusal in this source's dialect means certify failed.
+	 */
 	@Override
-	public boolean conflict(SQLException failure) {
-		return dialect.test(failure);
+	public boolean commit(List<Fact> flush) {
+		try {
+			SqlFlush.over(getConnection()).flush(flush);
+			getConnection().commit();
+			return true;
+		} catch (RuntimeException e) {
+			rollBackQuietly();
+			if (recognized(e)) {
+				return false;
+			}
+			throw e;
+		} catch (SQLException e) {
+			rollBackQuietly();
+			if (recognized(e)) {
+				return false;
+			}
+			throw new IllegalStateException(id() + ": commit failed", e);
+		}
+	}
+
+	private boolean recognized(Throwable e) {
+		for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+			if (cause instanceof SQLException && dialect.test((SQLException) cause)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void rollBackQuietly() {
+		try {
+			getConnection().rollback();
+		} catch (SQLException suppressed) {
+			// the transaction is already dead; the caller gets the original failure
+		}
 	}
 
 	@Override
@@ -70,7 +109,12 @@ public final class SerializableSource implements AnswerSource, CertifiedReads, A
 	}
 
 	@Override
-	public void close() {
+	public void close() throws Exception {
 		inner.close();
+	}
+
+	@Override
+	public Connection getConnection() {
+		return inner.getConnection();
 	}
 }

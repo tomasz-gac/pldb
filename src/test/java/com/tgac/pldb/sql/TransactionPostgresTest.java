@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.sql.transaction.AbstractTransaction;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -77,12 +78,12 @@ public class TransactionPostgresTest {
 				.collect(Collectors.toList());
 	}
 
-	private static Transaction transaction(String id, Connection connection) {
-		return Transaction.over(connection, SerializableSource.postgres(id, connection));
+	private static Transaction transaction(String id, Connection connection){
+		return AbstractTransaction.over(SerializableSource.postgres(id, connection));
 	}
 
 	@Test
-	public void openGrantsSerializable() throws SQLException {
+	public void openGrantsSerializable() throws Exception {
 		Connection connection = connect();
 		try (Transaction db = transaction("pg", connection)) {
 			assertThat(connection.getTransactionIsolation())
@@ -91,7 +92,7 @@ public class TransactionPostgresTest {
 	}
 
 	@Test
-	public void commitLandsStagedFactsForTheNextTransaction() throws SQLException {
+	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("pg", connect())
 				.withFacts(Arrays.asList(
 						person(null, lval(1), lval("Ada")).fact(),
@@ -107,7 +108,7 @@ public class TransactionPostgresTest {
 	}
 
 	@Test
-	public void anAbandonedValueLeavesNoTrace() throws SQLException {
+	public void anAbandonedValueLeavesNoTrace() throws Exception {
 		try (Transaction abandoned = transaction("pg", connect())
 				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
@@ -118,7 +119,7 @@ public class TransactionPostgresTest {
 	}
 
 	@Test
-	public void aGuardedConcurrentAppendMeetsTheConflict() throws SQLException {
+	public void aGuardedConcurrentAppendMeetsTheConflict() throws Exception {
 		// write skew, certified by rented SSI: both values read the person
 		// region their sibling writes; the first commit wins, the second maps
 		// to Conflict — the caller's move is an ordinary re-solve

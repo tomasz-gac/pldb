@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Subsumptive reuse over any delegate source — call subsumption at the data
@@ -38,16 +40,13 @@ import java.util.Set;
  * <p>Estimates delegate when uncovered, so a backend with real statistics
  * flows through; covered probes price exactly from the pool.
  */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CachingAnswerSource implements AnswerSource {
 
 	private final AnswerSource delegate;
 
 	private Database cache = ImmutableDatabase.empty();
 	private final Map<Relation, List<Call<Relation>>> covered = new HashMap<>();
-
-	private CachingAnswerSource(AnswerSource delegate) {
-		this.delegate = delegate;
-	}
 
 	public static CachingAnswerSource over(AnswerSource delegate) {
 		return new CachingAnswerSource(delegate);
@@ -95,8 +94,8 @@ public final class CachingAnswerSource implements AnswerSource {
 		// duplicate does too: the probe pattern's own (indexed) bucket is the
 		// whole dedup universe
 		Relation relation = probe.getRelation();
-		Set<Fact> resident = new HashSet<>();
-		for (Fact fact : cache.get(relation, Answers.pattern(probe.getArguments()))) {
+		Set<Tuple2<Reified<?>, Condition>> resident = new HashSet<>();
+		for (Tuple2<Reified<?>, Condition> fact : cache.answers(probe)) {
 			resident.add(fact);
 		}
 		List<Fact> fresh = new ArrayList<>();
@@ -108,7 +107,7 @@ public final class CachingAnswerSource implements AnswerSource {
 						"conditional answers cannot land in the ground pool: " + answer);
 			}
 			Fact row = Fact.of(relation, Answers.values(answer._1));
-			if (!resident.contains(row)) {
+			if (!resident.contains(answer)) {
 				fresh.add(row);
 			}
 		}

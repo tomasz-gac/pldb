@@ -20,7 +20,6 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -78,8 +77,8 @@ public class SqlPushdownTest {
 	}
 
 	/** Sources share the test's connection; the @After close owns its lifecycle. */
-	private SqlFactSource pushing() {
-		return SqlFactSource.pinned("h2-push", counting(connection));
+	private CachingSqlFetch pushing() {
+		return CachingSqlFetch.pinned("h2-push", counting(connection));
 	}
 
 	/** The unpushed leg of the oracle: the bare halves composed, no equipment. */
@@ -92,7 +91,7 @@ public class SqlPushdownTest {
 		// THE TRAP: the narrow fetch lands rows 1..2 under its pushed WHERE;
 		// coverage recorded by pattern alone would claim completeness for the
 		// whole relation and silently lose Kurt
-		SqlFactSource source = pushing();
+		CachingSqlFetch source = pushing();
 		Unifiable<Long> narrow = lvar();
 		assertThat(dom(narrow, EnumeratedDomain.range(1L, 3L))
 				.and(person(source, narrow, lvar()))
@@ -123,7 +122,7 @@ public class SqlPushdownTest {
 
 	@Test
 	public void aNarrowerProbeAfterAPushedFetchStaysLocal() {
-		SqlFactSource source = pushing();
+		CachingSqlFetch source = pushing();
 		Unifiable<Long> wide = lvar();
 		assertThat(dom(wide, EnumeratedDomain.range(1L, 4L))
 				.and(person(source, wide, lvar()))
@@ -145,7 +144,7 @@ public class SqlPushdownTest {
 	public void theFdCompilerIsEquipment() {
 		// no compiling(...) call anywhere: the FD compiler is wired at
 		// pinned() — the domain still reaches the WHERE clause
-		SqlFactSource source = SqlFactSource.pinned("h2-equipment", counting(connection));
+		CachingSqlFetch source = CachingSqlFetch.pinned("h2-equipment", counting(connection));
 		domProgram(source);
 		assertThat(statementSql.stream().anyMatch(sql -> sql.contains("id IN (?, ?)")))
 				.describedAs("the auto-registered FD compiler must push the domain")
@@ -156,7 +155,7 @@ public class SqlPushdownTest {
 	public void anAutoRegisteredCompilerIsOverridable() {
 		// a user replacement takes the family over: an always-refusing
 		// compiler keeps every FD atom local
-		SqlFactSource source = SqlFactSource.pinned("h2-override", counting(connection))
+		CachingSqlFetch source = CachingSqlFetch.pinned("h2-override", counting(connection))
 				.compiling(FiniteDomainConstraints.class, (atom, columns) -> java.util.Optional.empty());
 		domProgram(source);
 		assertThat(statementSql.stream().noneMatch(sql -> sql.contains("IN (")))
@@ -171,7 +170,7 @@ public class SqlPushdownTest {
 		// dom-literal conjunct drops and only the binding conjunct pushes —
 		// a WEAKER WHERE, the dropped conjunct enforced locally, answers
 		// identical to the reference enforcing both
-		SqlFactSource partial = SqlFactSource.pinned("h2-partial", counting(connection))
+		CachingSqlFetch partial = CachingSqlFetch.pinned("h2-partial", counting(connection))
 				.compiling(FiniteDomainConstraints.class, (atom, columns) -> java.util.Optional.empty());
 		Unifiable<Long> viaSql = lvar();
 		Unifiable<Long> viaMemory = lvar();

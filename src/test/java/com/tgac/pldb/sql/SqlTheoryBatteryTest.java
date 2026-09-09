@@ -24,7 +24,6 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -235,7 +234,7 @@ public class SqlTheoryBatteryTest {
 
 	private <T> void agree(int expected, BiFunction<AnswerSource, Unifiable<T>, Goal> program) {
 		Tuple2<AnswerSource, AnswerSource> sources = Tuple.of(
-				SqlFactSource.pinned("battery-push", connection),
+				CachingSqlFetch.pinned("battery-push", connection),
 				CachingAnswerSource.over(SqlFetch.pinned("battery-plain", connection)));
 		List<String> pushed = answers(sources._1, program);
 		List<String> unpushed = answers(sources._2, program);

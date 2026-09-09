@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
 /**
@@ -41,22 +42,16 @@ import lombok.Value;
  * conflicts. {@link #schema} is the DDL door — run it before any
  * transaction opens.
  */
-public final class Watermark implements AnswerSource, Certifiable {
-
+@Value
+@AllArgsConstructor
+public class Watermark implements JdbcSource, Certifiable {
 	private static final String LOCK_ROW = "*";
 
-	private final AnswerSource source;
-	private final Connection snapshot;
-	private final Supplier<Connection> commits;
+	JdbcSource source;
+	Supplier<Connection> commits;
 
-	private Watermark(AnswerSource source, Connection snapshot, Supplier<Connection> commits) {
-		this.source = source;
-		this.snapshot = snapshot;
-		this.commits = commits;
-	}
-
-	public static Watermark over(AnswerSource source, Connection snapshot, Supplier<Connection> commits) {
-		return new Watermark(source, snapshot, commits);
+	public static Watermark over(JdbcSource source, Supplier<Connection> commits) {
+		return new Watermark(source, commits);
 	}
 
 	/** The watermark table and its lock row; idempotent, admin-connection DDL. */
@@ -71,6 +66,16 @@ public final class Watermark implements AnswerSource, Certifiable {
 		}
 	}
 
+	@Override
+	public Connection getConnection() {
+		return source.getConnection();
+	}
+
+	@Override
+	public void close() throws Exception {
+		source.close();
+	}
+
 	@Value
 	private static class Marks implements Pin {
 		Map<String, Long> marks;
@@ -79,7 +84,7 @@ public final class Watermark implements AnswerSource, Certifiable {
 	@Override
 	public Pin pin() {
 		Map<String, Long> marks = new HashMap<>();
-		try (PreparedStatement read = snapshot.prepareStatement(
+		try (PreparedStatement read = source.getConnection().prepareStatement(
 				"SELECT relation, mark FROM watermark");
 				ResultSet rows = read.executeQuery()) {
 			while (rows.next()) {
@@ -92,13 +97,13 @@ public final class Watermark implements AnswerSource, Certifiable {
 	}
 
 	@Override
-	public boolean commit(Pin pin, Iterable<Footprint> reads, List<Fact> flush) {
+	public boolean commit(Pin pin, Footprint read, List<Fact> flush) {
 		Map<String, Long> pinned = ((Marks) pin).getMarks();
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {
 				Map<String, Long> current = lockAndReadMarks(commit);
-				if (!covers(pinned, current, reads)) {
+				if (!covers(pinned, current, read)) {
 					commit.rollback();
 					return false;
 				}
@@ -139,20 +144,18 @@ public final class Watermark implements AnswerSource, Certifiable {
 	}
 
 	private static boolean covers(Map<String, Long> pinned, Map<String, Long> current,
-			Iterable<Footprint> reads) {
+			Footprint read) {
 		if (current.getOrDefault(LOCK_ROW, 0L).equals(pinned.getOrDefault(LOCK_ROW, 0L))) {
 			return true;
 		}
-		for (Footprint read : reads) {
-			if (read.isEverything()) {
+		if (read.isEverything()) {
+			return false;
+		}
+		for (String relation : read.relationNames()) {
+			Long pinMark = pinned.get(relation);
+			Long currentMark = current.get(relation);
+			if (currentMark == null || !currentMark.equals(pinMark)) {
 				return false;
-			}
-			for (String relation : read.relationNames()) {
-				Long pinMark = pinned.get(relation);
-				Long currentMark = current.get(relation);
-				if (pinMark == null || currentMark == null || !currentMark.equals(pinMark)) {
-					return false;
-				}
 			}
 		}
 		return true;

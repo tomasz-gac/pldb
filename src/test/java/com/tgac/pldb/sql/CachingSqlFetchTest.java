@@ -30,7 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SqlFactSourceTest {
+public class CachingSqlFetchTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
 		return Literal.relation("person")
@@ -72,30 +72,30 @@ public class SqlFactSourceTest {
 		connection.close();
 	}
 
-	private SqlFactSource source() {
-		return SqlFactSource.pinned("h2-test", counting(connection));
+	private CachingSqlFetch source() {
+		return CachingSqlFetch.pinned("h2-test", counting(connection));
 	}
 
 	@Test
-	public void pinningKeepsAStrongerIsolationLevel() throws SQLException {
+	public void pinningKeepsAStrongerIsolationLevel() throws Exception {
 		// the pin promises AT LEAST a repeatable snapshot; a caller that
 		// already granted SERIALIZABLE (the rented certify) must keep it
 		connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-		try (SqlFactSource pinned = SqlFactSource.pinned("h2-serializable", connection)) {
+		try (CachingSqlFetch pinned = CachingSqlFetch.pinned("h2-serializable", connection)) {
 			assertThat(pinned.isolation()).isEqualTo(Connection.TRANSACTION_SERIALIZABLE);
 		}
 	}
 
 	@Test
-	public void answersLikeTheInMemoryReference() {
-		try (SqlFactSource source = source()) {
+	public void answersLikeTheInMemoryReference() throws Exception {
+		try (CachingSqlFetch source = source()) {
 			assertThat(solvedNames(source)).isEqualTo(solvedNames(reference));
 		}
 	}
 
 	@Test
-	public void aPostedConstraintAnswersLikeTheInMemoryReference() {
-		try (SqlFactSource source = source()) {
+	public void aPostedConstraintAnswersLikeTheInMemoryReference() throws Exception {
+		try (CachingSqlFetch source = source()) {
 			Unifiable<Integer> viaSql = lvar();
 			Unifiable<Integer> viaDb = lvar();
 			// answer SETS agree; enumeration order is the carrier's own
@@ -113,12 +113,12 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void aRelationWithoutATableFailsLoudlyAtFirstFetch() {
+	public void aRelationWithoutATableFailsLoudlyAtFirstFetch() throws Exception {
 		// the backend is the schema authority: no declared relation set —
 		// a missing table surfaces as the fetch's own loud failure, naming
 		// the SQL it tried
 		RelationN orphan = RelationN.of("orphan", id);
-		try (SqlFactSource source = source()) {
+		try (CachingSqlFetch source = source()) {
 			assertThatThrownBy(() -> orphan.apply(source, lvar()).solve(lvar()).count())
 					.isInstanceOf(IllegalStateException.class)
 					.hasMessageContaining("orphan");
@@ -126,12 +126,12 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void aPostedRecordGroundsFromTheLandedPoolWithoutAFetch() {
+	public void aPostedRecordGroundsFromTheLandedPoolWithoutAFetch() throws Exception {
 		// the wide fetch lands the whole relation; enforce's row-wise
 		// re-wakes probe GROUND patterns the ledger must prove covered —
 		// one round trip for the entire posted solve, never per-row
 		// existence checks
-		try (SqlFactSource source = source()) {
+		try (CachingSqlFetch source = source()) {
 			Unifiable<String> out = lvar();
 			assertThat(person(source, lvar(), out).posted()
 					.solve(out)
@@ -146,8 +146,8 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void aSubsumedProbeIsServedFromTheLandedPoolWithoutAFetch() {
-		try (SqlFactSource source = source()) {
+	public void aSubsumedProbeIsServedFromTheLandedPoolWithoutAFetch() throws Exception {
+		try (CachingSqlFetch source = source()) {
 			solvedNames(source);                       // the wide fetch: nothing bound
 			int afterWide = statements.get();
 
@@ -166,11 +166,11 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void aFirstProbeWithABoundPositionLandsRealValues() {
+	public void aFirstProbeWithABoundPositionLandsRealValues() throws Exception {
 		// the projection fetches only unbound columns; the merge must land the
 		// bound VALUE, not its Optional wrapper — and the landed index must
 		// answer by it
-		try (SqlFactSource source = source()) {
+		try (CachingSqlFetch source = source()) {
 			Unifiable<String> out = lvar();
 			List<String> answers = person(source, lval(2), out)
 					.solve(out)
@@ -182,10 +182,10 @@ public class SqlFactSourceTest {
 	}
 
 	@Test
-	public void aFullyBoundFirstProbeIsAnExistenceCheck() {
+	public void aFullyBoundFirstProbeIsAnExistenceCheck() throws Exception {
 		// every position bound: the projection degenerates — no unbound
 		// columns to select — and must still compile to legal SQL
-		try (SqlFactSource source = source()) {
+		try (CachingSqlFetch source = source()) {
 			assertThat(person(source,
 					lval(3),
 					lval("Kurt"))

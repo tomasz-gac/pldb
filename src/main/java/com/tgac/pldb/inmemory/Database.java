@@ -19,6 +19,7 @@ public interface Database extends AnswerSource {
 	 * {@code Optional} per argument position, present where bound. What
 	 * triggers, integrity constraints and the GAC tier consume directly.
 	 */
+	// TODO : remove in favor of AnswerSource.answers
 	Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args);
 
 	@Override

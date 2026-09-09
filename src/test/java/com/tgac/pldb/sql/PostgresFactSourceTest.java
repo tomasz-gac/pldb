@@ -16,10 +16,8 @@ import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.RelationN;
 import com.tgac.pldb.relations.Literal;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -94,7 +92,7 @@ public class PostgresFactSourceTest {
 	private static PostgreSQLContainer<?> postgres;
 
 	private Connection connection;
-	private SqlFactSource source;
+	private CachingSqlFetch source;
 
 	@BeforeClass
 	public static void startPostgres() {
@@ -116,7 +114,7 @@ public class PostgresFactSourceTest {
 		connection = DriverManager.getConnection(
 				postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
 		push(connection, facts);
-		source = SqlFactSource.pinned("pg", connection);
+		source = CachingSqlFetch.pinned("pg", connection);
 	}
 
 	/**
@@ -182,7 +180,7 @@ public class PostgresFactSourceTest {
 	}
 
 	@After
-	public void closePostgres() throws SQLException {
+	public void closePostgres() throws Exception {
 		source.close();
 		if (!connection.isClosed()) {
 			connection.close();

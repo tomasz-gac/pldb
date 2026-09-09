@@ -11,13 +11,11 @@ import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
-import lombok.extern.slf4j.Slf4j;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.sql.Connection;
@@ -30,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Talks to the backend, nothing else: pins the connection at construction
@@ -38,13 +38,14 @@ import java.util.Optional;
  * read), compiles a probe's region through the registered per-family
  * compilers into the WHERE, and executes the SELECT. Holds no pool and no
  * ledger; every get is a round trip, and the estimate is the optimizer
- * barrier. Package-private: callers compose through {@link SqlFactSource}
+ * barrier. Package-private: callers compose through {@link CachingSqlFetch}
  * — the caching is not optional equipment.
  */
 @Slf4j
-final class SqlFetch implements AnswerSource {
+final class SqlFetch implements JdbcSource {
 
 	private final String id;
+	@Getter
 	private final Connection connection;
 	private final int isolation;
 	private final Map<Class<?>, SqlCompiler> compilers = new HashMap<>();
@@ -111,7 +112,8 @@ final class SqlFetch implements AnswerSource {
 		return Long.MAX_VALUE;
 	}
 
-	void close() {
+	@Override
+	public void close() {
 		try {
 			connection.rollback();
 			connection.close();

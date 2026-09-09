@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 /**
  * An immutable store value over a shared read-only base: reads union the
@@ -32,20 +33,20 @@ import lombok.RequiredArgsConstructor;
  * an event-sourced base has no deletes, so the refusal is the method's
  * absence, not a runtime check.
  */
+@Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class Overlay implements AnswerSource {
+public class WriteBuffer implements AnswerSource {
+	AnswerSource base;
+	Database delta;
+	Array<Fact> staged;
 
-	private final AnswerSource base;
-	private final Database delta;
-	private final Array<Fact> staged;
-
-	public static Overlay over(AnswerSource base) {
-		return new Overlay(base, ImmutableDatabase.empty(), Array.empty());
+	public static WriteBuffer over(AnswerSource base) {
+		return new WriteBuffer(base, ImmutableDatabase.empty(), Array.empty());
 	}
 
-	public Try<Overlay> withFacts(List<Fact> facts) {
+	public Try<WriteBuffer> withFacts(List<Fact> facts) {
 		return delta.withFacts(facts)
-				.map(grown -> new Overlay(base, grown, staged.appendAll(facts)));
+				.map(grown -> new WriteBuffer(base, grown, staged.appendAll(facts)));
 	}
 
 	/** The facts this value's lineage appended, in append order. */

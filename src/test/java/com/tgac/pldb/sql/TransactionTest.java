@@ -6,11 +6,11 @@ package com.tgac.pldb.sql;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.sql.transaction.AbstractTransaction;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -39,10 +39,9 @@ public class TransactionTest {
 		}
 	}
 
-	private static Transaction transaction(String id) throws SQLException {
+	private static Transaction transaction(String id) throws Exception {
 		Connection connection = DriverManager.getConnection(URL);
-		return Transaction.over(connection,
-				Watermark.over(SqlFactSource.pinned(id, connection), connection,
+		return AbstractTransaction.over(Watermark.over(CachingSqlFetch.pinned(id, connection),
 						TransactionTest::commitConnection));
 	}
 
@@ -84,19 +83,12 @@ public class TransactionTest {
 				.collect(Collectors.toList());
 	}
 
-	@Test
-	public void aSourceWithoutACertifyCapabilityRefusesAtOpen() throws SQLException {
-		Connection connection = DriverManager.getConnection(URL);
-		try (SqlFactSource bare = SqlFactSource.pinned("bare", connection)) {
-			assertThatThrownBy(() -> Transaction.over(connection, bare))
-					.isInstanceOf(IllegalStateException.class)
-					.hasMessageContaining("bare")
-					.hasMessageContaining("certify");
-		}
-	}
+	// a source without a certify capability has no Transaction.over overload to
+	// call — the refusal moved from runtime into the type system, so its old
+	// receipt (aSourceWithoutACertifyCapabilityRefusesAtOpen) is now javac's job
 
 	@Test
-	public void commitLandsStagedFactsForTheNextTransaction() throws SQLException {
+	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("w")
 				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get();
 		assertThat(names(writer)).containsExactly("{Ada}");
@@ -108,7 +100,7 @@ public class TransactionTest {
 	}
 
 	@Test
-	public void writeSkewOnOneRelationMeetsTheConflict() throws SQLException {
+	public void writeSkewOnOneRelationMeetsTheConflict() throws Exception {
 		// both transactions read the person region their sibling writes: the
 		// first commit wins, the second's watermark moved — Conflict, re-solve
 		Transaction first = transaction("first");
@@ -132,7 +124,7 @@ public class TransactionTest {
 	}
 
 	@Test
-	public void disjointRelationsCommitWithoutConflict() throws SQLException {
+	public void disjointRelationsCommitWithoutConflict() throws Exception {
 		// the per-relation marks earn their keep: one transaction read only
 		// person, the other committed only book — no conflict between them
 		try (Transaction seed = transaction("seed")
@@ -159,7 +151,7 @@ public class TransactionTest {
 	}
 
 	@Test
-	public void anAbandonedTransactionLeavesNoTrace() throws SQLException {
+	public void anAbandonedTransactionLeavesNoTrace() throws Exception {
 		try (Transaction abandoned = transaction("a")
 				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");

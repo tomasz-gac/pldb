@@ -8,10 +8,12 @@ import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import java.sql.Connection;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 /**
  * A relation backend over one pinned JDBC connection, by CONVENTION: the
@@ -37,26 +39,23 @@ import java.sql.Connection;
  * solves serialize their fetches here. Landed answers are immutable
  * snapshots, so reads outside the monitor stay safe.
  */
-public final class SqlFactSource implements AnswerSource, AutoCloseable {
+@Value
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public class CachingSqlFetch implements JdbcSource {
 
-	private final SqlFetch fetch;
-	private final CachingAnswerSource cached;
-
-	private SqlFactSource(SqlFetch fetch) {
-		this.fetch = fetch;
-		this.cached = CachingAnswerSource.over(fetch);
-	}
+	SqlFetch fetch;
+	CachingAnswerSource cached;
 
 	/**
 	 * Pins the connection and wires the ENGINE-CORE compilers as equipment —
 	 * the FD family pushes out of the box. {@link #compiling} registers user
 	 * families and may OVERRIDE a built-in.
 	 */
-	public static SqlFactSource pinned(String id, Connection connection) {
+	public static CachingSqlFetch pinned(String id, Connection connection) {
 		SqlFetch fetch = SqlFetch.pinned(id, connection);
 		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
 		fetch.compiling(NogoodConstraints.class, new NogoodSqlCompiler(fetch.compilers()));
-		return new SqlFactSource(fetch);
+		return new CachingSqlFetch(fetch, CachingAnswerSource.over(fetch));
 	}
 
 	/**
@@ -64,7 +63,7 @@ public final class SqlFactSource implements AnswerSource, AutoCloseable {
 	 * registry changing under live coverage would make containment
 	 * order-dependent.
 	 */
-	public SqlFactSource compiling(Class<?> family, SqlCompiler compiler) {
+	public CachingSqlFetch compiling(Class<?> family, SqlCompiler compiler) {
 		if (!cached.isEmpty()) {
 			throw new IllegalStateException(id() + ": register compilers before first use");
 		}
@@ -93,12 +92,17 @@ public final class SqlFactSource implements AnswerSource, AutoCloseable {
 	}
 
 	@Override
-	public void close() {
-		fetch.close();
+	public String toString() {
+		return cached.toString();
 	}
 
 	@Override
-	public String toString() {
-		return cached.toString();
+	public Connection getConnection() {
+		return fetch.getConnection();
+	}
+
+	@Override
+	public void close() throws Exception {
+		fetch.close();
 	}
 }

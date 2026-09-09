@@ -51,8 +51,8 @@ public class SqlFlushTest {
 		return Literal.relation("visited").arg("city", city).from(db);
 	}
 
-	private List<String> namesReadBack() {
-		try (SqlFactSource source = SqlFactSource.pinned("h2", connection)) {
+	private List<String> namesReadBack() throws Exception {
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
 			Unifiable<String> name = lvar();
 			return person(source, lvar(), name).solve(name)
 					.map(Object::toString)
@@ -62,7 +62,7 @@ public class SqlFlushTest {
 	}
 
 	@Test
-	public void flushedFactsComeBackThroughTheFetch() {
+	public void flushedFactsComeBackThroughTheFetch() throws Exception {
 		SqlFlush.over(connection).flush(Arrays.asList(
 				person(null, lval(1), lval("Ada")).fact(),
 				person(null, lval(2), lval("Alan")).fact()));
@@ -82,7 +82,7 @@ public class SqlFlushTest {
 	}
 
 	@Test
-	public void aStructuralColumnValueRefusesByNameBeforeAnyRowLands() {
+	public void aStructuralColumnValueRefusesByNameBeforeAnyRowLands() throws Exception {
 		Fact structural = visited(null, lval((Object) Arrays.asList("Zurich", "Bern"))).fact();
 		assertThatThrownBy(() -> SqlFlush.over(connection).flush(Arrays.asList(
 				person(null, lval(1), lval("Ada")).fact(),
@@ -96,7 +96,7 @@ public class SqlFlushTest {
 	}
 
 	@Test
-	public void anEmptyFlushIsANoOp() {
+	public void anEmptyFlushIsANoOp() throws Exception {
 		SqlFlush.over(connection).flush(Collections.emptyList());
 		assertThat(namesReadBack()).isEmpty();
 	}

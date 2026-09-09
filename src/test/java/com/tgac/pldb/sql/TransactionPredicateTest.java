@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.sql.transaction.AbstractTransaction;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -43,15 +44,15 @@ public class TransactionPredicateTest {
 	}
 
 	@Test
-	public void aRecognizedCommitFailureMapsToConflict() {
-		Try<?> refused = commitFailure(Transaction.over(connection, SerializableSource.pinned("h2", connection, e -> true)));
+	public void aRecognizedCommitFailureMapsToConflict()  {
+		Try<?> refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> true)));
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test
 	public void anUnrecognizedFailureSurfacesAsItself() {
-		Try<?> refused = commitFailure(Transaction.over(connection, SerializableSource.pinned("h2", connection, e -> false)));
+		Try<?> refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> false)));
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause()).isNotInstanceOf(Transaction.Conflict.class);
 	}

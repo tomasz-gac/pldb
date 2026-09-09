@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
-public class OverlayTest {
+public class WriteBufferTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
 		return Literal.relation("person").arg("id", id).indexed().arg("name", name).from(db);
@@ -44,30 +44,30 @@ public class OverlayTest {
 
 	@Test
 	public void readsUnionTheBaseAndTheStagedDelta() {
-		Overlay lib = Overlay.over(base())
+		WriteBuffer lib = WriteBuffer.over(base())
 				.withFacts(Collections.singletonList(personFact(3, "Kurt"))).get();
 		assertThat(ids(lib)).containsExactly("{1}", "{2}", "{3}");
 	}
 
 	@Test
 	public void anAncestorIsUndisturbedByADescendantsAppend() {
-		Overlay parent = Overlay.over(base());
+		WriteBuffer parent = WriteBuffer.over(base());
 		parent.withFacts(Collections.singletonList(personFact(3, "Kurt"))).get();
 		assertThat(ids(parent)).containsExactly("{1}", "{2}");
 	}
 
 	@Test
 	public void siblingsForkIndependently() {
-		Overlay parent = Overlay.over(base());
-		Overlay left = parent.withFacts(Collections.singletonList(personFact(3, "Kurt"))).get();
-		Overlay right = parent.withFacts(Collections.singletonList(personFact(4, "Emmy"))).get();
+		WriteBuffer parent = WriteBuffer.over(base());
+		WriteBuffer left = parent.withFacts(Collections.singletonList(personFact(3, "Kurt"))).get();
+		WriteBuffer right = parent.withFacts(Collections.singletonList(personFact(4, "Emmy"))).get();
 		assertThat(ids(left)).containsExactly("{1}", "{2}", "{3}");
 		assertThat(ids(right)).containsExactly("{1}", "{2}", "{4}");
 	}
 
 	@Test
 	public void stagedFactsKeepAppendOrder() {
-		Overlay lib = Overlay.over(base())
+		WriteBuffer lib = WriteBuffer.over(base())
 				.withFacts(Arrays.asList(personFact(3, "Kurt"), personFact(4, "Emmy"))).get()
 				.withFacts(Collections.singletonList(personFact(5, "Noether"))).get();
 		assertThat(lib.staged()).containsExactly(
@@ -76,21 +76,21 @@ public class OverlayTest {
 
 	@Test
 	public void aStagedDuplicateOfACommittedFactDeliversOnce() {
-		Overlay lib = Overlay.over(base())
+		WriteBuffer lib = WriteBuffer.over(base())
 				.withFacts(Collections.singletonList(personFact(1, "Ada"))).get();
 		assertThat(ids(lib)).containsExactly("{1}", "{2}");
 	}
 
 	@Test
 	public void aFreshOverlayStagesNothing() {
-		assertThat(Overlay.over(base()).staged()).isEmpty();
+		assertThat(WriteBuffer.over(base()).staged()).isEmpty();
 	}
 
 	@Test
 	public void negationSeesTheStagedDelta() {
 		// the constraint tier reads through the same union: a staged row
 		// entails a ground exclusion the base alone would have refuted
-		Overlay lib = Overlay.over(base())
+		WriteBuffer lib = WriteBuffer.over(base())
 				.withFacts(Collections.singletonList(personFact(3, "Kurt"))).get();
 		Unifiable<Long> free = lvar();
 		assertThat(free.unifies(3L)
@@ -98,7 +98,7 @@ public class OverlayTest {
 				.solve(free)
 				.collect(Collectors.toList())).isEmpty();
 		assertThat(free.unifies(3L)
-				.and(exclude(person(Overlay.over(base()), free, lval("Kurt"))))
+				.and(exclude(person(WriteBuffer.over(base()), free, lval("Kurt"))))
 				.solve(free)
 				.map(Object::toString)
 				.collect(Collectors.toList())).containsExactly("{3}");
