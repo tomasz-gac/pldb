@@ -171,6 +171,7 @@ public class Literal implements Goal, Bounded, Postable {
 		private final String name;
 		private final List<Property<?>> columns = new ArrayList<>();
 		private final List<Unifiable<?>> values = new ArrayList<>();
+		private final List<Boolean> projectedHere = new ArrayList<>();
 
 		private Builder(String name) {
 			this.name = name;
@@ -179,6 +180,7 @@ public class Literal implements Goal, Bounded, Postable {
 		public Builder arg(String column, Unifiable<?> value) {
 			columns.add(Property.of(column));
 			values.add(value);
+			projectedHere.add(value instanceof Projected && ((Projected<?>) value).claim());
 			return this;
 		}
 
@@ -215,15 +217,48 @@ public class Literal implements Goal, Bounded, Postable {
 		}
 
 		public Literal from(AnswerSource source) {
-			return new Literal(relation(), Array.ofAll(values), new SourceReading(source));
+			return projecting(new Literal(relation(), Array.ofAll(values), new SourceReading(source)));
 		}
 
 		public Literal produced(AnswerProducer producer) {
-			return new Literal(relation(), Array.ofAll(values), new ProducerReading(producer));
+			return projecting(new Literal(relation(), Array.ofAll(values), new ProducerReading(producer)));
 		}
 
 		public Literal solving(Goal body) {
-			return new Literal(relation(), Array.ofAll(values), new RuleReading(body));
+			return projecting(new Literal(relation(), Array.ofAll(values), new RuleReading(body)));
+		}
+
+		/**
+		 * A {@link Projected} column drops out of the head into a GENERATED
+		 * projection rule over the full literal — the tabled cell folds
+		 * duplicates (∃-projection is set semantics), the posted form makes
+		 * {@code exclude} an honest ¬∃, and inside the body the marker is an
+		 * ordinary fresh variable. A projected column marked ground()
+		 * refuses: an input cannot be projected away.
+		 */
+		private Literal projecting(Literal full) {
+			List<Property<?>> keptColumns = new ArrayList<>();
+			List<Unifiable<?>> keptValues = new ArrayList<>();
+			StringBuilder keptNames = new StringBuilder();
+			for (int i = 0; i < values.size(); i++) {
+				if (projectedHere.get(i)) {
+					if (columns.get(i).isGround()) {
+						throw new IllegalStateException("relation '" + name + "': column '"
+								+ columns.get(i).getName() + "' is ground — an input cannot be projected away");
+					}
+					continue;
+				}
+				keptColumns.add(columns.get(i));
+				keptValues.add(values.get(i));
+				keptNames.append(keptNames.length() == 0 ? "" : ",").append(columns.get(i).getName());
+			}
+			if (keptColumns.size() == values.size()) {
+				return full;
+			}
+			return new Literal(
+					RelationN.of(name + "[" + keptNames + "]", keptColumns.toArray(new Property<?>[0])),
+					Array.ofAll(keptValues),
+					new RuleReading(full));
 		}
 	}
 
