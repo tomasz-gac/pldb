@@ -6,8 +6,11 @@ package com.tgac.pldb.transaction;
 import com.tgac.functional.category.Nothing;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import io.vavr.control.Try;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * One transaction over one serialized source: an {@link AnswerSource}
@@ -29,6 +32,11 @@ public interface Transaction extends AnswerSource, AutoCloseable {
 	}
 
 	Try<Transaction> withFacts(List<Fact> facts);
+
+	/** The API face: literals in, the door converts — a hole refuses by column. */
+	default Try<Transaction> withFacts(Literal... rows) {
+		return withFacts(Arrays.stream(rows).map(Literal::fact).collect(Collectors.toList()));
+	}
 
 	/**
 	 * The write face: the source's own commit door proves the binding and

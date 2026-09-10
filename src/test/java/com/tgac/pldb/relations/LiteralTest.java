@@ -164,4 +164,21 @@ public class LiteralTest {
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("Duplicated");
 	}
+
+	@Test
+	public void theWriteDoorsAcceptLiteralsDirectly() {
+		// the API face: no .fact() ceremony — the door converts, and the
+		// hole refusal arrives with the relation and column named
+		com.tgac.pldb.inmemory.Database db = com.tgac.pldb.inmemory.ImmutableDatabase.empty()
+				.withFacts(
+						Literal.relation("person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
+						Literal.relation("person").arg("id", lval(2)).arg("name", lval("Alan")).from(null))
+				.get();
+		org.assertj.core.api.Assertions.assertThat(db.estimate(
+						com.tgac.logic.tabling.Call.of(
+								Literal.relation("person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),
+								(com.tgac.logic.unification.Reified<?>) lval(io.vavr.collection.Array.of(
+										com.tgac.logic.unification.Any.of(0), com.tgac.logic.unification.Any.of(1))))))
+				.isEqualTo(2);
+	}
 }
