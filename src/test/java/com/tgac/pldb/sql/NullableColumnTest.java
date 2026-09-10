@@ -1,22 +1,23 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: Declared nullability: a nullable column reads NULL as the sentinel
-// ABOUTME: value, writes it back as SQL NULL, and matches it via IS NULL.
+// ABOUTME: Declared nullability: a nullable column carries SQL NULL as Java's own
+// ABOUTME: null inside lval — the typed surface intact, IS NULL at the probe.
 
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.logic.nogoods.Exclusion;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Null;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.After;
@@ -41,8 +42,9 @@ public class NullableColumnTest {
 		connection.close();
 	}
 
-	/** name declared nullable: the customer's schema allows it, so do we. */
-	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<Object> name) {
+	/** name declared nullable: the customer's schema allows it, so do we —
+	 * and the column stays a plain {@code Unifiable<String>}. */
+	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
 		return Literal.relation("person")
 				.arg("id", id).indexed()
 				.arg("name", name).nullable()
@@ -50,22 +52,22 @@ public class NullableColumnTest {
 	}
 
 	@Test
-	public void aNullCellReadsAsTheSentinel() throws Exception {
+	public void aNullCellReadsAsABoundNull() throws Exception {
 		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
-			Unifiable<Object> name = lvar();
+			Unifiable<String> name = lvar();
 			List<String> names = person(source, lvar(), name).solve(name)
 					.map(Object::toString)
 					.sorted()
 					.collect(Collectors.toList());
-			assertThat(names).containsExactly("{Ada}", "{NULL}");
+			assertThat(names).containsExactly("{Ada}", "{null}");
 		}
 	}
 
 	@Test
-	public void aBoundSentinelMatchesOnlyNullRows() throws Exception {
+	public void aBoundNullMatchesOnlyNullRows() throws Exception {
 		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
 			Unifiable<Integer> id = lvar();
-			List<String> ids = person(source, id, lval(Null.VALUE)).solve(id)
+			List<String> ids = person(source, id, lval((String) null)).solve(id)
 					.map(Object::toString)
 					.collect(Collectors.toList());
 			assertThat(ids).containsExactly("{2}");
@@ -73,16 +75,16 @@ public class NullableColumnTest {
 	}
 
 	@Test
-	public void theSentinelRoundTripsThroughTheFlush() throws Exception {
+	public void aNullCellRoundTripsThroughTheFlush() throws Exception {
 		SqlFlush.over(connection).flush(Arrays.asList(
-				person(null, lval(3), lval(Null.VALUE)).fact()));
+				person(null, lval(3), lval((String) null)).fact()));
 		try (Statement read = connection.createStatement()) {
 			assertThat(read.executeQuery("SELECT COUNT(*) FROM person WHERE id = 3 AND name IS NULL")
 					.next()).isTrue();
 		}
 		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
 			Unifiable<Integer> id = lvar();
-			assertThat(person(source, id, lval(Null.VALUE)).solve(id)
+			assertThat(person(source, id, lval((String) null)).solve(id)
 					.map(Object::toString)
 					.sorted()
 					.collect(Collectors.toList())).containsExactly("{2}", "{3}");
@@ -91,18 +93,35 @@ public class NullableColumnTest {
 
 	@Test
 	public void aPushedDisequalityKeepsTheNullRow() throws Exception {
-		// the one place sentinel and SQL diverge: engine-side NULL != 'Ada'
-		// holds (the sentinel is a value), SQL-side it is UNKNOWN and the row
-		// drops — the pushed WHERE must carry OR IS NULL to stay complete
+		// the one place null-as-value and SQL diverge: engine-side
+		// null != 'Ada' holds, SQL-side it is UNKNOWN and the row drops —
+		// the pushed WHERE must carry OR IS NULL to stay complete
 		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
 			Unifiable<Integer> id = lvar();
-			Unifiable<Object> name = lvar();
-			List<String> ids = com.tgac.logic.nogoods.Exclusion.exclude(name.unifies("Ada"))
+			Unifiable<String> name = lvar();
+			List<String> ids = Exclusion.exclude(name.unifies("Ada"))
 					.and(person(source, id, name))
 					.solve(id)
 					.map(Object::toString)
 					.collect(Collectors.toList());
 			assertThat(ids).containsExactly("{2}");
+		}
+	}
+
+	@Test
+	public void aWideCoveredFetchServesTheNullBoundProbe() throws Exception {
+		// coverage over nulls: the wide probe lands the relation (null cell
+		// included), and the null-bound probe is SUBSUMED — Any covers the
+		// bound null like any other ground term, and the pool's index keys
+		// the null bucket
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
+			Unifiable<String> name = lvar();
+			assertThat(person(source, lvar(), name).solve(name).count()).isEqualTo(2);
+
+			Unifiable<Integer> id = lvar();
+			assertThat(person(source, id, lval((String) null)).solve(id)
+					.map(Object::toString)
+					.collect(Collectors.toList())).containsExactly("{2}");
 		}
 	}
 
@@ -126,13 +145,9 @@ public class NullableColumnTest {
 	}
 
 	@Test
-	public void theSentinelOnAStrictColumnRefusesAtTheFlush() {
-		Literal sentinelOnStrict = Literal.relation("person")
-				.arg("id", lval(4)).indexed()
-				.arg("name", lval(Null.VALUE))
-				.from(null);
-		assertThatThrownBy(() -> SqlFlush.over(connection).flush(Arrays.asList(
-				sentinelOnStrict.fact())))
+	public void aNullOnAStrictColumnRefusesAtTheFlush() {
+		assertThatThrownBy(() -> SqlFlush.over(connection).flush(Collections.singletonList(
+				strict(null, lval(4), lval(null)).fact())))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("name");

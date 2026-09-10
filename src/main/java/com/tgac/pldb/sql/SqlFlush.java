@@ -4,7 +4,6 @@ package com.tgac.pldb.sql;
 // ABOUTME: relation name is the table, property names are the columns, atoms only.
 
 import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Null;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import java.sql.Connection;
@@ -54,8 +53,7 @@ public final class SqlFlush {
 		try (PreparedStatement statement = connection.prepareStatement(insertSql(relation))) {
 			for (Fact row : rows) {
 				for (int i = 0; i < row.getValues().size(); i++) {
-					Object value = row.getValues().get(i);
-					statement.setObject(i + 1, value == Null.VALUE ? null : value);
+					statement.setObject(i + 1, row.getValues().get(i));
 				}
 				statement.addBatch();
 			}
@@ -77,11 +75,11 @@ public final class SqlFlush {
 		Property<?>[] columns = fact.getRelation().getArgs();
 		for (int i = 0; i < columns.length; i++) {
 			Object value = fact.getValues().get(i);
-			if (value == Null.VALUE) {
+			if (value == null) {
 				if (!columns[i].isNullable()) {
 					throw new IllegalStateException("flush of " + fact.getRelation().getName()
 							+ ": column '" + columns[i].getName() + "' is not nullable —"
-							+ " Null.VALUE cannot land in it");
+							+ " null cannot land in it");
 				}
 				continue;
 			}

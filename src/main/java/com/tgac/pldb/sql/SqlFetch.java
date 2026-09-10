@@ -13,7 +13,6 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Null;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.compiler.SqlPredicate;
@@ -176,7 +175,7 @@ final class SqlFetch implements JdbcSource {
 		List<String> nullBoundColumns = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
 			if (args.get(i).asVal().isDefined()) {
-				if (args.get(i).get() == Null.VALUE) {
+				if (args.get(i).get() == null) {
 					requireNullable(relation, columns[i]);
 					nullBoundColumns.add(columns[i].getName());
 				} else {
@@ -210,13 +209,10 @@ final class SqlFetch implements JdbcSource {
 					Object[] values = new Object[unboundColumns.size()];
 					for (int i = 0; i < values.length; i++) {
 						values[i] = rows.getObject(unboundColumns.get(i));
-						if (values[i] == null) {
-							if (!unboundProperties.get(i).isNullable()) {
-								throw new IllegalStateException(relation.getName() + ": column '"
-										+ unboundColumns.get(i) + "' holds null — the engine has no"
-										+ " null vocabulary and the schema declares none for it");
-							}
-							values[i] = Null.VALUE;
+						if (values[i] == null && !unboundProperties.get(i).isNullable()) {
+							throw new IllegalStateException(relation.getName() + ": column '"
+									+ unboundColumns.get(i) + "' holds null and is not"
+									+ " declared nullable()");
 						}
 					}
 					Array<Object> vals = mergeValuesWithSupplied(args, values);
@@ -247,7 +243,7 @@ final class SqlFetch implements JdbcSource {
 	private static void requireNullable(Relation relation, Property<?> column) {
 		if (!column.isNullable()) {
 			throw new IllegalStateException(relation.getName() + ": column '"
-					+ column.getName() + "' is not nullable — Null.VALUE cannot probe it");
+					+ column.getName() + "' is not nullable — null cannot probe it");
 		}
 	}
 
