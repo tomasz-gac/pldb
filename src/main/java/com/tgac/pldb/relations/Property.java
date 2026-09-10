@@ -12,22 +12,28 @@ public class Property<T> {
 	private final String name;
 	private final boolean indexed;
 	private final boolean ground;
+	private final boolean nullable;
 
 	public static <T> Property<T> of(String name) {
-		return new Property<>(name, false, false);
+		return new Property<>(name, false, false, false);
 	}
 
 	public Property<T> indexed() {
-		return new Property<T>(name, true, ground);
+		return new Property<T>(name, true, ground, nullable);
 	}
 
 	public Property<T> ground() {
-		return new Property<T>(name, indexed, true);
+		return new Property<T>(name, indexed, true, nullable);
+	}
+
+	/** The column may hold SQL NULL; a null cell reads as {@link Null#VALUE}. */
+	public Property<T> nullable() {
+		return new Property<T>(name, indexed, ground, true);
 	}
 
 	@Override
 	public String toString() {
-		String access = (indexed ? "i" : "") + (ground ? "g" : "");
+		String access = (indexed ? "i" : "") + (ground ? "g" : "") + (nullable ? "n" : "");
 		return name + (access.isEmpty() ? "" : "_" + access);
 	}
 }

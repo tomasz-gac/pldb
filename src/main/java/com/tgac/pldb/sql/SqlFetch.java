@@ -13,6 +13,7 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Null;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.compiler.SqlPredicate;
@@ -158,15 +159,23 @@ final class SqlFetch implements JdbcSource {
 		List<String> boundColumns = new ArrayList<>();
 		List<Object> boundValues = new ArrayList<>();
 		List<String> unboundColumns = new ArrayList<>();
+		List<Property<?>> unboundProperties = new ArrayList<>();
+		List<String> nullBoundColumns = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
 			if (args.get(i).asVal().isDefined()) {
-				boundColumns.add(columns[i].getName());
-				boundValues.add(args.get(i).get());
+				if (args.get(i).get() == Null.VALUE) {
+					requireNullable(relation, columns[i]);
+					nullBoundColumns.add(columns[i].getName());
+				} else {
+					boundColumns.add(columns[i].getName());
+					boundValues.add(args.get(i).get());
+				}
 			} else {
 				unboundColumns.add(columns[i].getName());
+				unboundProperties.add(columns[i]);
 			}
 		}
-		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns, predicates);
+		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns, nullBoundColumns, predicates);
 		if (log.isDebugEnabled()) {
 			List<Object> parameters = new ArrayList<>(boundValues);
 			predicates.forEach(predicate -> predicate.getParameters().forEach(parameters::add));
@@ -189,9 +198,12 @@ final class SqlFetch implements JdbcSource {
 					for (int i = 0; i < values.length; i++) {
 						values[i] = rows.getObject(unboundColumns.get(i));
 						if (values[i] == null) {
-							throw new IllegalStateException(relation.getName() + ": column '"
-									+ unboundColumns.get(i) + "' holds null — the engine has no"
-									+ " null vocabulary and the schema declares none for it");
+							if (!unboundProperties.get(i).isNullable()) {
+								throw new IllegalStateException(relation.getName() + ": column '"
+										+ unboundColumns.get(i) + "' holds null — the engine has no"
+										+ " null vocabulary and the schema declares none for it");
+							}
+							values[i] = Null.VALUE;
 						}
 					}
 					Array<Object> vals = mergeValuesWithSupplied(args, values);
@@ -219,8 +231,15 @@ final class SqlFetch implements JdbcSource {
 		return result;
 	}
 
+	private static void requireNullable(Relation relation, Property<?> column) {
+		if (!column.isNullable()) {
+			throw new IllegalStateException(relation.getName() + ": column '"
+					+ column.getName() + "' is not nullable — Null.VALUE cannot probe it");
+		}
+	}
+
 	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns,
-			List<String> boundColumns, List<SqlPredicate> predicates) {
+			List<String> boundColumns, List<String> nullBoundColumns, List<SqlPredicate> predicates) {
 		// every position bound: nothing to project, the probe is an existence
 		// check — a blank select list would not compile
 		StringBuilder sql = new StringBuilder("SELECT ")
@@ -230,6 +249,9 @@ final class SqlFetch implements JdbcSource {
 		List<String> conditions = new ArrayList<>();
 		for (String column : boundColumns) {
 			conditions.add(column + " = ?");
+		}
+		for (String column : nullBoundColumns) {
+			conditions.add(column + " IS NULL");
 		}
 		for (SqlPredicate predicate : predicates) {
 			conditions.add(predicate.getFragment());

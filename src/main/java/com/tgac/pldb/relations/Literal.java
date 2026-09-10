@@ -196,6 +196,11 @@ public class Literal implements Goal, Bounded, Postable {
 			return modify(Property::ground);
 		}
 
+		/** Marks the LAST declared column nullable: NULL reads as {@link Null#VALUE}. */
+		public Builder nullable() {
+			return modify(Property::nullable);
+		}
+
 		private Builder modify(UnaryOperator<Property<?>> flag) {
 			if (columns.isEmpty()) {
 				throw new IllegalStateException(
