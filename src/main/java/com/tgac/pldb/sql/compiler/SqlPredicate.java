@@ -60,6 +60,10 @@ public class SqlPredicate {
 		return new SqlPredicate(column + " = ?", Array.of(value), true);
 	}
 
+	public static SqlPredicate isNull(String column) {
+		return new SqlPredicate(column + " IS NULL", Array.empty(), true);
+	}
+
 	public static <T> SqlPredicate leq(String column, T value) {
 		return new SqlPredicate(column + " <= ?", Array.of(value), true);
 	}

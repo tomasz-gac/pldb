@@ -32,5 +32,10 @@ public interface SqlCompiler {
 
 	interface ColumnResolver {
 		Optional<String> columnOf(Term<?> term);
+
+		/** Whether the named column is declared nullable; false when unknown. */
+		default boolean nullable(String column) {
+			return false;
+		}
 	}
 }

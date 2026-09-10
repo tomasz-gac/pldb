@@ -143,14 +143,27 @@ final class SqlFetch implements JdbcSource {
 
 	/** Positional names resolve to columns: {@code _.i} is the i-th property. */
 	private static SqlCompiler.ColumnResolver columnResolver(Relation relation) {
-		return term -> {
-			if (!(term instanceof Any)) {
-				return Optional.empty();
+		return new SqlCompiler.ColumnResolver() {
+			@Override
+			public Optional<String> columnOf(Term<?> term) {
+				if (!(term instanceof Any)) {
+					return Optional.empty();
+				}
+				int position = ((Any<?>) term).getNumber();
+				return position >= 0 && position < relation.getArgs().length ?
+						Optional.of(relation.getArgs()[position].getName()) :
+						Optional.empty();
 			}
-			int position = ((Any<?>) term).getNumber();
-			return position >= 0 && position < relation.getArgs().length ?
-					Optional.of(relation.getArgs()[position].getName()) :
-					Optional.empty();
+
+			@Override
+			public boolean nullable(String column) {
+				for (Property<?> property : relation.getArgs()) {
+					if (property.getName().equals(column)) {
+						return property.isNullable();
+					}
+				}
+				return false;
+			}
 		};
 	}
 

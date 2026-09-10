@@ -89,6 +89,23 @@ public class NullableColumnTest {
 		}
 	}
 
+	@Test
+	public void aPushedDisequalityKeepsTheNullRow() throws Exception {
+		// the one place sentinel and SQL diverge: engine-side NULL != 'Ada'
+		// holds (the sentinel is a value), SQL-side it is UNKNOWN and the row
+		// drops — the pushed WHERE must carry OR IS NULL to stay complete
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
+			Unifiable<Integer> id = lvar();
+			Unifiable<Object> name = lvar();
+			List<String> ids = com.tgac.logic.nogoods.Exclusion.exclude(name.unifies("Ada"))
+					.and(person(source, id, name))
+					.solve(id)
+					.map(Object::toString)
+					.collect(Collectors.toList());
+			assertThat(ids).containsExactly("{2}");
+		}
+	}
+
 	/** The catcher stays for columns NOT declared nullable. */
 	private static Literal strict(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
 		return Literal.relation("person")

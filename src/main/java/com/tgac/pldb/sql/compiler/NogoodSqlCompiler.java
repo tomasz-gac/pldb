@@ -10,6 +10,7 @@ import com.tgac.logic.nogoods.Nogood;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.sql.SqlCompiler;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,14 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 				SqlPredicate.or(negations));
 	}
 
+	/** The sentinel satisfies {@code != v}; SQL's NULL does not — push the disjunct. */
+	private static SqlPredicate nullAwareNeq(String column, Object value, ColumnResolver columns) {
+		SqlPredicate neq = SqlPredicate.neq(column, value);
+		return columns.nullable(column) ?
+				SqlPredicate.or(Arrays.asList(neq, SqlPredicate.isNull(column))) :
+				neq;
+	}
+
 	private Optional<SqlPredicate> negatedLiteral(Posting literal, ColumnResolver columns) {
 		return literal.accept(new Posting.Visitor<Optional<SqlPredicate>>() {
 
@@ -93,13 +102,17 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 				Optional<Object> leftValue = value(unification.getU());
 				Optional<Object> rightValue = value(unification.getV());
 				if (leftColumn.isPresent() && rightColumn.isPresent()) {
-					return Optional.of(SqlPredicate.neqColumns(leftColumn.get(), rightColumn.get()));
+					// engine-side the sentinel decides half-null rows; SQL's
+					// UNKNOWN drops them — a nullable operand stays local
+					return columns.nullable(leftColumn.get()) || columns.nullable(rightColumn.get()) ?
+							Optional.<SqlPredicate> empty() :
+							Optional.of(SqlPredicate.neqColumns(leftColumn.get(), rightColumn.get()));
 				}
 				if (leftColumn.isPresent() && rightValue.isPresent()) {
-					return Optional.of(SqlPredicate.neq(leftColumn.get(), rightValue.get()));
+					return Optional.of(nullAwareNeq(leftColumn.get(), rightValue.get(), columns));
 				}
 				if (leftValue.isPresent() && rightColumn.isPresent()) {
-					return Optional.of(SqlPredicate.neq(rightColumn.get(), leftValue.get()));
+					return Optional.of(nullAwareNeq(rightColumn.get(), leftValue.get(), columns));
 				}
 				return Optional.empty();
 			}
