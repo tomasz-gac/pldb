@@ -9,6 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import com.tgac.logic.tabling.Call;
+import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.unification.Reified;
+import io.vavr.Tuple2;
 import com.tgac.logic.goals.optimizer.Optimizer;
 import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.unification.Unifiable;
@@ -59,11 +62,11 @@ public class PlannerTest {
 		}
 
 		@Override
-		public Iterable<Fact> get(Relation relation, IndexedSeq<Optional<Object>> args) {
-			List<Fact> out = new ArrayList<>();
-			inner.get(relation, args).forEach(f -> {
+		public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+			List<Tuple2<Reified<?>, Condition>> out = new ArrayList<>();
+			inner.answers(probe).forEach(row -> {
 				yielded.incrementAndGet();
-				out.add(f);
+				out.add(row);
 			});
 			return out;
 		}

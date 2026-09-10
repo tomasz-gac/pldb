@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 
 // ABOUTME: The answer codec: a Fact encodes as (ground reified row, ONE); the image
-// ABOUTME: decodes per position — values for rows, a pattern for probes.
+// ABOUTME: decodes per position — cells in Term vocabulary, values for rows.
 
 import static com.tgac.logic.unification.LVar.lvar;
 
@@ -39,11 +39,4 @@ public class AnswersTest {
 		assertThat(first).isInstanceOf(Long.class).isEqualTo(1L);
 	}
 
-	@Test
-	public void anImageDecodesToAPattern() {
-		// ground positions carry their value, anys are free slots
-		Reified<?> image = (Reified<?>) lval(Array.of(lval(1L), Any.of(0)));
-		assertThat(Answers.pattern(image).toJavaList())
-				.containsExactly(Optional.<Object> of(1L), Optional.<Object> empty());
-	}
 }

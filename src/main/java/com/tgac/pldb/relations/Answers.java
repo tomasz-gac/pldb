@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 
 // ABOUTME: The answer codec at the seam: a Fact encodes as its ground reified row
-// ABOUTME: at ONE; images decode per position into values or a probe pattern.
+// ABOUTME: at ONE; images decode per position into cells or values.
 
 import static com.tgac.logic.unification.LVal.lval;
 
@@ -42,22 +42,10 @@ public final class Answers {
 	}
 
 	/**
-	 * The probe pattern the image carries: a ground position holds its
-	 * value, an any is a free slot.
-	 */
-	public static IndexedSeq<Optional<Object>> pattern(Reified<?> image) {
-		return positions(image)
-				.map(position -> position.asReified().isDefined() ?
-						Optional.empty() :
-						Optional.of(position.get()));
-	}
-
-	/**
 	 * The image's cells in Term vocabulary — a ground position is a value
 	 * ({@code asVal}), a free position an any ({@code asReified}) — the same
-	 * vocabulary as the walked terms a row is compared against, coupling
-	 * identity preserved. {@link #pattern} is the {@code Optional} rendering
-	 * the database index keys by; constraint-side consumers read cells.
+	 * vocabulary as the walked terms a row is compared against and the
+	 * database index keys by, coupling identity preserved.
 	 */
 	@SuppressWarnings("unchecked")
 	public static Array<Term<Object>> positions(Reified<?> image) {

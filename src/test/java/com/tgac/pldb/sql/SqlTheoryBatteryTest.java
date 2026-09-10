@@ -12,6 +12,13 @@ import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Fact;
+import java.util.ArrayList;
+import java.util.stream.Stream;
 import com.tgac.logic.finitedomain.FiniteDomain;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.finitedomain.domains.Interval;
@@ -95,19 +102,30 @@ public class SqlTheoryBatteryTest {
 
 	private Connection connection;
 
+	/** The whole reference relation, enumerated through the answers face. */
+	private static Stream<Fact> allFacts(Relation relation) {
+		List<Object> members = new ArrayList<>();
+		for (int i = 0; i < relation.getArgs().length; i++) {
+			members.add(Any.of(i));
+		}
+		return StreamSupport.stream(reference.answers(
+						Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
+				.spliterator(), false)
+				.map(answer -> Fact.of(relation, Answers.values(answer._1)));
+	}
+
 	@Before
 	public void loadH2() throws SQLException {
 		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE person(id BIGINT, name VARCHAR(64))");
 			ddl.execute("INSERT INTO person VALUES " +
-					StreamSupport.stream(reference.get(personRel(), Array.of(Optional.empty(), Optional.empty()))
-									.spliterator(), false)
+					allFacts(personRel())
 							.map(f -> "(" + f.get(id).get() + ", '" + f.get(name).get() + "') ")
 							.collect(Collectors.joining(",")));
 			ddl.execute("CREATE TABLE edge(lo BIGINT, hi BIGINT)");
 			ddl.execute("INSERT INTO edge VALUES " +
-					StreamSupport.stream(reference.get(edgeRel(), Array.of(Optional.empty(), Optional.empty())).spliterator(), false)
+					allFacts(edgeRel())
 							.map(f -> "(" + f.get(lo).get() + ", " + f.get(hi).get() + ") ")
 							.collect(Collectors.joining(",")));
 		}

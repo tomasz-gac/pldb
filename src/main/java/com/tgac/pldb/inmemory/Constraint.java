@@ -1,6 +1,11 @@
 package com.tgac.pldb.inmemory;
 
 import com.tgac.functional.Exceptions;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.LVal;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answers;
 import io.vavr.Function2;
 import com.tgac.pldb.inmemory.events.ChangeType;
 import com.tgac.pldb.inmemory.events.FactsChanged;
@@ -11,6 +16,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +44,7 @@ public interface Constraint extends Function2<FactsChanged, Database, Optional<S
 						.flatMap(facts -> facts
 								.filter(f -> relation.equals(f.getRelation()))
 								.findFirst()
-								.map(i -> StreamSupport.stream(db.get(relation, Array.empty()).spliterator(), false)
+								.map(i -> scan(db, probe(relation, -1, null))
 										.map(fact -> propertyIndex.toJavaStream()
 												.map(fact.getValues()::get)
 												.collect(Collectors.toList()))
@@ -105,10 +111,22 @@ public interface Constraint extends Function2<FactsChanged, Database, Optional<S
 		Integer targetPropertyIndex = relation.indexOf(property)
 				.orElseThrow(Exceptions.format(IllegalArgumentException::new,
 						"No such property %s in relation %s", property, relation));
+		return scan(db, probe(relation, targetPropertyIndex, value));
+	}
 
-		return StreamSupport.stream(db.get(relation,
-						Array.fill(relation.getArgs().length, Optional.empty())
-								.update(targetPropertyIndex, Optional.of(value))).spliterator(),
-				false);
+	/** One bound position ({@code -1} = none), the rest free. */
+	static Call<Relation> probe(Relation relation, int boundIndex, Object value) {
+		List<Object> members = new ArrayList<>();
+		int frees = 0;
+		for (int i = 0; i < relation.getArgs().length; i++) {
+			members.add(i == boundIndex ? LVal.lval(value) : Any.of(frees++));
+		}
+		return Call.of(relation, (Reified<?>) LVal.lval(Array.ofAll(members)));
+	}
+
+	/** The integrity tier reads GROUND rows: answers decoded back to facts. */
+	static Stream<Fact> scan(Database db, Call<Relation> probe) {
+		return StreamSupport.stream(db.answers(probe).spliterator(), false)
+				.map(answer -> Fact.of(probe.getRelation(), Answers.values(answer._1)));
 	}
 }
