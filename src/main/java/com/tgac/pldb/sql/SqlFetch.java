@@ -188,6 +188,11 @@ final class SqlFetch implements JdbcSource {
 					Object[] values = new Object[unboundColumns.size()];
 					for (int i = 0; i < values.length; i++) {
 						values[i] = rows.getObject(unboundColumns.get(i));
+						if (values[i] == null) {
+							throw new IllegalStateException(relation.getName() + ": column '"
+									+ unboundColumns.get(i) + "' holds null — the engine has no"
+									+ " null vocabulary and the schema declares none for it");
+						}
 					}
 					Array<Object> vals = mergeValuesWithSupplied(args, values);
 					facts.add(Fact.of(relation, Array.ofAll(vals)));
