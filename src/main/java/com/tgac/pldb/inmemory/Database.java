@@ -1,26 +1,32 @@
 package com.tgac.pldb.inmemory;
 
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.Writer;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import io.vavr.control.Try;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public interface Database extends AnswerSource {
+public interface Database extends AnswerSource, Writer<Database> {
 
 	Try<Database> withFacts(List<Fact> facts);
 
 	/** The API face: literals in, the door converts — a hole refuses by column. */
-	default Try<Database> withFacts(Literal... rows) {
-		return withFacts(Arrays.stream(rows).map(Literal::fact).collect(Collectors.toList()));
+	@Override
+	default Try<Database> withFacts(Collection<Literal> rows) {
+		return withFacts(rows.stream().map(Literal::fact).collect(Collectors.toList()));
 	}
 
 	Try<Database> withoutFacts(List<Fact> facts);
 
+	default Try<Database> withoutFacts(Collection<Literal> rows) {
+		return withoutFacts(rows.stream().map(Literal::fact).collect(Collectors.toList()));
+	}
+
 	default Try<Database> withoutFacts(Literal... rows) {
-		return withoutFacts(Arrays.stream(rows).map(Literal::fact).collect(Collectors.toList()));
+		return withoutFacts(java.util.Arrays.asList(rows));
 	}
 
 	Database withTrigger(Trigger trigger);

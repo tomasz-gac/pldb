@@ -11,8 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.Propagation;
-import com.tgac.logic.constraints.store.Renaming;
 import com.tgac.logic.constraints.store.Atom;
+import com.tgac.logic.constraints.store.Renaming;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.nogoods.Nogood;
@@ -24,10 +24,10 @@ import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.constraints.TableConstraints;
-import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.SqlCompiler;
 import io.vavr.collection.Array;
@@ -119,7 +119,7 @@ public class NogoodSqlCompilerTest {
 				Prefix.binding(Substitutions.empty(), (LVar<?>) x.asVar().get(), lval(3L)).get()));
 		Atom<?> atom = ((Posting.Activation) exclusion).getItem();
 		Atom<?> crossed = atom.rename(Renaming.of(
-				Collections.<Name<?>, Term<?>> singletonMap(x.asVar().get(), Any.of(0))))
+						Collections.<Name<?>, Term<?>> singletonMap(x.asVar().get(), Any.of(0))))
 				.ground();
 		Optional<SqlPredicate> p = compiler().compile(crossed,
 				term -> term.equals(Any.of(0)) ? Optional.of("id") : Optional.empty());

@@ -10,8 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.sql.Watermark;
 import com.tgac.pldb.sql.CachingSqlFetch;
+import com.tgac.pldb.sql.Watermark;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,8 +29,10 @@ public class TransactionTest {
 
 	@Before
 	public void resetSchema() throws SQLException {
-		try (Connection admin = DriverManager.getConnection(URL);
-				Statement ddl = admin.createStatement()) {
+		try (
+				Connection admin = DriverManager.getConnection(URL);
+				Statement ddl = admin.createStatement()
+		) {
 			ddl.execute("DROP TABLE IF EXISTS person");
 			ddl.execute("DROP TABLE IF EXISTS book");
 			ddl.execute("DROP TABLE IF EXISTS watermark");
@@ -43,7 +45,7 @@ public class TransactionTest {
 	private static Transaction transaction(String id) throws Exception {
 		Connection connection = DriverManager.getConnection(URL);
 		return AbstractTransaction.over(Watermark.over(CachingSqlFetch.pinned(id, connection),
-						TransactionTest::commitConnection));
+				TransactionTest::commitConnection));
 	}
 
 	private static Connection commitConnection() {
@@ -91,7 +93,7 @@ public class TransactionTest {
 	@Test
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("w")
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get();
+				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
 		assertThat(names(writer)).containsExactly("{Ada}");
 		assertThat(writer.commit().isSuccess()).isTrue();
 
@@ -110,9 +112,9 @@ public class TransactionTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.withFacts(Collections.singletonList(
-				person(null, lval(1), lval("Ada")).fact())).get();
+				person(null, lval(1), lval("Ada")))).get();
 		second = second.withFacts(Collections.singletonList(
-				person(null, lval(2), lval("Alan")).fact())).get();
+				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(first.commit().isSuccess()).isTrue();
 		Try<?> refused = second.commit();
@@ -128,9 +130,11 @@ public class TransactionTest {
 	public void disjointRelationsCommitWithoutConflict() throws Exception {
 		// the per-relation marks earn their keep: one transaction read only
 		// person, the other committed only book — no conflict between them
-		try (Transaction seed = transaction("seed")
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()
-				.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")).fact())).get()) {
+		try (
+				Transaction seed = transaction("seed")
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
 			assertThat(seed.commit().isSuccess()).isTrue();
 		}
 
@@ -140,9 +144,9 @@ public class TransactionTest {
 		assertThat(names(personWriter)).containsExactly("{Ada}");
 
 		bookWriter = bookWriter.withFacts(Collections.singletonList(
-				book(null, lval("978-1"), lval("TAPL")).fact())).get();
+				book(null, lval("978-1"), lval("TAPL")))).get();
 		personWriter = personWriter.withFacts(Collections.singletonList(
-				person(null, lval(2), lval("Alan")).fact())).get();
+				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(bookWriter.commit().isSuccess()).isTrue();
 		assertThat(personWriter.commit()
@@ -153,8 +157,10 @@ public class TransactionTest {
 
 	@Test
 	public void anAbandonedTransactionLeavesNoTrace() throws Exception {
-		try (Transaction abandoned = transaction("a")
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
+		try (
+				Transaction abandoned = transaction("a")
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
 		try (Transaction reader = transaction("r")) {

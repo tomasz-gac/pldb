@@ -8,9 +8,9 @@ import static com.tgac.logic.unification.LVal.lval;
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.Propagation;
-import com.tgac.logic.goals.Goal;
 import com.tgac.logic.constraints.store.Constraint;
 import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.lattice.LatticeFactor;
@@ -91,7 +91,6 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	public static Posting postedRule(Relation rel, Goal rule, Array<Unifiable<?>> args) {
 		return Propagation.activate(TableParkingPropagator.rule(rel, rule, args));
 	}
-
 
 	/**
 	 * The declared branch point: enumerate each variable's LIVE support, in

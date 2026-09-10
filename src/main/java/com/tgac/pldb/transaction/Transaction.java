@@ -5,12 +5,8 @@ package com.tgac.pldb.transaction;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.Writer;
 import io.vavr.control.Try;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * One transaction over one serialized source: an {@link AnswerSource}
@@ -23,19 +19,12 @@ import java.util.stream.Collectors;
  * itself. A source with neither capability has no {@code over} to call:
  * a transaction exists FOR its write face — reads alone never need one.
  */
-public interface Transaction extends AnswerSource, AutoCloseable {
+public interface Transaction extends AnswerSource, Writer<Transaction>, AutoCloseable {
 
 	final class Conflict extends Exception {
 		public Conflict(String message) {
 			super(message);
 		}
-	}
-
-	Try<Transaction> withFacts(List<Fact> facts);
-
-	/** The API face: literals in, the door converts — a hole refuses by column. */
-	default Try<Transaction> withFacts(Literal... rows) {
-		return withFacts(Arrays.stream(rows).map(Literal::fact).collect(Collectors.toList()));
 	}
 
 	/**

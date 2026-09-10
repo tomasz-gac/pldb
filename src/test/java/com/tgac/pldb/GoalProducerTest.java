@@ -20,7 +20,6 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
@@ -48,9 +47,9 @@ public class GoalProducerTest {
 
 	private final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person((AnswerSource) null, lval(1L), lval("Ada")).fact(),
-					person((AnswerSource) null, lval(2L), lval("Alan")).fact(),
-					person((AnswerSource) null, lval(3L), lval("Kurt")).fact()))
+					person((AnswerSource) null, lval(1L), lval("Ada")),
+					person((AnswerSource) null, lval(2L), lval("Alan")),
+					person((AnswerSource) null, lval(3L), lval("Kurt"))))
 			.get();
 
 	private final AtomicInteger hits = new AtomicInteger();

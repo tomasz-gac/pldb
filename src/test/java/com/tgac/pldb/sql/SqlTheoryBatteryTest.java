@@ -12,25 +12,23 @@ import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.tgac.logic.tabling.Call;
-import com.tgac.logic.unification.Any;
-import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Fact;
-import java.util.ArrayList;
-import java.util.stream.Stream;
+import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.finitedomain.FiniteDomain;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.finitedomain.domains.Interval;
-import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -38,11 +36,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -82,22 +81,20 @@ public class SqlTheoryBatteryTest {
 	private static final Property<Long> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-
 	private static final Property<Long> lo = Property.of("lo");
 	private static final Property<Long> hi = Property.of("hi");
 
-
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person(null, lval(1L), lval("Ada")).fact(),
-					person(null, lval(2L), lval("Alan")).fact(),
-					person(null, lval(3L), lval("Kurt")).fact(),
-					person(null, lval(4L), lval("Barbara")).fact(),
-					person(null, lval(5L), lval("Edsger")).fact(),
-					edge(null, lval(1L), lval(2L)).fact(),
-					edge(null, lval(2L), lval(1L)).fact(),
-					edge(null, lval(3L), lval(3L)).fact(),
-					edge(null, lval(1L), lval(5L)).fact()))
+					person(null, lval(1L), lval("Ada")),
+					person(null, lval(2L), lval("Alan")),
+					person(null, lval(3L), lval("Kurt")),
+					person(null, lval(4L), lval("Barbara")),
+					person(null, lval(5L), lval("Edsger")),
+					edge(null, lval(1L), lval(2L)),
+					edge(null, lval(2L), lval(1L)),
+					edge(null, lval(3L), lval(3L)),
+					edge(null, lval(1L), lval(5L))))
 			.get();
 
 	private Connection connection;
@@ -109,8 +106,8 @@ public class SqlTheoryBatteryTest {
 			members.add(Any.of(i));
 		}
 		return StreamSupport.stream(reference.answers(
-						Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
-				.spliterator(), false)
+								Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
+						.spliterator(), false)
 				.map(answer -> Fact.of(relation, Answers.values(answer._1)));
 	}
 

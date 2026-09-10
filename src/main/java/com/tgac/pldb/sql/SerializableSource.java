@@ -6,9 +6,9 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.transaction.NativeSerialization;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.transaction.NativeSerialization;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -56,7 +56,7 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 	 * and a refusal in this source's dialect means the world moved.
 	 */
 	@Override
-	public boolean commit(List<Fact> flush) {
+	public boolean commit(List<Literal> flush) {
 		try {
 			SqlFlush.over(getConnection()).flush(flush);
 			getConnection().commit();

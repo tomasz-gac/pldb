@@ -1,9 +1,10 @@
 package com.tgac.pldb.transaction;
 
 import com.tgac.functional.category.Nothing;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import io.vavr.control.Try;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * NATIVE serialization: the backend tracks every read it serves, so this
@@ -20,8 +21,8 @@ public class Native extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> withFacts(List<Fact> facts) {
-		return writeBuffer.withFacts(facts)
+	public Try<Transaction> withFacts(Collection<Literal> facts) {
+		return writeBuffer.withFacts(new ArrayList<>(facts))
 				.map(grown -> new Native(grown, serialization));
 	}
 

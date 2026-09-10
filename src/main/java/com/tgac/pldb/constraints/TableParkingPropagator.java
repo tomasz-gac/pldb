@@ -28,12 +28,11 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.Queue;
-import java.util.function.Function;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 
 /**
  * The posted table over the ASYNC kind, read as its algebra: the constraint
@@ -127,7 +126,6 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 				.flatMap(explored -> Fiber.sealed(sub))
 				.map(sealed -> Extension.fold(delivered));
 	}
-
 
 	/**
 	 * The record's reify-time grounding: branch over the live disjuncts —

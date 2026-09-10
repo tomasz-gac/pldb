@@ -13,22 +13,20 @@ import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
-import com.tgac.logic.unification.Term;
-import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
+import com.tgac.logic.unification.Term;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.constraints.Support;
+import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.RelationN;
-import io.vavr.Tuple2;
-import com.tgac.pldb.constraints.TableConstraints;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -82,20 +80,16 @@ public class TableConstraintsTest {
 	private static final Property<String> label = Property.of("label");
 	private static final Property<Integer> price = Property.of("price");
 
-
-
-
-
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					r(null, lval(1), lval("a")).fact(),
-					r(null, lval(2), lval("b")).fact(),
-					r(null, lval(3), lval("c")).fact(),
-					s(null, lval("a"), lval(10)).fact(),
-					s(null, lval("b"), lval(20)).fact(),
-					s(null, lval("d"), lval(40)).fact(),
-					t(null, lval(7), lval("u")).fact(),
-					t(null, lval(7), lval("v")).fact()))
+					r(null, lval(1), lval("a")),
+					r(null, lval(2), lval("b")),
+					r(null, lval(3), lval("c")),
+					s(null, lval("a"), lval(10)),
+					s(null, lval("b"), lval(20)),
+					s(null, lval("d"), lval(40)),
+					t(null, lval(7), lval("u")),
+					t(null, lval(7), lval("v"))))
 			.get();
 
 	/** A goal that runs assertions against the live package and succeeds. */

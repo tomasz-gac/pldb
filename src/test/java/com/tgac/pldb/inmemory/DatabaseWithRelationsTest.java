@@ -1,11 +1,10 @@
 package com.tgac.pldb.inmemory;
 
-import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import static com.tgac.logic.goals.Goal.condu;
 import static com.tgac.logic.goals.Goal.defer;
+import static com.tgac.logic.goals.Logic.distincto;
 import static com.tgac.logic.goals.Matche.llist;
 import static com.tgac.logic.goals.Matche.matche;
-import static com.tgac.logic.goals.Logic.distincto;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -13,14 +12,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Logic;
+import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import com.tgac.logic.unification.LList;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -58,6 +57,7 @@ public class DatabaseWithRelationsTest {
 	private static Relation parentRel() {
 		return parent(null, lvar(), lvar()).getRel();
 	}
+
 	private enum Gender {
 		MALE, FEMALE
 	}
@@ -67,59 +67,55 @@ public class DatabaseWithRelationsTest {
 	private static final Property<String> surname = Property.of("surname");
 	private static final Property<Gender> gender = Property.of("gender");
 
-
-
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
 
-
-
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
-						person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact(),
-						person(null, lval(2), lval("Franciszek"), lval("Żyduch"), lval(Gender.MALE)).fact(),
-						person(null, lval(3), lval("Czesław"), lval("Kroc"), lval(Gender.MALE)).fact(),
-						person(null, lval(4), lval("Wacław"), lval("Wiercioch"), lval(Gender.MALE)).fact(),
-						person(null, lval(5), lval("Wiesław"), lval("Gac"), lval(Gender.MALE)).fact(),
-						person(null, lval(6), lval("Ireneusz"), lval("Kroc"), lval(Gender.MALE)).fact(),
-						person(null, lval(7), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact(),
-						person(null, lval(8), lval("Tomek"), lval("Gac"), lval(Gender.MALE)).fact(),
-						person(null, lval(10), lval("Aniela"), lval("X"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(11), lval("Honorata"), lval("Żyduch"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(12), lval("Helena"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(13), lval("Ewa"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(14), lval("Janina"), lval("Wiercioch"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(15), lval("Arletta"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(16), lval("Jolanta"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(17), lval("Henryka"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(18), lval("Kasia"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(19), lval("Marta"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(20), lval("Magda"), lval("Gac"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(21), lval("Weronika"), lval("Kroc"), lval(Gender.FEMALE)).fact(),
-						person(null, lval(22), lval("Monika"), lval("Kroc"), lval(Gender.FEMALE)).fact()))
+						person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)),
+						person(null, lval(2), lval("Franciszek"), lval("Żyduch"), lval(Gender.MALE)),
+						person(null, lval(3), lval("Czesław"), lval("Kroc"), lval(Gender.MALE)),
+						person(null, lval(4), lval("Wacław"), lval("Wiercioch"), lval(Gender.MALE)),
+						person(null, lval(5), lval("Wiesław"), lval("Gac"), lval(Gender.MALE)),
+						person(null, lval(6), lval("Ireneusz"), lval("Kroc"), lval(Gender.MALE)),
+						person(null, lval(7), lval("Michał"), lval("Gac"), lval(Gender.MALE)),
+						person(null, lval(8), lval("Tomek"), lval("Gac"), lval(Gender.MALE)),
+						person(null, lval(10), lval("Aniela"), lval("X"), lval(Gender.FEMALE)),
+						person(null, lval(11), lval("Honorata"), lval("Żyduch"), lval(Gender.FEMALE)),
+						person(null, lval(12), lval("Helena"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(13), lval("Ewa"), lval("Kroc"), lval(Gender.FEMALE)),
+						person(null, lval(14), lval("Janina"), lval("Wiercioch"), lval(Gender.FEMALE)),
+						person(null, lval(15), lval("Arletta"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(16), lval("Jolanta"), lval("Kroc"), lval(Gender.FEMALE)),
+						person(null, lval(17), lval("Henryka"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(18), lval("Kasia"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(19), lval("Marta"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(20), lval("Magda"), lval("Gac"), lval(Gender.FEMALE)),
+						person(null, lval(21), lval("Weronika"), lval("Kroc"), lval(Gender.FEMALE)),
+						person(null, lval(22), lval("Monika"), lval("Kroc"), lval(Gender.FEMALE))))
 				.get()
 				.withFacts(Arrays.asList(
-						parent(null, lval(10), lval(11)).fact(),
-						parent(null, lval(1), lval(5)).fact(),
-						parent(null, lval(12), lval(5)).fact(),
-						parent(null, lval(5), lval(7)).fact(),
-						parent(null, lval(5), lval(18)).fact(),
-						parent(null, lval(5), lval(20)).fact(),
-						parent(null, lval(17), lval(18)).fact(),
-						parent(null, lval(17), lval(7)).fact(),
-						parent(null, lval(5), lval(8)).fact(),
-						parent(null, lval(16), lval(19)).fact(),
-						parent(null, lval(11), lval(15)).fact(),
-						parent(null, lval(2), lval(15)).fact(),
-						parent(null, lval(15), lval(8)).fact(),
-						parent(null, lval(15), lval(20)).fact(),
-						parent(null, lval(3), lval(6)).fact(),
-						parent(null, lval(13), lval(6)).fact(),
-						parent(null, lval(14), lval(16)).fact(),
-						parent(null, lval(4), lval(16)).fact(),
-						parent(null, lval(6), lval(19)).fact(),
-						parent(null, lval(6), lval(22)).fact(),
-						parent(null, lval(22), lval(21)).fact()))
+						parent(null, lval(10), lval(11)),
+						parent(null, lval(1), lval(5)),
+						parent(null, lval(12), lval(5)),
+						parent(null, lval(5), lval(7)),
+						parent(null, lval(5), lval(18)),
+						parent(null, lval(5), lval(20)),
+						parent(null, lval(17), lval(18)),
+						parent(null, lval(17), lval(7)),
+						parent(null, lval(5), lval(8)),
+						parent(null, lval(16), lval(19)),
+						parent(null, lval(11), lval(15)),
+						parent(null, lval(2), lval(15)),
+						parent(null, lval(15), lval(8)),
+						parent(null, lval(15), lval(20)),
+						parent(null, lval(3), lval(6)),
+						parent(null, lval(13), lval(6)),
+						parent(null, lval(14), lval(16)),
+						parent(null, lval(4), lval(16)),
+						parent(null, lval(6), lval(19)),
+						parent(null, lval(6), lval(22)),
+						parent(null, lval(22), lval(21))))
 				.get();
 	}
 
@@ -283,7 +279,7 @@ public class DatabaseWithRelationsTest {
 	public void shouldThrowOnUniqueConstraintViolation() {
 		Try<Database> database = DatabaseWithRelationsTest.db
 				.withConstraint(Constraint.unique(personRel(), id))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("NAME"), lval("SURNAME"), lval(Gender.MALE)).fact()));
+				.withFacts(Collections.singletonList(person(null, lval(1), lval("NAME"), lval("SURNAME"), lval(Gender.MALE))));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);
@@ -293,7 +289,7 @@ public class DatabaseWithRelationsTest {
 	public void shouldThrowOnForeignKeyViolationOnAdd() {
 		Try<Database> database = DatabaseWithRelationsTest.db
 				.withConstraint(Constraint.foreignKey(parentRel(), parentId, personRel(), id))
-				.withFacts(Collections.singletonList(parent(null, lval(-1), lval(1)).fact()));
+				.withFacts(Collections.singletonList(parent(null, lval(-1), lval(1))));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);
@@ -303,7 +299,7 @@ public class DatabaseWithRelationsTest {
 	public void shouldThrowOnForeignKeyViolationOnRemove() {
 		Try<Database> database = DatabaseWithRelationsTest.db
 				.withConstraint(Constraint.foreignKey(parentRel(), parentId, personRel(), id))
-				.withoutFacts(Collections.singletonList(person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)).fact()));
+				.withoutFacts(Collections.singletonList(person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE))));
 
 		Assertions.assertThatThrownBy(database::get)
 				.isInstanceOf(RuntimeException.class);

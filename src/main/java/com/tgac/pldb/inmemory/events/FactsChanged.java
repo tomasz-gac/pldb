@@ -1,9 +1,9 @@
 package com.tgac.pldb.inmemory.events;
+
 import com.tgac.pldb.relations.Fact;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
-
-import java.util.List;
 
 @Value
 @RequiredArgsConstructor(staticName = "of")

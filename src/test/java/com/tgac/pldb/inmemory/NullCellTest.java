@@ -34,10 +34,10 @@ public class NullCellTest {
 
 	private static Database db() {
 		return ImmutableDatabase.empty().withFacts(Arrays.asList(
-				person(null, lval(1), lval("Ada")).fact(),
-				person(null, lval(2), lval((String) null)).fact(),
-				tagged(null, lval(1), lval("core")).fact(),
-				tagged(null, lval(2), lval((String) null)).fact())).get();
+				person(null, lval(1), lval("Ada")),
+				person(null, lval(2), lval((String) null)),
+				tagged(null, lval(1), lval("core")),
+				tagged(null, lval(2), lval((String) null)))).get();
 	}
 
 	@Test

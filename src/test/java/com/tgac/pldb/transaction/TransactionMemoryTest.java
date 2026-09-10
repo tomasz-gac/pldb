@@ -53,7 +53,7 @@ public class TransactionMemoryTest {
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
 		Transaction writer = AbstractTransaction.over(store.open("w"))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get();
+				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
 		assertThat(names(writer)).containsExactly("{Ada}");
 		assertThat(writer.commit().isSuccess()).isTrue();
 
@@ -71,9 +71,9 @@ public class TransactionMemoryTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.withFacts(Collections.singletonList(
-				person(null, lval(1), lval("Ada")).fact())).get();
+				person(null, lval(1), lval("Ada")))).get();
 		second = second.withFacts(Collections.singletonList(
-				person(null, lval(2), lval("Alan")).fact())).get();
+				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(first.commit().isSuccess()).isTrue();
 		Try<?> refused = second.commit();
@@ -88,9 +88,11 @@ public class TransactionMemoryTest {
 	@Test
 	public void disjointRelationsCommitWithoutConflict() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
-		try (Transaction seed = AbstractTransaction.over(store.open("seed"))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()
-				.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")).fact())).get()) {
+		try (
+				Transaction seed = AbstractTransaction.over(store.open("seed"))
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
 			assertThat(seed.commit().isSuccess()).isTrue();
 		}
 
@@ -100,9 +102,9 @@ public class TransactionMemoryTest {
 		assertThat(names(personWriter)).containsExactly("{Ada}");
 
 		bookWriter = bookWriter.withFacts(Collections.singletonList(
-				book(null, lval("978-1"), lval("TAPL")).fact())).get();
+				book(null, lval("978-1"), lval("TAPL")))).get();
 		personWriter = personWriter.withFacts(Collections.singletonList(
-				person(null, lval(2), lval("Alan")).fact())).get();
+				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(bookWriter.commit().isSuccess()).isTrue();
 		assertThat(personWriter.commit()
@@ -118,8 +120,10 @@ public class TransactionMemoryTest {
 		SharedDatabase store = SharedDatabase.empty();
 		Transaction reader = AbstractTransaction.over(store.open("reader"));
 
-		try (Transaction writer = AbstractTransaction.over(store.open("writer"))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
+		try (
+				Transaction writer = AbstractTransaction.over(store.open("writer"))
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+		) {
 			assertThat(writer.commit().isSuccess()).isTrue();
 		}
 
@@ -132,8 +136,10 @@ public class TransactionMemoryTest {
 	@Test
 	public void anAbandonedTransactionLeavesNoTrace() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
-		try (Transaction abandoned = AbstractTransaction.over(store.open("a"))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
+		try (
+				Transaction abandoned = AbstractTransaction.over(store.open("a"))
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
 		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {

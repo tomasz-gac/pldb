@@ -32,8 +32,8 @@ public class LiteralTest {
 
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person(null, lval(1), lval("Ada")).fact(),
-					person(null, lval(2), lval("Alan")).fact()))
+					person(null, lval(1), lval("Ada")),
+					person(null, lval(2), lval("Alan"))))
 			.get();
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {
@@ -69,8 +69,9 @@ public class LiteralTest {
 	}
 
 	@Test
-	public void factRefusesUnboundArgsByName() {
-		assertThatThrownBy(() -> person(null, lval(1), lvar()).fact())
+	public void aHoledLiteralRefusesAtTheWriteDoorByName() {
+		assertThatThrownBy(() -> com.tgac.pldb.inmemory.ImmutableDatabase.empty()
+				.withFacts(person(null, lval(1), lvar())))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("name");
@@ -87,7 +88,7 @@ public class LiteralTest {
 				.withFacts(Arrays.asList(
 						wide(null, lval(7), lval("a"), lval("b"), lval("c"), lval("d"),
 								lval("e"), lval("f"), lval("g"), lval("h"), lval("i"),
-								lval("j"), lval("k")).fact()))
+								lval("j"), lval("k"))))
 				.get();
 		Unifiable<String> last = lvar();
 		assertThat(answers(wide(wideDb, lval(7),
@@ -167,12 +168,12 @@ public class LiteralTest {
 
 	@Test
 	public void theWriteDoorsAcceptLiteralsDirectly() {
-		// the API face: no .fact() ceremony — the door converts, and the
+		// the API face: no  ceremony — the door converts, and the
 		// hole refusal arrives with the relation and column named
 		com.tgac.pldb.inmemory.Database db = com.tgac.pldb.inmemory.ImmutableDatabase.empty()
-				.withFacts(
+				.withFacts(Arrays.asList(
 						Literal.relation("person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
-						Literal.relation("person").arg("id", lval(2)).arg("name", lval("Alan")).from(null))
+						Literal.relation("person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
 				.get();
 		org.assertj.core.api.Assertions.assertThat(db.estimate(
 						com.tgac.logic.tabling.Call.of(

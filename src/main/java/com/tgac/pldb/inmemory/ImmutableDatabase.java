@@ -1,4 +1,5 @@
 package com.tgac.pldb.inmemory;
+
 import com.tgac.functional.Exceptions;
 import com.tgac.functional.index.ImmutableIndex;
 import com.tgac.functional.index.Index;
@@ -8,11 +9,10 @@ import io.vavr.collection.Array;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Set;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-
-import java.util.stream.Stream;
 
 @ToString
 @RequiredArgsConstructor(staticName = "of", access = AccessLevel.PRIVATE)
@@ -54,6 +54,7 @@ public class ImmutableDatabase extends AbstractIndexedDatabase {
 								Exceptions.throwingBiOp(UnsupportedOperationException::new)),
 				triggers);
 	}
+
 	@Override
 	protected Stream<Trigger> getTriggers() {
 		return triggers.toJavaStream();

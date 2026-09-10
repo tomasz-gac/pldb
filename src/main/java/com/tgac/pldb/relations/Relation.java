@@ -3,10 +3,10 @@ package com.tgac.pldb.relations;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Stream;
-
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 public interface Relation {
 	String getName();
 

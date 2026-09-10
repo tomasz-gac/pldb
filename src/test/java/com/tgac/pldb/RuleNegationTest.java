@@ -28,7 +28,7 @@ public class RuleNegationTest {
 				.arg("item", i)
 				.arg("tag", t)
 				.solving(i.unifies(1).and(t.unifies("a"))
-								.or(i.unifies(2).and(t.unifies("b"))));
+						.or(i.unifies(2).and(t.unifies("b"))));
 	}
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {
@@ -132,8 +132,8 @@ public class RuleNegationTest {
 	public void aNegatedRecursiveClosureFilters() {
 		Database db = ImmutableDatabase.empty()
 				.withFacts(Arrays.asList(
-						edge(null, lval(1), lval(2)).fact(),
-						edge(null, lval(2), lval(3)).fact()))
+						edge(null, lval(1), lval(2)),
+						edge(null, lval(2), lval(3))))
 				.get();
 		// reachable: 1→2, 1→3, 2→3; NOT reachable: (3, anything), (2,1), ...
 		Unifiable<Integer> x = lvar();
@@ -198,9 +198,9 @@ public class RuleNegationTest {
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y)
-								.or(defer(() -> {
-									Unifiable<Integer> z = lvar();
-									return reach(db, x, z).and(edge(db, z, y));
-								})));
+						.or(defer(() -> {
+							Unifiable<Integer> z = lvar();
+							return reach(db, x, z).and(edge(db, z, y));
+						})));
 	}
 }

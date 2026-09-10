@@ -1,8 +1,6 @@
 package com.tgac.pldb.relations;
 
-
 import com.tgac.logic.constraints.Posting;
-import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
@@ -12,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.AccessLevel;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -36,7 +33,7 @@ public class RelationN implements Relation {
 				.filter(e -> e.getValue().size() > 1)
 				.map(Map.Entry::getKey)
 				.collect(Collectors.toList());
-		if(!duplicates.isEmpty()){
+		if (!duplicates.isEmpty()) {
 			throw new IllegalArgumentException("Duplicated property names: " + duplicates);
 		}
 	}

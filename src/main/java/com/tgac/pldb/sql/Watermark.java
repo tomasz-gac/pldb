@@ -6,11 +6,11 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.transaction.SimulatedSerialization;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
-import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.transaction.SimulatedSerialization;
 import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -57,8 +57,10 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	public static void schema(Statement admin) throws SQLException {
 		admin.execute("CREATE TABLE IF NOT EXISTS watermark("
 				+ "relation VARCHAR(128) PRIMARY KEY, mark BIGINT NOT NULL)");
-		try (ResultSet lockRow = admin.executeQuery(
-				"SELECT 1 FROM watermark WHERE relation = '" + LOCK_ROW + "'")) {
+		try (
+				ResultSet lockRow = admin.executeQuery(
+						"SELECT 1 FROM watermark WHERE relation = '" + LOCK_ROW + "'")
+		) {
 			if (!lockRow.next()) {
 				admin.execute("INSERT INTO watermark(relation, mark) VALUES ('" + LOCK_ROW + "', 0)");
 			}
@@ -83,9 +85,11 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	@Override
 	public Pin pin() {
 		Map<String, Long> marks = new HashMap<>();
-		try (PreparedStatement read = source.getConnection().prepareStatement(
-				"SELECT relation, mark FROM watermark");
-				ResultSet rows = read.executeQuery()) {
+		try (
+				PreparedStatement read = source.getConnection().prepareStatement(
+						"SELECT relation, mark FROM watermark");
+				ResultSet rows = read.executeQuery()
+		) {
 			while (rows.next()) {
 				marks.put(rows.getString(1), rows.getLong(2));
 			}
@@ -96,7 +100,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public boolean commit(Pin pin, Footprint read, List<Fact> flush) {
+	public boolean commit(Pin pin, Footprint read, List<Literal> flush) {
 		Map<String, Long> pinned = ((Marks) pin).getMarks();
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
@@ -122,8 +126,10 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	/** The lock row first (the commit lock), then every mark, all current. */
 	private static Map<String, Long> lockAndReadMarks(Connection commit) throws SQLException {
 		Map<String, Long> current = new HashMap<>();
-		try (PreparedStatement lock = commit.prepareStatement(
-				"SELECT relation, mark FROM watermark WHERE relation = ? FOR UPDATE")) {
+		try (
+				PreparedStatement lock = commit.prepareStatement(
+						"SELECT relation, mark FROM watermark WHERE relation = ? FOR UPDATE")
+		) {
 			lock.setString(1, LOCK_ROW);
 			try (ResultSet row = lock.executeQuery()) {
 				if (!row.next()) {
@@ -132,9 +138,11 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 				current.put(LOCK_ROW, row.getLong(2));
 			}
 		}
-		try (PreparedStatement read = commit.prepareStatement(
-				"SELECT relation, mark FROM watermark");
-				ResultSet rows = read.executeQuery()) {
+		try (
+				PreparedStatement read = commit.prepareStatement(
+						"SELECT relation, mark FROM watermark");
+				ResultSet rows = read.executeQuery()
+		) {
 			while (rows.next()) {
 				current.put(rows.getString(1), rows.getLong(2));
 			}
@@ -160,11 +168,11 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		return true;
 	}
 
-	private static void advance(Connection commit, List<Fact> flushed) throws SQLException {
+	private static void advance(Connection commit, List<Literal> flushed) throws SQLException {
 		Set<String> moved = new LinkedHashSet<>();
 		moved.add(LOCK_ROW);
-		for (Fact fact : flushed) {
-			moved.add(fact.getRelation().getName());
+		for (Literal row : flushed) {
+			moved.add(row.getRel().getName());
 		}
 		for (String relation : moved) {
 			bump(commit, relation);
@@ -172,12 +180,16 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	private static void bump(Connection commit, String relation) throws SQLException {
-		try (PreparedStatement update = commit.prepareStatement(
-				"UPDATE watermark SET mark = mark + 1 WHERE relation = ?")) {
+		try (
+				PreparedStatement update = commit.prepareStatement(
+						"UPDATE watermark SET mark = mark + 1 WHERE relation = ?")
+		) {
 			update.setString(1, relation);
 			if (update.executeUpdate() == 0) {
-				try (PreparedStatement insert = commit.prepareStatement(
-						"INSERT INTO watermark(relation, mark) VALUES (?, 1)")) {
+				try (
+						PreparedStatement insert = commit.prepareStatement(
+								"INSERT INTO watermark(relation, mark) VALUES (?, 1)")
+				) {
 					insert.setString(1, relation);
 					insert.executeUpdate();
 				}

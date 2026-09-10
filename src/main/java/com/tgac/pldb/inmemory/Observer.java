@@ -1,10 +1,11 @@
 package com.tgac.pldb.inmemory;
-import java.util.function.BiConsumer;
+
 import com.tgac.pldb.inmemory.events.ChangeType;
 import com.tgac.pldb.inmemory.events.FactsChanged;
 import com.tgac.pldb.relations.Relation;
-
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+
 public interface Observer extends BiConsumer<FactsChanged, Database> {
 	static Observer ofRelation(Relation rel, Observer c) {
 		return (fc, db) -> c.accept(

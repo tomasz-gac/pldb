@@ -14,12 +14,12 @@ import com.tgac.logic.finitedomain.FiniteDomain;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Relation;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -49,13 +49,11 @@ public class SqlPushdownTest {
 	private static final Property<Long> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-
-
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person(null, lval(1L), lval("Ada")).fact(),
-					person(null, lval(2L), lval("Alan")).fact(),
-					person(null, lval(3L), lval("Kurt")).fact()))
+					person(null, lval(1L), lval("Ada")),
+					person(null, lval(2L), lval("Alan")),
+					person(null, lval(3L), lval("Kurt"))))
 			.get();
 
 	private Connection connection;

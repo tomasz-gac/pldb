@@ -10,11 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
+import com.tgac.pldb.relations.Relation;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -35,13 +33,11 @@ public class AnswerSourceTest {
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-
-
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					person(null, lval(1), lval("Ada")).fact(),
-					person(null, lval(2), lval("Alan")).fact(),
-					person(null, lval(3), lval("Kurt")).fact()))
+					person(null, lval(1), lval("Ada")),
+					person(null, lval(2), lval("Alan")),
+					person(null, lval(3), lval("Kurt"))))
 			.get();
 
 	@Test

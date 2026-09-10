@@ -14,9 +14,9 @@ import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.Literal;
 import io.vavr.Tuple;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -73,17 +73,14 @@ public class PostgresFactSourceTest {
 	private static final Property<Integer> src = Property.of("src");
 	private static final Property<Integer> dst = Property.of("dst");
 
-
-
-
-	private static final List<Fact> facts = Arrays.asList(
-			person(null, lval(1), lval("Ada")).fact(),
-			person(null, lval(2), lval("Alan")).fact(),
-			person(null, lval(3), lval("Kurt")).fact(),
-			edge(null, lval(1), lval(2)).fact(),
-			edge(null, lval(1), lval(3)).fact(),
-			edge(null, lval(2), lval(4)).fact(),
-			edge(null, lval(3), lval(4)).fact());
+	private static final List<Literal> facts = Arrays.asList(
+			person(null, lval(1), lval("Ada")),
+			person(null, lval(2), lval("Alan")),
+			person(null, lval(3), lval("Kurt")),
+			edge(null, lval(1), lval(2)),
+			edge(null, lval(1), lval(3)),
+			edge(null, lval(2), lval(4)),
+			edge(null, lval(3), lval(4)));
 
 	private static final Database reference = ImmutableDatabase.empty()
 			.withFacts(facts)
@@ -123,8 +120,9 @@ public class PostgresFactSourceTest {
 	 * names the columns, column types inferred from the values. One fact
 	 * list feeds both worlds — the proof compares backings, not fixtures.
 	 */
-	private static void push(Connection connection, List<Fact> facts) throws SQLException {
+	private static void push(Connection connection, List<Literal> facts) throws SQLException {
 		Map<Relation, List<Fact>> byRelation = facts.stream()
+				.map(Literal::fact)
 				.collect(Collectors.groupingBy(Fact::getRelation,
 						LinkedHashMap::new, Collectors.toList()));
 		try (Statement ddl = connection.createStatement()) {
@@ -210,11 +208,11 @@ public class PostgresFactSourceTest {
 				.arg("src", x)
 				.arg("dst", y)
 				.solving(edge(backing, x, y)
-								.or(defer(() -> {
-									Unifiable<Integer> z = lvar();
-									return reach(backing, x, z)
-											.and(edge(backing, z, y).posted());
-								})));
+						.or(defer(() -> {
+							Unifiable<Integer> z = lvar();
+							return reach(backing, x, z)
+									.and(edge(backing, z, y).posted());
+						})));
 	}
 
 	@Test

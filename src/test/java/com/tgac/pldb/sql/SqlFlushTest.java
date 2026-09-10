@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -64,18 +63,20 @@ public class SqlFlushTest {
 	@Test
 	public void flushedFactsComeBackThroughTheFetch() throws Exception {
 		SqlFlush.over(connection).flush(Arrays.asList(
-				person(null, lval(1), lval("Ada")).fact(),
-				person(null, lval(2), lval("Alan")).fact()));
+				person(null, lval(1), lval("Ada")),
+				person(null, lval(2), lval("Alan"))));
 		assertThat(namesReadBack()).containsExactly("{Ada}", "{Alan}");
 	}
 
 	@Test
 	public void oneFlushLandsInEveryTableItNames() throws SQLException {
 		SqlFlush.over(connection).flush(Arrays.asList(
-				person(null, lval(1), lval("Ada")).fact(),
-				visited(null, lval((Object) "Zurich")).fact()));
-		try (Statement read = connection.createStatement();
-				ResultSet rows = read.executeQuery("SELECT city FROM visited")) {
+				person(null, lval(1), lval("Ada")),
+				visited(null, lval((Object) "Zurich"))));
+		try (
+				Statement read = connection.createStatement();
+				ResultSet rows = read.executeQuery("SELECT city FROM visited")
+		) {
 			assertThat(rows.next()).isTrue();
 			assertThat(rows.getString(1)).isEqualTo("Zurich");
 		}
@@ -83,9 +84,9 @@ public class SqlFlushTest {
 
 	@Test
 	public void aStructuralColumnValueRefusesByNameBeforeAnyRowLands() throws Exception {
-		Fact structural = visited(null, lval((Object) Arrays.asList("Zurich", "Bern"))).fact();
+		Literal structural = visited(null, lval((Object) Arrays.asList("Zurich", "Bern")));
 		assertThatThrownBy(() -> SqlFlush.over(connection).flush(Arrays.asList(
-				person(null, lval(1), lval("Ada")).fact(),
+				person(null, lval(1), lval("Ada")),
 				structural)))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("visited")

@@ -4,16 +4,12 @@ package com.tgac.pldb.relations;
 // ABOUTME: decodes per position — cells in Term vocabulary, values for rows.
 
 import static com.tgac.logic.unification.LVar.lvar;
-
-import static com.tgac.logic.unification.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
-import java.util.Optional;
 import org.junit.Test;
 
 public class AnswersTest {

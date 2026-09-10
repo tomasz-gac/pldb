@@ -4,7 +4,7 @@ package com.tgac.pldb.transaction;
 // ABOUTME: lands the flush in one short transaction of its own.
 
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import java.util.List;
 
 /**
@@ -25,5 +25,5 @@ public interface SimulatedSerialization extends AnswerSource, AutoCloseable {
 
 	Pin pin();
 
-	boolean commit(Pin pin, Footprint read, List<Fact> flush);
+	boolean commit(Pin pin, Footprint read, List<Literal> flush);
 }

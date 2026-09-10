@@ -36,7 +36,7 @@ public class LiteralSolvingTest {
 	private static Database edges(int[][] pairs) {
 		return ImmutableDatabase.empty()
 				.withFacts(Arrays.stream(pairs)
-						.map(p -> edge(null, lval(p[0]), lval(p[1])).fact())
+						.map(p -> edge(null, lval(p[0]), lval(p[1])))
 						.collect(Collectors.toList()))
 				.get();
 	}
@@ -47,10 +47,10 @@ public class LiteralSolvingTest {
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y)
-								.or(defer(() -> {
-									Unifiable<Integer> z = lvar();
-									return reach(db, x, z).and(edge(db, z, y));
-								})));
+						.or(defer(() -> {
+							Unifiable<Integer> z = lvar();
+							return reach(db, x, z).and(edge(db, z, y));
+						})));
 	}
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {

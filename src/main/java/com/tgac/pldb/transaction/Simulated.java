@@ -4,12 +4,12 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Queue;
 
 /**
@@ -38,8 +38,8 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> withFacts(List<Fact> facts) {
-		return writeBuffer.withFacts(facts)
+	public Try<Transaction> withFacts(Collection<Literal> facts) {
+		return writeBuffer.withFacts(new ArrayList<>(facts))
 				.map(grown -> new Simulated(grown, serialization, reads, pinAtOpen));
 	}
 

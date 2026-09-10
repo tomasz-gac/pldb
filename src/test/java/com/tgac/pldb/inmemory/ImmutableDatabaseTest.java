@@ -11,9 +11,8 @@ import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.relations.Property;
-import com.tgac.pldb.relations.RelationN;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.control.Either;
 import java.util.Arrays;
 import java.util.List;
@@ -65,61 +64,57 @@ public class ImmutableDatabaseTest {
 	private static Relation treeRel() {
 		return tree(null, lvar(), lvar(), lvar()).getRel();
 	}
+
 	private static final Property<String> name = Property.of("name");
 	private static final Property<String> child = Property.of("child");
-
-
-
 
 	private static final Property<Integer> id = Property.of("id");
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<String> data = Property.of("data");
 
-
-
 	private static Database loadGeneology(Database db) {
 		return db.withFacts(Arrays.asList(
-						tree(null, lval(0), lval(0), lval("1")).fact(),
+						tree(null, lval(0), lval(0), lval("1")),
 
-						man(null, lval("Michał")).fact(),
-						man(null, lval("Franciszek")).fact(),
-						man(null, lval("Czesław")).fact(),
-						man(null, lval("Wacław")).fact(),
-						man(null, lval("Wiesław")).fact(),
-						man(null, lval("MichałW")).fact(),
-						man(null, lval("Ireneusz")).fact(),
-						man(null, lval("Wacław")).fact(),
-						man(null, lval("Tomek")).fact(),
-						woman(null, lval("Honorata")).fact(),
-						woman(null, lval("Helena")).fact(),
-						woman(null, lval("Ewa")).fact(),
-						woman(null, lval("Janina")).fact(),
-						woman(null, lval("Arletta")).fact(),
-						woman(null, lval("Jolanta")).fact(),
-						woman(null, lval("Henia")).fact(),
-						woman(null, lval("Marta")).fact(),
-						woman(null, lval("Weronika")).fact(),
-						woman(null, lval("Aniela")).fact(),
-						parent(null, lval("Aniela"), lval("Honorata")).fact(),
-						parent(null, lval("Michał"), lval("Wiesław")).fact(),
-						parent(null, lval("Helena"), lval("Wiesław")).fact(),
-						parent(null, lval("Wiesław"), lval("MichałW")).fact(),
-						parent(null, lval("Wiesław"), lval("Kasia")).fact(),
-						parent(null, lval("Henia"), lval("Kasia")).fact(),
-						parent(null, lval("Henia"), lval("MichałW")).fact(),
-						parent(null, lval("Wiesław"), lval("Tomek")).fact(),
-						parent(null, lval("Wiesław"), lval("Magda")).fact(),
-						parent(null, lval("Honorata"), lval("Arletta")).fact(),
-						parent(null, lval("Franciszek"), lval("Arletta")).fact(),
-						parent(null, lval("Arletta"), lval("Tomek")).fact(),
-						parent(null, lval("Arletta"), lval("Magda")).fact(),
-						parent(null, lval("Czesław"), lval("Ireneusz")).fact(),
-						parent(null, lval("Ewa"), lval("Ireneusz")).fact(),
-						parent(null, lval("Janina"), lval("Jolanta")).fact(),
-						parent(null, lval("WacławM"), lval("Jolanta")).fact(),
-						parent(null, lval("Ireneusz"), lval("Marta")).fact(),
-						parent(null, lval("Ireneusz"), lval("Weronika->Michał")).fact(),
-						parent(null, lval("Jolanta"), lval("Marta")).fact()))
+						man(null, lval("Michał")),
+						man(null, lval("Franciszek")),
+						man(null, lval("Czesław")),
+						man(null, lval("Wacław")),
+						man(null, lval("Wiesław")),
+						man(null, lval("MichałW")),
+						man(null, lval("Ireneusz")),
+						man(null, lval("Wacław")),
+						man(null, lval("Tomek")),
+						woman(null, lval("Honorata")),
+						woman(null, lval("Helena")),
+						woman(null, lval("Ewa")),
+						woman(null, lval("Janina")),
+						woman(null, lval("Arletta")),
+						woman(null, lval("Jolanta")),
+						woman(null, lval("Henia")),
+						woman(null, lval("Marta")),
+						woman(null, lval("Weronika")),
+						woman(null, lval("Aniela")),
+						parent(null, lval("Aniela"), lval("Honorata")),
+						parent(null, lval("Michał"), lval("Wiesław")),
+						parent(null, lval("Helena"), lval("Wiesław")),
+						parent(null, lval("Wiesław"), lval("MichałW")),
+						parent(null, lval("Wiesław"), lval("Kasia")),
+						parent(null, lval("Henia"), lval("Kasia")),
+						parent(null, lval("Henia"), lval("MichałW")),
+						parent(null, lval("Wiesław"), lval("Tomek")),
+						parent(null, lval("Wiesław"), lval("Magda")),
+						parent(null, lval("Honorata"), lval("Arletta")),
+						parent(null, lval("Franciszek"), lval("Arletta")),
+						parent(null, lval("Arletta"), lval("Tomek")),
+						parent(null, lval("Arletta"), lval("Magda")),
+						parent(null, lval("Czesław"), lval("Ireneusz")),
+						parent(null, lval("Ewa"), lval("Ireneusz")),
+						parent(null, lval("Janina"), lval("Jolanta")),
+						parent(null, lval("WacławM"), lval("Jolanta")),
+						parent(null, lval("Ireneusz"), lval("Marta")),
+						parent(null, lval("Ireneusz"), lval("Weronika->Michał")),
+						parent(null, lval("Jolanta"), lval("Marta"))))
 				.get();
 	}
 

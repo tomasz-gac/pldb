@@ -8,27 +8,23 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.goals.optimizer.CascadingOptimizer;
+import com.tgac.logic.goals.optimizer.Optimizer;
+import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import io.vavr.Tuple2;
-import com.tgac.logic.goals.optimizer.Optimizer;
-import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.inmemory.Trigger;
 import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.RelationN;
-import io.vavr.collection.IndexedSeq;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -49,7 +45,6 @@ public class PlannerTest {
 	private static final int N = 40;
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
-
 
 	/** Counts facts the index yields — the probe metric of query-planning.md §Phase 2. */
 	private static final class CountingDb implements Database {
@@ -94,9 +89,9 @@ public class PlannerTest {
 	}
 
 	private static Database chain(AtomicLong counter) {
-		List<Fact> facts = new ArrayList<>();
+		List<Literal> facts = new ArrayList<>();
 		for (int i = 0; i < N; i++) {
-			facts.add(parent(null, lval(i), lval(i + 1)).fact());
+			facts.add(parent(null, lval(i), lval(i + 1)));
 		}
 		return new CountingDb(ImmutableDatabase.empty(), counter).withFacts(facts).get();
 	}

@@ -6,7 +6,7 @@ package com.tgac.pldb.inmemory;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
@@ -64,14 +64,14 @@ public final class SharedDatabase {
 	 * The commit protocol, whole: the monitor is the commit lock, the
 	 * generation compare is the proof, the persistent grow is the flush.
 	 */
-	private synchronized boolean commit(Versioned pinned, Footprint read, java.util.List<Fact> flush) {
+	private synchronized boolean commit(Versioned pinned, Footprint read, java.util.List<Literal> flush) {
 		if (current.getGlobal() != pinned.getGlobal() && !covers(pinned, read)) {
 			return false;
 		}
 		Database grown = current.getValue().withFacts(flush).get();
 		Map<String, Long> marks = new HashMap<>(current.getMarks());
-		for (Fact fact : flush) {
-			marks.merge(fact.getRelation().getName(), 1L, Long::sum);
+		for (Literal fact : flush) {
+			marks.merge(fact.fact().getRelation().getName(), 1L, Long::sum);
 		}
 		current = new Versioned(grown, marks, current.getGlobal() + 1);
 		return true;
@@ -107,7 +107,7 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public boolean commit(Pin pin, Footprint read, java.util.List<Fact> flush) {
+		public boolean commit(Pin pin, Footprint read, java.util.List<Literal> flush) {
 			return SharedDatabase.this.commit(((MarksPin) pin).getVersioned(), read, flush);
 		}
 

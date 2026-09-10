@@ -10,9 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.transaction.Transaction;
 import com.tgac.pldb.sql.SerializableSource;
-import com.tgac.pldb.transaction.AbstractTransaction;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -80,7 +78,7 @@ public class TransactionPostgresTest {
 				.collect(Collectors.toList());
 	}
 
-	private static Transaction transaction(String id, Connection connection){
+	private static Transaction transaction(String id, Connection connection) {
 		return AbstractTransaction.over(SerializableSource.postgres(id, connection));
 	}
 
@@ -97,8 +95,8 @@ public class TransactionPostgresTest {
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("pg", connect())
 				.withFacts(Arrays.asList(
-						person(null, lval(1), lval("Ada")).fact(),
-						person(null, lval(2), lval("Alan")).fact())).get();
+						person(null, lval(1), lval("Ada")),
+						person(null, lval(2), lval("Alan")))).get();
 		assertThat(names(writer))
 				.describedAs("the writer reads its own staged rows before commit")
 				.containsExactly("{Ada}", "{Alan}");
@@ -111,8 +109,10 @@ public class TransactionPostgresTest {
 
 	@Test
 	public void anAbandonedValueLeavesNoTrace() throws Exception {
-		try (Transaction abandoned = transaction("pg", connect())
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")).fact())).get()) {
+		try (
+				Transaction abandoned = transaction("pg", connect())
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
 		try (Transaction reader = transaction("pg", connect())) {
@@ -131,9 +131,9 @@ public class TransactionPostgresTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.withFacts(Collections.singletonList(
-				person(null, lval(1), lval("Ada")).fact())).get();
+				person(null, lval(1), lval("Ada")))).get();
 		second = second.withFacts(Collections.singletonList(
-				person(null, lval(2), lval("Alan")).fact())).get();
+				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(first.commit().isSuccess()).isTrue();
 		Try<?> refused = second.commit();

@@ -4,6 +4,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: relation name is the table, property names are the columns, atoms only.
 
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import java.sql.Connection;
@@ -36,7 +37,8 @@ public final class SqlFlush {
 		return new SqlFlush(connection);
 	}
 
-	public void flush(List<Fact> facts) {
+	public void flush(List<Literal> literals) {
+		List<Fact> facts = literals.stream().map(Literal::fact).collect(Collectors.toList());
 		facts.forEach(SqlFlush::requireAtomColumns);
 		Map<Relation, List<Fact>> byRelation = facts.stream()
 				.collect(Collectors.groupingBy(Fact::getRelation, LinkedHashMap::new, Collectors.toList()));

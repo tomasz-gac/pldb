@@ -42,8 +42,10 @@ public class NullableColumnTest {
 		connection.close();
 	}
 
-	/** name declared nullable: the customer's schema allows it, so do we —
-	 * and the column stays a plain {@code Unifiable<String>}. */
+	/**
+	 * name declared nullable: the customer's schema allows it, so do we —
+	 * and the column stays a plain {@code Unifiable<String>}.
+	 */
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
 		return Literal.relation("person")
 				.arg("id", id).indexed()
@@ -77,7 +79,7 @@ public class NullableColumnTest {
 	@Test
 	public void aNullCellRoundTripsThroughTheFlush() throws Exception {
 		SqlFlush.over(connection).flush(Arrays.asList(
-				person(null, lval(3), lval((String) null)).fact()));
+				person(null, lval(3), lval((String) null))));
 		try (Statement read = connection.createStatement()) {
 			assertThat(read.executeQuery("SELECT COUNT(*) FROM person WHERE id = 3 AND name IS NULL")
 					.next()).isTrue();
@@ -147,7 +149,7 @@ public class NullableColumnTest {
 	@Test
 	public void aNullOnAStrictColumnRefusesAtTheFlush() {
 		assertThatThrownBy(() -> SqlFlush.over(connection).flush(Collections.singletonList(
-				strict(null, lval(4), lval(null)).fact())))
+				strict(null, lval(4), lval(null)))))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("name");

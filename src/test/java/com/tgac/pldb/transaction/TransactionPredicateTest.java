@@ -9,9 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.transaction.Transaction;
 import com.tgac.pldb.sql.SerializableSource;
-import com.tgac.pldb.transaction.AbstractTransaction;
 import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -41,12 +39,12 @@ public class TransactionPredicateTest {
 
 	/** No orphan table exists, so the flush inside commit fails for real. */
 	private Try<?> commitFailure(Transaction db) {
-		return db.withFacts(Collections.singletonList(orphan(null, lval(1)).fact()))
+		return db.withFacts(Collections.singletonList(orphan(null, lval(1))))
 				.get().commit();
 	}
 
 	@Test
-	public void aRecognizedCommitFailureMapsToConflict()  {
+	public void aRecognizedCommitFailureMapsToConflict() {
 		Try<?> refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> true)));
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);

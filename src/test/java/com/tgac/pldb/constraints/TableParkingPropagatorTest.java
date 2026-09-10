@@ -24,14 +24,13 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.relations.RelationN;
-import io.vavr.Tuple;
 import com.tgac.pldb.relations.Property;
+import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
@@ -57,13 +56,11 @@ public class TableParkingPropagatorTest {
 	private static final Property<Integer> item = Property.of("item");
 	private static final Property<String> tag = Property.of("tag");
 
-
-
 	private static final Database db = ImmutableDatabase.empty()
 			.withFacts(Arrays.asList(
-					r(null, lval(1), lval("a")).fact(),
-					r(null, lval(2), lval("b")).fact(),
-					r(null, lval(3), lval("c")).fact()))
+					r(null, lval(1), lval("a")),
+					r(null, lval(2), lval("b")),
+					r(null, lval(3), lval("c"))))
 			.get();
 
 	/** The reference relation as a rule: the body is the db lookup over the heads. */
@@ -260,7 +257,7 @@ public class TableParkingPropagatorTest {
 				.arg("item", i)
 				.arg("tag", y)
 				.solving(i.unifies(7).and(exclude(y.unifies("q")))
-								.or(i.unifies(8).and(y.unifies("a")))).posted();
+						.or(i.unifies(8).and(y.unifies("a")))).posted();
 		assertThat(answers(guarded, y))
 				.containsExactlyInAnyOrder("_.0 : ¬(_.0 ≡ {q})", "{a}");
 	}

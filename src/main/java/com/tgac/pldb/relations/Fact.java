@@ -2,11 +2,10 @@ package com.tgac.pldb.relations;
 
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
-
-import java.util.Optional;
 
 @Value
 @RequiredArgsConstructor(staticName = "of", access = AccessLevel.PUBLIC)
