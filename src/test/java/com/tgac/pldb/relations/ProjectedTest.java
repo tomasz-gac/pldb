@@ -94,20 +94,16 @@ public class ProjectedTest {
 		// linked is itself a solving literal
 		Unifiable<Integer> x = lvar();
 		assertThat(x.unifies(1)
-				.and(exclude(linked(db(), x, /* via */ ProjectedTest.via())))
+				.and(exclude(linked(db(), x, projected())))
 				.solve(x)
 				.collect(Collectors.toList())).isEmpty();
 
 		Unifiable<Integer> y = lvar();
 		assertThat(y.unifies(9)
-				.and(exclude(linked(db(), y, ProjectedTest.via())))
+				.and(exclude(linked(db(), y, projected())))
 				.solve(y)
 				.map(Object::toString)
 				.collect(Collectors.toList())).containsExactly("{9}");
-	}
-
-	private static Unifiable<Integer> via() {
-		return projected();
 	}
 
 	private static Literal linked(AnswerSource db, Unifiable<Integer> node, Unifiable<Integer> via) {
