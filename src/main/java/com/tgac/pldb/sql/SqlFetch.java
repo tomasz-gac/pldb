@@ -50,6 +50,8 @@ final class SqlFetch implements JdbcSource {
 	private final Connection connection;
 	private final int isolation;
 	private final Map<Class<?>, SqlCompiler> compilers = new HashMap<>();
+	@Getter
+	private final Codecs codecs = Codecs.builtin();
 
 	private SqlFetch(String id, Connection connection, int isolation) {
 		this.id = id;
@@ -180,7 +182,7 @@ final class SqlFetch implements JdbcSource {
 					nullBoundColumns.add(columns[i].getName());
 				} else {
 					boundColumns.add(columns[i].getName());
-					boundValues.add(args.get(i).get());
+					boundValues.add(codecs.encode(relation, columns[i], args.get(i).get()));
 				}
 			} else {
 				unboundColumns.add(columns[i].getName());
@@ -209,6 +211,9 @@ final class SqlFetch implements JdbcSource {
 					Object[] values = new Object[unboundColumns.size()];
 					for (int i = 0; i < values.length; i++) {
 						values[i] = rows.getObject(unboundColumns.get(i));
+						if (values[i] != null) {
+							values[i] = codecs.decode(values[i]);
+						}
 						if (values[i] == null && !unboundProperties.get(i).isNullable()) {
 							throw new IllegalStateException(relation.getName() + ": column '"
 									+ unboundColumns.get(i) + "' holds null and is not"

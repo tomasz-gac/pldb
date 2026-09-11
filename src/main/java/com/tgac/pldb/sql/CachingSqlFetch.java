@@ -73,6 +73,20 @@ public class CachingSqlFetch implements JdbcSource {
 		return this;
 	}
 
+	/** Registers a column type's translation. Before first use only. */
+	public CachingSqlFetch codec(Codec<?> codec) {
+		if (!cached.isEmpty()) {
+			throw new IllegalStateException(id() + ": register codecs before first use");
+		}
+		fetch.getCodecs().codec(codec);
+		return this;
+	}
+
+	@Override
+	public Codecs codecs() {
+		return fetch.getCodecs();
+	}
+
 	@Override
 	public String id() {
 		return fetch.id();

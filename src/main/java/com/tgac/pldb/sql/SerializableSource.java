@@ -58,7 +58,7 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 	@Override
 	public boolean commit(List<Literal> flush) {
 		try {
-			SqlFlush.over(getConnection()).flush(flush);
+			SqlFlush.over(getConnection(), inner.codecs()).flush(flush);
 			getConnection().commit();
 			return true;
 		} catch (RuntimeException e) {
@@ -116,5 +116,16 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 	@Override
 	public Connection getConnection() {
 		return inner.getConnection();
+	}
+
+	@Override
+	public Codecs codecs() {
+		return inner.codecs();
+	}
+
+	/** Registers a column type's translation. Before first use only. */
+	public SerializableSource codec(Codec<?> codec) {
+		inner.codec(codec);
+		return this;
 	}
 }

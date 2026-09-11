@@ -1,12 +1,13 @@
 package com.tgac.pldb.sql;
 
 // ABOUTME: The JDBC write face: facts land as INSERTs by the schema convention —
-// ABOUTME: relation name is the table, property names are the columns, atoms only.
+// ABOUTME: relation name is the table, columns encode through the codec registry.
 
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.collection.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -19,27 +20,35 @@ import java.util.stream.Collectors;
 /**
  * Flushes facts through one JDBC connection by the same convention the
  * fetch reads with: the relation's name is the table, its property names
- * are the columns. Column values must be ATOMS — a structural value (a
- * collection, a term) is a first-normal-form violation whose relational
- * spelling is a child relation, so it refuses by relation and column
- * name, and the whole batch is validated before any row lands. The
- * caller owns the transaction: this face neither commits nor rolls back.
+ * are the columns. Every cell encodes through the CODEC registry — a
+ * value without a codec refuses by relation and column, and a
+ * structural value (a collection, a term) keeps the modelling refusal:
+ * its relational spelling is a child relation. The whole batch encodes
+ * before any row lands. The caller owns the transaction: this face
+ * neither commits nor rolls back.
  */
 public final class SqlFlush {
 
 	private final Connection connection;
+	private final Codecs codecs;
 
-	private SqlFlush(Connection connection) {
+	private SqlFlush(Connection connection, Codecs codecs) {
 		this.connection = connection;
+		this.codecs = codecs;
 	}
 
 	public static SqlFlush over(Connection connection) {
-		return new SqlFlush(connection);
+		return new SqlFlush(connection, Codecs.builtin());
+	}
+
+	public static SqlFlush over(Connection connection, Codecs codecs) {
+		return new SqlFlush(connection, codecs);
 	}
 
 	public void flush(List<Literal> literals) {
-		List<Fact> facts = literals.stream().map(Literal::fact).collect(Collectors.toList());
-		facts.forEach(SqlFlush::requireAtomColumns);
+		List<Fact> facts = literals.stream().map(Literal::fact)
+				.map(this::encoded)
+				.collect(Collectors.toList());
 		Map<Relation, List<Fact>> byRelation = facts.stream()
 				.collect(Collectors.groupingBy(Fact::getRelation, LinkedHashMap::new, Collectors.toList()));
 		try {
@@ -73,8 +82,14 @@ public final class SqlFlush {
 		return "INSERT INTO " + relation.getName() + " (" + columns + ") VALUES (" + holes + ")";
 	}
 
-	private static void requireAtomColumns(Fact fact) {
+	/**
+	 * Every cell through the registry BEFORE any insert — the whole batch
+	 * validates or none of it lands. A null cell rides the nullable
+	 * declaration; everything else must have a codec.
+	 */
+	private Fact encoded(Fact fact) {
 		Property<?>[] columns = fact.getRelation().getArgs();
+		Object[] cells = new Object[columns.length];
 		for (int i = 0; i < columns.length; i++) {
 			Object value = fact.getValues().get(i);
 			if (value == null) {
@@ -85,19 +100,8 @@ public final class SqlFlush {
 				}
 				continue;
 			}
-			if (!isAtom(value)) {
-				throw new IllegalStateException("flush of " + fact.getRelation().getName()
-						+ ": column '" + columns[i].getName() + "' holds a structural value ("
-						+ value.getClass().getSimpleName()
-						+ ") — a first-normal-form violation; model it as a child relation");
-			}
+			cells[i] = codecs.encode(fact.getRelation(), columns[i], value);
 		}
-	}
-
-	private static boolean isAtom(Object value) {
-		return value instanceof Number
-				|| value instanceof String
-				|| value instanceof Boolean
-				|| value instanceof Character;
+		return Fact.of(fact.getRelation(), Array.of(cells));
 	}
 }

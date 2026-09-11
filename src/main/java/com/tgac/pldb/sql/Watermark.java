@@ -73,6 +73,11 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
+	public Codecs codecs() {
+		return source.codecs();
+	}
+
+	@Override
 	public void close() throws Exception {
 		source.close();
 	}
@@ -110,7 +115,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 					commit.rollback();
 					return false;
 				}
-				SqlFlush.over(commit).flush(flush);
+				SqlFlush.over(commit, source.codecs()).flush(flush);
 				advance(commit, flush);
 				commit.commit();
 				return true;
