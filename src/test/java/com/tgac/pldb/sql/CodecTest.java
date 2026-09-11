@@ -1,13 +1,14 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The codec registry: builtins pass through, registered types round-trip
-// ABOUTME: through flush, decode and bound probes; the unknown refuses by column.
+// ABOUTME: The codec map: builtins pass through, column codecs register through a
+// ABOUTME: template literal on the SOURCE — serialization is the backend's concern.
 
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
@@ -17,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,8 +28,12 @@ import org.junit.Test;
 
 public class CodecTest {
 
-	private static final Codec<LocalDate> DATES =
+	private static final Codec<LocalDate> AS_DATE =
 			Codec.of(LocalDate.class, Date.class, Date::valueOf, Date::toLocalDate);
+	private static final DateTimeFormatter BASIC = DateTimeFormatter.BASIC_ISO_DATE;
+	private static final Codec<LocalDate> AS_TEXT =
+			Codec.of(LocalDate.class, String.class,
+					d -> d.format(BASIC), s -> LocalDate.parse(s, BASIC));
 
 	private Connection connection;
 
@@ -36,6 +42,7 @@ public class CodecTest {
 		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE loan(id INT NOT NULL, due DATE NOT NULL)");
+			ddl.execute("CREATE TABLE event(at DATE NOT NULL, logged VARCHAR(8) NOT NULL)");
 		}
 	}
 
@@ -51,17 +58,27 @@ public class CodecTest {
 				.from(db);
 	}
 
+	/** One Java type, TWO wire encodings in one relation — the codec is a
+	 * property of the COLUMN, addressed through the defining method. */
+	private static Literal event(AnswerSource db, Unifiable<LocalDate> at, Unifiable<LocalDate> logged) {
+		return Literal.relation("event")
+				.arg("at", at).indexed()
+				.arg("logged", logged)
+				.from(db);
+	}
+
 	@Test
-	public void aRegisteredTypeRoundTripsThroughFlushAndFetch() throws Exception {
-		Codecs codecs = Codecs.builtin().codec(DATES);
+	public void aColumnCodecRoundTripsThroughFlushAndFetch() throws Exception {
+		Codecs codecs = Codecs.builtin().withCodec(loan(null, lvar(), AS_DATE.arg()));
 		SqlFlush.over(connection, codecs).flush(Arrays.asList(
 				loan(null, lval(1), lval(LocalDate.of(2026, 9, 11))),
 				loan(null, lval(2), lval(LocalDate.of(2026, 12, 24)))));
 
-		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection).codec(DATES)) {
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+				.withCodec(loan(null, lvar(), AS_DATE.arg()))) {
 			Unifiable<LocalDate> due = lvar();
 			List<LocalDate> dues = loan(source, lvar(), due).solve(due)
-					.map(reified -> reified.get())
+					.map(Term::get)
 					.sorted()
 					.collect(Collectors.toList());
 			assertThat(dues).containsExactly(
@@ -70,13 +87,33 @@ public class CodecTest {
 	}
 
 	@Test
+	public void oneTypeTwoEncodingsInOneRelation() throws Exception {
+		Codecs codecs = Codecs.builtin().withCodec(event(null, AS_DATE.arg(), AS_TEXT.arg()));
+		SqlFlush.over(connection, codecs).flush(Arrays.asList(
+				event(null, lval(LocalDate.of(2026, 9, 11)), lval(LocalDate.of(2026, 9, 12)))));
+		try (Statement read = connection.createStatement()) {
+			assertThat(read.executeQuery(
+					"SELECT 1 FROM event WHERE at = DATE '2026-09-11' AND logged = '20260912'")
+					.next()).isTrue();
+		}
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+				.withCodec(event(null, AS_DATE.arg(), AS_TEXT.arg()))) {
+			Unifiable<LocalDate> logged = lvar();
+			assertThat(event(source, lvar(), logged).solve(logged)
+					.map(Term::get)
+					.collect(Collectors.toList())).containsExactly(LocalDate.of(2026, 9, 12));
+		}
+	}
+
+	@Test
 	public void aBoundProbeEncodesItsParameter() throws Exception {
-		Codecs codecs = Codecs.builtin().codec(DATES);
+		Codecs codecs = Codecs.builtin().withCodec(loan(null, lvar(), AS_DATE.arg()));
 		SqlFlush.over(connection, codecs).flush(Arrays.asList(
 				loan(null, lval(1), lval(LocalDate.of(2026, 9, 11))),
 				loan(null, lval(2), lval(LocalDate.of(2026, 12, 24)))));
 
-		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection).codec(DATES)) {
+		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+				.withCodec(loan(null, lvar(), AS_DATE.arg()))) {
 			Unifiable<Integer> id = lvar();
 			assertThat(loan(source, id, lval(LocalDate.of(2026, 12, 24))).solve(id)
 					.map(Object::toString)
@@ -115,7 +152,7 @@ public class CodecTest {
 			Unifiable<String> name = lvar();
 			Literal.relation("person").arg("id", lvar()).indexed().arg("name", name).from(source)
 					.solve(name).collect(Collectors.toList());
-			assertThatThrownBy(() -> source.codec(DATES))
+			assertThatThrownBy(() -> source.withCodec(loan(null, lvar(), AS_DATE.arg())))
 					.isInstanceOf(IllegalStateException.class)
 					.hasMessageContaining("before first use");
 		}

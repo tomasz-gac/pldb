@@ -123,9 +123,9 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 		return inner.codecs();
 	}
 
-	/** Registers a column type's translation. Before first use only. */
-	public SerializableSource codec(Codec<?> codec) {
-		inner.codec(codec);
+	/** Binds column codecs through a template literal. Before first use only. */
+	public SerializableSource withCodec(Literal template) {
+		inner.withCodec(template);
 		return this;
 	}
 }

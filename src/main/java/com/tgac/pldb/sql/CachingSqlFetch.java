@@ -8,6 +8,7 @@ import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.compiler.FiniteDomainSqlCompiler;
 import com.tgac.pldb.sql.compiler.NogoodSqlCompiler;
@@ -73,12 +74,12 @@ public class CachingSqlFetch implements JdbcSource {
 		return this;
 	}
 
-	/** Registers a column type's translation. Before first use only. */
-	public CachingSqlFetch codec(Codec<?> codec) {
+	/** Binds column codecs through a template literal. Before first use only. */
+	public CachingSqlFetch withCodec(Literal template) {
 		if (!cached.isEmpty()) {
 			throw new IllegalStateException(id() + ": register codecs before first use");
 		}
-		fetch.getCodecs().codec(codec);
+		fetch.getCodecs().withCodec(template);
 		return this;
 	}
 

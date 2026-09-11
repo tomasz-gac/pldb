@@ -212,7 +212,7 @@ final class SqlFetch implements JdbcSource {
 					for (int i = 0; i < values.length; i++) {
 						values[i] = rows.getObject(unboundColumns.get(i));
 						if (values[i] != null) {
-							values[i] = codecs.decode(values[i]);
+							values[i] = codecs.decode(relation, unboundProperties.get(i), values[i]);
 						}
 						if (values[i] == null && !unboundProperties.get(i).isNullable()) {
 							throw new IllegalStateException(relation.getName() + ": column '"

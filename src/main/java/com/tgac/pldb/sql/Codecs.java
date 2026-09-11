@@ -1,29 +1,37 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: The per-source codec registry: builtins pass through, registered types
-// ABOUTME: translate both ways, the unknown refuses loudly on the write side.
+// ABOUTME: The per-source codec map: builtins pass through, column codecs bind
+// ABOUTME: through a template literal, the unknown refuses loudly on the write side.
 
+import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.collection.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The value↔wire translation table, mirroring the compiler registry:
- * builtin Java types are wired at construction, user types register
- * before the source's first use. WRITES are strict — a value whose type
- * has no codec refuses by relation and column (and a structural value
- * keeps the modelling refusal: its relational spelling is a child
- * relation). READS are lenient — a cell whose type claims no codec
- * passes through unchanged, because the backend's types are the
- * backend's business and an opaque value still unifies as itself.
+ * The value↔wire translation table. Serialization is the BACKEND's
+ * concern: the boundary declaration ({@code Literal}/{@code Relation})
+ * says nothing about storage, so codecs live here, on the source, keyed
+ * by COLUMN — the same Java type may encode differently in different
+ * columns. {@link #withCodec} binds them through a template literal: the
+ * relation's defining method is the address book, {@link Codec#arg()}
+ * markers the payload, and the signature type-checks the association.
+ * WRITES are strict — a value with neither a column codec nor a builtin
+ * refuses by relation and column (and a structural value keeps the
+ * modelling refusal: its relational spelling is a child relation). READS
+ * are lenient — a column without a codec passes its cells through
+ * unchanged, because the backend's types are the backend's business and
+ * an opaque value still unifies as itself.
  */
 public final class Codecs {
 
-	private final Map<Class<?>, Codec<?>> byValue = new HashMap<>();
-	private final Map<Class<?>, Codec<?>> byJdbc = new HashMap<>();
+	private final Map<Class<?>, Codec<?>> builtins = new HashMap<>();
+	private final Map<String, Map<String, Codec<?>>> byColumn = new HashMap<>();
 
 	private Codecs() {
 	}
@@ -42,27 +50,45 @@ public final class Codecs {
 
 	@SuppressWarnings("unchecked")
 	private <T> void identity(Class<T> type) {
-		byValue.put(type, Codec.of(type, (Class<Object>) type, value -> value, cell -> (T) cell));
+		builtins.put(type, Codec.of(type, (Class<Object>) type, value -> value, cell -> (T) cell));
 	}
 
-	/** Registers both directions; a doubly-claimed type refuses. */
-	public Codecs codec(Codec<?> codec) {
-		if (byValue.containsKey(codec.getValueType())) {
-			throw new IllegalStateException(
-					"a codec for " + codec.getValueType().getSimpleName() + " is already registered");
+	/**
+	 * Binds column codecs through a template literal: every
+	 * {@link Codec#arg()} marker in the args binds its codec to the column
+	 * at its position. A markerless template refuses — it registers
+	 * nothing. A doubly-bound column refuses.
+	 */
+	public Codecs withCodec(Literal template) {
+		Relation relation = template.getRel();
+		Property<?>[] columns = relation.getArgs();
+		Array<Unifiable<?>> args = template.getArgs();
+		boolean bound = false;
+		for (int i = 0; i < columns.length; i++) {
+			if (!(args.get(i) instanceof Codec.Arg)) {
+				continue;
+			}
+			Codec<?> codec = ((Codec.Arg<?>) args.get(i)).getCodec();
+			Map<String, Codec<?>> perColumn = byColumn.computeIfAbsent(relation.getName(), name -> new HashMap<>());
+			if (perColumn.putIfAbsent(columns[i].getName(), codec) != null) {
+				throw new IllegalStateException(relation.getName() + ": column '"
+						+ columns[i].getName() + "' already has a codec");
+			}
+			bound = true;
 		}
-		if (byJdbc.containsKey(codec.getJdbcType())) {
-			throw new IllegalStateException(
-					"the wire type " + codec.getJdbcType().getSimpleName() + " is already claimed");
+		if (!bound) {
+			throw new IllegalStateException(relation.getName()
+					+ ": the template carries no Codec.arg() marker — nothing to bind");
 		}
-		byValue.put(codec.getValueType(), codec);
-		byJdbc.put(codec.getJdbcType(), codec);
 		return this;
 	}
 
-	/** The write side: strict — refuses by relation and column. */
+	/** The write side: strict — column codec, then builtin, then refuse by relation and column. */
 	Object encode(Relation relation, Property<?> column, Object value) {
-		Codec<?> codec = byValue.get(value.getClass());
+		Codec<?> codec = columnCodec(relation, column);
+		if (codec == null) {
+			codec = builtins.get(value.getClass());
+		}
 		if (codec != null) {
 			return codec.encode(value);
 		}
@@ -78,9 +104,14 @@ public final class Codecs {
 				+ " and no codec is registered for it");
 	}
 
-	/** The read side: lenient — an unclaimed cell type passes through. */
-	Object decode(Object cell) {
-		Codec<?> codec = byJdbc.get(cell.getClass());
+	/** The read side: lenient — a column without a codec passes its cells through. */
+	Object decode(Relation relation, Property<?> column, Object cell) {
+		Codec<?> codec = columnCodec(relation, column);
 		return codec == null ? cell : codec.decode(cell);
+	}
+
+	private Codec<?> columnCodec(Relation relation, Property<?> column) {
+		Map<String, Codec<?>> perColumn = byColumn.get(relation.getName());
+		return perColumn == null ? null : perColumn.get(column.getName());
 	}
 }
