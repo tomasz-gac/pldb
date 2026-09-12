@@ -205,6 +205,62 @@ public class AnswerStoreTest {
 				.containsExactly("{Array(_.0, {c3})}");
 	}
 
+	private static final Relation PAIR = Literal.relation("pair")
+			.arg("a", lvar()).indexed()
+			.arg("b", lvar()).indexed()
+			.from(null)
+			.getRel();
+
+	private static Answer pair(Object a, Object b) {
+		return Answers.answer(Fact.of(PAIR, Array.of(a, b)));
+	}
+
+	private static Call<Relation> pairProbe(Term<?> a, Term<?> b) {
+		return Call.of(PAIR, (Reified<?>) lval(Array.of(a, b)));
+	}
+
+	@Test
+	public void twoGroundIndexedPositionsIntersectTheirBuckets() {
+		// the narrowing path: each column's bucket over-approximates alone —
+		// only their intersection names the row, and the estimate is exact
+		// on it
+		AnswerStore store = AnswerStore.empty()
+				.with(PAIR, pair("a1", "b1"))
+				.with(PAIR, pair("a1", "b2"))
+				.with(PAIR, pair("a2", "b1"));
+
+		assertThat(images(store.answers(pairProbe(lval("a1"), lval("b1")))))
+				.containsExactly("{Array({a1}, {b1})}");
+		assertThat(store.estimate(pairProbe(lval("a1"), lval("b1")))).isEqualTo(1);
+	}
+
+	@Test
+	public void anEmptyIntersectionAnswersNothingAndEstimatesZero() {
+		// both buckets are non-empty; their intersection is not "all rows"
+		// (the null sentinel) but the honest empty set
+		AnswerStore store = AnswerStore.empty()
+				.with(PAIR, pair("a1", "b1"))
+				.with(PAIR, pair("a2", "b2"));
+
+		assertThat(store.answers(pairProbe(lval("a1"), lval("b2")))).isEmpty();
+		assertThat(store.estimate(pairProbe(lval("a1"), lval("b2")))).isEqualTo(0);
+	}
+
+	@Test
+	public void aWildcardSurvivesTheIntersection() {
+		// a row free at one indexed column rides that column's wildcard set
+		// INTO the intersection: pair(a9, _) answers any b probe under a9
+		AnswerStore store = AnswerStore.empty()
+				.with(PAIR, pair("a1", "b1"))
+				.with(PAIR, Answer.of(
+						(Reified<?>) lval(Array.of(lval("a9"), Any.of(0))),
+						Condition.ONE));
+
+		assertThat(images(store.answers(pairProbe(lval("a9"), lval("b5")))))
+				.containsExactly("{Array({a9}, _.0)}");
+		assertThat(store.answers(pairProbe(lval("a1"), lval("b5")))).isEmpty();
+	}
+
 	@Test
 	public void insertsForkTheValueAndAncestorsKeepAnswering() {
 		AnswerStore before = AnswerStore.empty().with(LOAN, row("m1", "c1"));

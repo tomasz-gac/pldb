@@ -10,16 +10,17 @@ import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
+import io.vavr.Tuple;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -119,16 +120,11 @@ public class AnswerStore {
 		Iterable<Answer> answers(Call<Relation> probe) {
 			Array<Term<Object>> args = Answers.positions(probe.getArguments());
 			HashSet<Reified<?>> candidates = candidates(probe.getRelation(), args);
-			ArrayList<Answer> matched = new ArrayList<>();
-			for (Tuple2<Reified<?>, Condition> row : byImage) {
-				if (candidates != null && !candidates.contains(row._1)) {
-					continue;
-				}
-				if (matches(args, Answers.positions(row._1))) {
-					matched.add(row.apply(Answer::of));
-				}
-			}
-			return matched;
+			return byImage.toJavaStream()
+					.filter(row -> candidates == null || candidates.contains(row._1))
+					.filter(row -> matches(args, Answers.positions(row._1)))
+					.map(row -> row.apply(Answer::of))
+					.collect(Collectors.toList());
 		}
 
 		long estimate(Call<Relation> probe) {
@@ -161,18 +157,16 @@ public class AnswerStore {
 		}
 
 		/** Every bound probe position: the row's cell equals it, or the cell is free. */
-		private static boolean matches(Array<Term<Object>> args, Array<Term<Object>> cells) {
-			for (int i = 0; i < args.size(); i++) {
-				if (!args.get(i).asVal().isDefined()) {
-					continue;
-				}
-				if (cells.get(i).asVal().isDefined()
-						&& !Objects.equals(cells.get(i).get(), args.get(i).get())) {
-					return false;
-				}
-			}
-			return true;
+		private static boolean matches(Array<Term<Object>> probe, Array<Term<Object>> cells) {
+			return IntStream.range(0, probe.size())
+					.mapToObj(i -> Tuple.of(probe.get(i), cells.get(i)))
+					.filter(p -> isGround(p._1))
+					.noneMatch(p -> isGround(p._2) && !Objects.equals(p._1.get(), p._2.get()));
 		}
+	}
+
+	private static boolean isGround(Term<?> v) {
+		return v.asVal().isDefined();
 	}
 
 	@Value
