@@ -80,6 +80,23 @@ final class SqlFetch implements JdbcSource {
 		}
 	}
 
+	/**
+	 * The LIVE lane: no snapshot, no isolation raise — auto-commit on, so
+	 * every statement reads the CURRENT committed world. Read stability
+	 * must come from elsewhere (the caching ledger); what makes a
+	 * transaction over this lane sound is per-touch pins captured BEFORE
+	 * their rows and the commit-time proof. No long-lived transaction is
+	 * ever held — idle-in-transaction cannot occur.
+	 */
+	static SqlFetch live(String id, Connection connection) {
+		try {
+			connection.setAutoCommit(true);
+			return new SqlFetch(id, connection, connection.getTransactionIsolation());
+		} catch (SQLException e) {
+			throw new IllegalStateException("could not open live " + id, e);
+		}
+	}
+
 	int isolation() {
 		return isolation;
 	}
@@ -117,7 +134,9 @@ final class SqlFetch implements JdbcSource {
 	@Override
 	public void close() {
 		try {
-			connection.rollback();
+			if (!connection.getAutoCommit()) {
+				connection.rollback();
+			}
 			connection.close();
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not close " + id, e);

@@ -53,7 +53,20 @@ public class CachingSqlFetch implements JdbcSource {
 	 * families and may OVERRIDE a built-in.
 	 */
 	public static CachingSqlFetch pinned(String id, Connection connection) {
-		SqlFetch fetch = SqlFetch.pinned(id, connection);
+		return composed(SqlFetch.pinned(id, connection));
+	}
+
+	/**
+	 * The LIVE lane: reads the current committed world per statement, no
+	 * snapshot held — the caching ledger is what keeps a solve's repeats
+	 * stable, and a transaction over this lane leans wholly on per-touch
+	 * pins and the commit proof.
+	 */
+	public static CachingSqlFetch live(String id, Connection connection) {
+		return composed(SqlFetch.live(id, connection));
+	}
+
+	private static CachingSqlFetch composed(SqlFetch fetch) {
 		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
 		fetch.compiling(NogoodConstraints.class, new NogoodSqlCompiler(fetch.compilers()));
 		return new CachingSqlFetch(fetch, CachingAnswerSource.over(fetch));
