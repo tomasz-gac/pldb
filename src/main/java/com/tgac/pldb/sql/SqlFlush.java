@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Flushes facts through one JDBC connection by the same convention the
@@ -31,6 +32,7 @@ import lombok.Value;
  * neither commits nor rolls back.
  */
 
+@Slf4j
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SqlFlush {
@@ -70,7 +72,14 @@ public class SqlFlush {
 	}
 
 	private void insert(Relation relation, List<Fact> rows) throws SQLException {
-		try (PreparedStatement statement = connection.prepareStatement(insertSql(relation))) {
+		String sql = insertSql(relation);
+		if (log.isDebugEnabled()) {
+			for (Fact row : rows) {
+				log.debug("{} ← {}{}", sql, row.getValues(),
+						stampColumn == null ? "" : ", " + stampValue);
+			}
+		}
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
 			for (Fact row : rows) {
 				for (int i = 0; i < row.getValues().size(); i++) {
 					statement.setObject(i + 1, row.getValues().get(i));
