@@ -48,7 +48,7 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void agreeingUnionsMergeAndDuplicateRegionsFold() throws Exception {
+	public void agreeingUnionsMergeAndDuplicateRegionsFold() {
 		Footprint left = Footprint.of(region("person"), new Generation(1))
 				.union(Footprint.of(region("book"), new Generation(4)));
 		Footprint right = Footprint.of(region("person"), new Generation(1))
@@ -73,7 +73,7 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void emptyIsTheUnionIdentity() throws Exception {
+	public void emptyIsTheUnionIdentity() {
 		Footprint some = Footprint.of(region("person"), new Generation(1));
 		assertThat(Footprint.empty().union(some)).isEqualTo(some);
 		assertThat(some.union(Footprint.empty())).isEqualTo(some);

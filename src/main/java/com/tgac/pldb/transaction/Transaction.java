@@ -21,7 +21,7 @@ import io.vavr.control.Try;
  */
 public interface Transaction extends AnswerSource, Writer<Transaction>, AutoCloseable {
 
-	final class Conflict extends Exception {
+	final class Conflict extends RuntimeException {
 		public Conflict(String message) {
 			super(message);
 		}

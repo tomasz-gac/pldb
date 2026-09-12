@@ -53,7 +53,7 @@ public final class Footprint implements Pin {
 	 * composition needs source-qualified keys — a named door, not this
 	 * method.
 	 */
-	public Footprint union(Footprint other) throws Transaction.Conflict {
+	public Footprint union(Footprint other) {
 		Map<Call<Relation>, Pin> merged = new LinkedHashMap<>(pins);
 		for (Map.Entry<Call<Relation>, Pin> entry : other.pins.entrySet()) {
 			Pin resident = merged.putIfAbsent(entry.getKey(), entry.getValue());
