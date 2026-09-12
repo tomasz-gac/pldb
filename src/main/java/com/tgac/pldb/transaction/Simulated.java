@@ -11,18 +11,23 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * SIMULATED serialization: this transaction is the read-tracker — every
- * region pins at its FIRST touch, BEFORE the read it certifies (the
- * ordering {@link SimulatedSerialization} stands on), and commit hands
- * the pinned footprint and the flush to the source's door.
+ * SIMULATED serialization: this transaction's ledger is the read cache
+ * AND the recorder in one — a region's FIRST touch reads through the
+ * source (pin and rows minted from one world) and every repeat serves
+ * the same {@link Pinned} back, so the transaction is its own snapshot
+ * at region grain: read stability by construction, no source consulted
+ * twice for one region. Commit folds the ledger's pins into the
+ * {@link Footprint} by {@link Footprint#union} — regions are distinct
+ * keys, so the union never conflicts here; its refusal guards the
+ * cross-part compositions to come.
  */
 public class Simulated extends AbstractTransaction {
 
 	private final SimulatedSerialization serialization;
-	private final ConcurrentMap<Call<Relation>, Pin> reads;
+	private final ConcurrentMap<Call<Relation>, Pinned<Iterable<Answer>>> reads;
 
 	Simulated(WriteBuffer writeBuffer, SimulatedSerialization serialization,
-			ConcurrentMap<Call<Relation>, Pin> reads) {
+			ConcurrentMap<Call<Relation>, Pinned<Iterable<Answer>>> reads) {
 		super(writeBuffer);
 		this.serialization = serialization;
 		this.reads = reads;
@@ -30,12 +35,7 @@ public class Simulated extends AbstractTransaction {
 
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
-		Pinned<Iterable<Answer>> read = serialization.read(probe);
-		// keep the FIRST touch's pin: a later read under a moved world then
-		// fails covers at commit — the conservative direction; the dangerous
-		// inverse (fresh pin certifying stale data) is unrepresentable
-		// because pin and data arrive as one Pinned
-		reads.putIfAbsent(probe, read.getPin());
+		Pinned<Iterable<Answer>> read = reads.computeIfAbsent(probe, serialization::read);
 		return writeBuffer.overlay(probe, read.getValue());
 	}
 
@@ -47,8 +47,10 @@ public class Simulated extends AbstractTransaction {
 
 	@Override
 	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(Footprint.of(reads),
-				writeBuffer.staged().asJava()));
+		Footprint footprint = reads.entrySet().stream()
+				.map(read -> Footprint.of(read.getKey(), read.getValue().getPin()))
+				.reduce(Footprint.empty(), Footprint::union);
+		return through(() -> serialization.commit(footprint, writeBuffer.staged().asJava()));
 	}
 
 	/** Ends the snapshot (the source's close rolls its read transaction back). */

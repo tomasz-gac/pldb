@@ -1,7 +1,7 @@
 package com.tgac.pldb.transaction;
 
-// ABOUTME: The pinned-read contract: every touch reads data WITH its pin, the
-// ABOUTME: footprint keeps the FIRST touch's pin, and commit sees exactly that one.
+// ABOUTME: The transaction ledger: a region's FIRST touch reads through the
+// ABOUTME: source, repeats serve from the ledger, commit carries that one pin.
 
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,18 +68,16 @@ public class PinAtFirstTouchTest {
 	}
 
 	@Test
-	public void everyTouchReadsButTheFootprintKeepsTheFirstPin() throws Exception {
+	public void aRegionReadsOnceAndItsPinIsTheFootprint() throws Exception {
 		Recording recording = new Recording();
 		try (Transaction transaction = AbstractTransaction.over(recording)) {
 			solve(transaction);
 			solve(transaction);
 			assertThat(transaction.commit().isSuccess()).isTrue();
 		}
-		// two touches, two reads (data is needed every time), ONE footprint
-		// entry carrying the FIRST read's pin — the later, fresher pin is
-		// discarded, the conservative direction
-		assertThat(recording.events).containsExactly(
-				"read:person", "read:person", "commit:1");
+		// two touches, ONE read: the ledger serves the repeat the same
+		// Pinned back — the transaction is its own snapshot at region grain
+		assertThat(recording.events).containsExactly("read:person", "commit:1");
 		assertThat(recording.committed).containsExactly(new Generation(0));
 	}
 
