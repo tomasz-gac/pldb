@@ -162,6 +162,30 @@ public class LiveSourceTest {
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
+	@Test
+	public void disjointTransactionsCommitAcrossEachOther() throws Exception {
+		// the torn receipt's complement: a mid-flight foreign commit to a
+		// DIFFERENT relation must not bounce this one, even though its pins
+		// were captured on both sides of that commit
+		Transaction people = transaction("people");
+		assertThat(names(people.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
+
+		try (
+				Transaction books = transaction("books")
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
+			assertThat(books.commit().isSuccess()).isTrue();
+		}
+
+		assertThat(names(people.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
+		Transaction staged = people.withFacts(Collections.singletonList(
+				person(null, lval(1), lval("Ada")))).get();
+		assertThat(staged.commit()
+				.isSuccess())
+				.describedAs("only book moved — person pins spanning the foreign commit still hold")
+				.isTrue();
+	}
+
 	private Transaction transaction(String id) {
 		return AbstractTransaction.over(
 				Watermark.over(CachingSqlFetch.live(id, connection()), this::connection));

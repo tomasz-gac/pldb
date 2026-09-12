@@ -114,6 +114,31 @@ public class TransactionMemoryTest {
 	}
 
 	@Test
+	public void aForeignDisjointCommitBetweenReadsDoesNotBounce() throws Exception {
+		// the disjoint receipt's interleaved variant: the person region's
+		// FIRST touch happens AFTER the book commit moved the world — the
+		// pin carries the captured generations, the global fast path fails,
+		// and the per-relation compare must still prove person unmoved
+		SharedDatabase store = SharedDatabase.empty();
+		Transaction people = AbstractTransaction.over(store.open("people"));
+
+		try (
+				Transaction books = AbstractTransaction.over(store.open("books"))
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
+			assertThat(books.commit().isSuccess()).isTrue();
+		}
+
+		assertThat(names(people)).isEmpty();
+		Transaction staged = people.withFacts(Collections.singletonList(
+				person(null, lval(1), lval("Ada")))).get();
+		assertThat(staged.commit()
+				.isSuccess())
+				.describedAs("only book moved — the disjoint person write must land")
+				.isTrue();
+	}
+
+	@Test
 	public void readsAreStableAcrossAForeignCommit() throws Exception {
 		// the snapshot property REST cannot promise and SQL buys with MVCC:
 		// a commit landing between my open and my read must not appear
