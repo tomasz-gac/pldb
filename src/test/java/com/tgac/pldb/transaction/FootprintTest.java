@@ -48,7 +48,7 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void agreeingUnionsMergeAndDuplicateRegionsFold() {
+	public void agreeingUnionsMergeAndDuplicateRegionsFold() throws Exception {
 		Footprint left = Footprint.of(region("person"), new Generation(1))
 				.union(Footprint.of(region("book"), new Generation(4)));
 		Footprint right = Footprint.of(region("person"), new Generation(1))
@@ -67,13 +67,13 @@ public class FootprintTest {
 		Footprint atOne = Footprint.of(region("person"), new Generation(1));
 		Footprint atTwo = Footprint.of(region("person"), new Generation(2));
 		assertThatThrownBy(() -> atOne.union(atTwo))
-				.isInstanceOf(IllegalStateException.class)
+				.isInstanceOf(Transaction.Conflict.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("different");
 	}
 
 	@Test
-	public void emptyIsTheUnionIdentity() {
+	public void emptyIsTheUnionIdentity() throws Exception {
 		Footprint some = Footprint.of(region("person"), new Generation(1));
 		assertThat(Footprint.empty().union(some)).isEqualTo(some);
 		assertThat(some.union(Footprint.empty())).isEqualTo(some);

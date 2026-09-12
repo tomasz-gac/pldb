@@ -17,8 +17,9 @@ import java.util.Objects;
  * {@link #union} of its parts' footprints; the transaction's footprint
  * is the same type at the top. The carrier never interprets leaves —
  * {@link #union} only compares them per region, and overlapping
- * regions carrying UNEQUAL pins refuse loudly: composing reads of two
- * different worlds is a structural conflict, never a silent staleness.
+ * regions carrying UNEQUAL pins refuse with {@link Transaction.Conflict}:
+ * composing reads of two different worlds IS the conflict the commit
+ * door speaks, met at composition instead of commit.
  * An empty footprint certifies vacuously: a decision that stood on no
  * reads cannot have stood on stale ones.
  */
@@ -52,12 +53,12 @@ public final class Footprint implements Pin {
 	 * composition needs source-qualified keys — a named door, not this
 	 * method.
 	 */
-	public Footprint union(Footprint other) {
+	public Footprint union(Footprint other) throws Transaction.Conflict {
 		Map<Call<Relation>, Pin> merged = new LinkedHashMap<>(pins);
 		for (Map.Entry<Call<Relation>, Pin> entry : other.pins.entrySet()) {
 			Pin resident = merged.putIfAbsent(entry.getKey(), entry.getValue());
 			if (resident != null && !Objects.equals(resident, entry.getValue())) {
-				throw new IllegalStateException("cross-world composition: region "
+				throw new Transaction.Conflict("cross-world composition: region "
 						+ entry.getKey().getRelation().getName()
 						+ " was read at two different pins — the parts saw different worlds");
 			}
