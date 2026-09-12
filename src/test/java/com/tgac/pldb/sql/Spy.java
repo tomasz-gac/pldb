@@ -1,15 +1,15 @@
 package com.tgac.pldb.sql;
 
-// ABOUTME: Statement logging for tests, ON by default: JDBC URLs route through
-// ABOUTME: p6spy, printing every executed statement to stdout; -Dsql.spy=false mutes.
+// ABOUTME: Opt-in statement logging for tests: -Dsql.spy reroutes a JDBC URL
+// ABOUTME: through p6spy, printing every executed statement to stdout.
 
 /**
- * The test suites' statement spy, ON by default: every JDBC statement —
- * the fetches, the flush inserts, the certify's lock and MAX probes,
- * the DDL — prints to stdout with parameters interpolated, via p6spy's
- * proxy driver ({@code spy.properties} holds the format). Run with
- * {@code -Dsql.spy=false} to mute. Wrap the URL at its constant:
- * {@code Spy.url("jdbc:h2:mem:...")}.
+ * The test suites' statement spy, off by default so test output stays
+ * pristine. Run with {@code -Dsql.spy} and every JDBC statement — the
+ * fetches, the flush inserts, the certify's lock and MAX probes, the
+ * DDL — prints to stdout with parameters interpolated, via p6spy's
+ * proxy driver ({@code spy.properties} holds the format). Wrap the URL
+ * at its constant: {@code Spy.url("jdbc:h2:mem:...")}.
  */
 public final class Spy {
 
@@ -17,8 +17,8 @@ public final class Spy {
 	}
 
 	public static String url(String jdbcUrl) {
-		return "false".equals(System.getProperty("sql.spy"))
-				? jdbcUrl
-				: "jdbc:p6spy:" + jdbcUrl.substring("jdbc:".length());
+		return Boolean.getBoolean("sql.spy")
+				? "jdbc:p6spy:" + jdbcUrl.substring("jdbc:".length())
+				: jdbcUrl;
 	}
 }
