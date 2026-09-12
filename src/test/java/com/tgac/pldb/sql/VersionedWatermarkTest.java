@@ -3,11 +3,14 @@ package com.tgac.pldb.sql;
 // ABOUTME: Region-grain receipts: disjoint regions of ONE relation commit across
 // ABOUTME: each other, an insert into a pinned region bounces, no column refuses.
 
+import static com.tgac.logic.finitedomain.FiniteDomain.dom;
+import static com.tgac.logic.finitedomain.domains.EnumeratedDomain.range;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
@@ -43,6 +46,9 @@ public class VersionedWatermarkTest {
 			ddl.execute("CREATE TABLE loan(member VARCHAR(16) NOT NULL, copy VARCHAR(16) NOT NULL,"
 					+ " version BIGINT NOT NULL)");
 			ddl.execute("CREATE TABLE book(isbn VARCHAR(32) NOT NULL, title VARCHAR(64) NOT NULL)");
+			ddl.execute("DROP TABLE IF EXISTS invoice");
+			ddl.execute("CREATE TABLE invoice(member VARCHAR(16) NOT NULL, due BIGINT NOT NULL,"
+					+ " version BIGINT NOT NULL)");
 			Watermark.schema(ddl);
 		}
 	}
@@ -137,6 +143,66 @@ public class VersionedWatermarkTest {
 				loan(null, lval("m1"), lval("c1")))).get();
 		assertThat(staged.commit().getCause())
 				.describedAs("the pinned empty region gained a row — the decision stood on its absence")
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
+	private static Literal invoice(AnswerSource db, Unifiable<String> member, Unifiable<Long> day) {
+		return Literal.relation("invoice")
+				.arg("member", member)
+				.arg("due", day)
+				.from(db);
+	}
+
+	/** Reads the FD-constrained region day ∈ [1,10]; the domain rides the probe. */
+	private static List<Long> earlyInvoices(AnswerSource db) {
+		Unifiable<Long> day = lvar();
+		return dom(day, range(1L, 10L))
+				.and(invoice(db, lvar(), day))
+				.solve(day)
+				.map(Term::get)
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
+	@Test
+	public void aCommitOutsideTheFdRegionDoesNotConflict() throws Exception {
+		// the pushed domain narrows the PIN, not just the fetch: the pinned
+		// region is "invoices with day in [1,10]", so a row landing at day 50
+		// never moves its MAX — relation grain would have bounced this
+		Transaction reader = transaction("fd-reader");
+		assertThat(earlyInvoices(reader)).isEmpty();
+
+		try (
+				Transaction mover = transaction("mover")
+						.withFacts(Collections.singletonList(invoice(null, lval("m9"), lval(50L)))).get()
+		) {
+			assertThat(mover.commit().isSuccess()).isTrue();
+		}
+
+		Transaction staged = reader.withFacts(Collections.singletonList(
+				invoice(null, lval("a1"), lval(5L)))).get();
+		assertThat(staged.commit()
+				.isSuccess())
+				.describedAs("day 50 lies outside the pinned domain — the FD region never moved")
+				.isTrue();
+	}
+
+	@Test
+	public void aCommitInsideTheFdRegionConflicts() throws Exception {
+		Transaction reader = transaction("fd-reader");
+		assertThat(earlyInvoices(reader)).isEmpty();
+
+		try (
+				Transaction mover = transaction("mover")
+						.withFacts(Collections.singletonList(invoice(null, lval("m9"), lval(5L)))).get()
+		) {
+			assertThat(mover.commit().isSuccess()).isTrue();
+		}
+
+		Transaction staged = reader.withFacts(Collections.singletonList(
+				invoice(null, lval("a1"), lval(7L)))).get();
+		assertThat(staged.commit().getCause())
+				.describedAs("day 5 lies inside the pinned domain — the FD region moved")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
