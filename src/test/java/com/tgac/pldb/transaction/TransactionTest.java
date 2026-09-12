@@ -156,6 +156,49 @@ public class TransactionTest {
 	}
 
 	@Test
+	public void aNeverWrittenRelationSurvivesAnUnrelatedCommit() throws Exception {
+		// person has never been written, so it has no watermark row on either
+		// side of the read — double absence proves silence (any write would
+		// have minted the row), and an unrelated book commit must not bounce it
+		Transaction reader = transaction("reader");
+		assertThat(names(reader)).isEmpty();
+
+		try (
+				Transaction bookWriter = transaction("books")
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
+			assertThat(bookWriter.commit().isSuccess()).isTrue();
+		}
+
+		reader = reader.withFacts(Collections.singletonList(
+				person(null, lval(1), lval("Ada")))).get();
+		assertThat(reader.commit()
+				.isSuccess())
+				.describedAs("person never moved — absence at pin and at commit is proof, not blindness")
+				.isTrue();
+	}
+
+	@Test
+	public void aWriteOnlyTransactionCommitsPastAnyConcurrentCommit() throws Exception {
+		// no reads recorded: an empty footprint certifies vacuously — a decision
+		// that stood on no reads cannot have stood on stale ones
+		Transaction blind = transaction("blind")
+				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
+
+		try (
+				Transaction other = transaction("other")
+						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+		) {
+			assertThat(other.commit().isSuccess()).isTrue();
+		}
+
+		assertThat(blind.commit().isSuccess()).isTrue();
+		try (Transaction check = transaction("check")) {
+			assertThat(names(check)).containsExactly("{Ada}");
+		}
+	}
+
+	@Test
 	public void anAbandonedTransactionLeavesNoTrace() throws Exception {
 		try (
 				Transaction abandoned = transaction("a")

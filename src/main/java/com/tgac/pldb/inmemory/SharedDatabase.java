@@ -64,8 +64,8 @@ public final class SharedDatabase {
 	 * The commit protocol, whole: the monitor is the commit lock, the
 	 * generation compare is the proof, the persistent grow is the flush.
 	 */
-	private synchronized boolean commit(Versioned pinned, Footprint read, java.util.List<Literal> flush) {
-		if (current.getGlobal() != pinned.getGlobal() && !covers(pinned, read)) {
+	private synchronized boolean commit(Footprint read, java.util.List<Literal> flush) {
+		if (!covers(read)) {
 			return false;
 		}
 		Database grown = current.getValue().withFacts(flush).get();
@@ -77,13 +77,15 @@ public final class SharedDatabase {
 		return true;
 	}
 
-	/** Exact per-relation marks: unlike SQL's, absence here is knowledge. */
-	private boolean covers(Versioned pinned, Footprint read) {
-		if (read.isEverything()) {
-			return false;
-		}
-		for (String relation : read.relationNames()) {
-			if (!Objects.equals(current.getMarks().get(relation), pinned.getMarks().get(relation))) {
+	/** Exact per-relation marks: absence here is knowledge either way. */
+	private boolean covers(Footprint read) {
+		for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
+			Versioned versioned = ((MarksPin) pinned.getValue()).getVersioned();
+			if (current.getGlobal() == versioned.getGlobal()) {
+				continue;
+			}
+			String relation = pinned.getKey().getRelation().getName();
+			if (!Objects.equals(current.getMarks().get(relation), versioned.getMarks().get(relation))) {
 				return false;
 			}
 		}
@@ -102,13 +104,13 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public Pin pin() {
+		public Pin pin(Call<Relation> region) {
 			return new MarksPin(captured);
 		}
 
 		@Override
-		public boolean commit(Pin pin, Footprint read, java.util.List<Literal> flush) {
-			return SharedDatabase.this.commit(((MarksPin) pin).getVersioned(), read, flush);
+		public boolean commit(Footprint read, java.util.List<Literal> flush) {
+			return SharedDatabase.this.commit(read, flush);
 		}
 
 		@Override

@@ -10,43 +10,41 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Queue;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * SIMULATED serialization: this transaction is the read-tracker — every probe
- * lands in the log, and commit hands the pin, the log's footprint and
- * the flush to the source's {@link SimulatedSerialization} door.
+ * SIMULATED serialization: this transaction is the read-tracker — every
+ * region pins at its FIRST touch, BEFORE the read it certifies (the
+ * ordering {@link SimulatedSerialization} stands on), and commit hands
+ * the pinned footprint and the flush to the source's door.
  */
 public class Simulated extends AbstractTransaction {
 
 	private final SimulatedSerialization serialization;
-	private final Queue<Call<Relation>> reads;
-	private final Pin pinAtOpen;
+	private final ConcurrentMap<Call<Relation>, Pin> reads;
 
 	Simulated(WriteBuffer writeBuffer, SimulatedSerialization serialization,
-			Queue<Call<Relation>> reads, Pin pinAtOpen) {
+			ConcurrentMap<Call<Relation>, Pin> reads) {
 		super(writeBuffer);
 		this.serialization = serialization;
 		this.reads = reads;
-		this.pinAtOpen = pinAtOpen;
 	}
 
 	@Override
 	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-		reads.add(probe);
+		reads.computeIfAbsent(probe, serialization::pin);
 		return super.answers(probe);
 	}
 
 	@Override
 	public Try<Transaction> withFacts(Collection<Literal> facts) {
 		return writeBuffer.withFacts(new ArrayList<>(facts))
-				.map(grown -> new Simulated(grown, serialization, reads, pinAtOpen));
+				.map(grown -> new Simulated(grown, serialization, reads));
 	}
 
 	@Override
 	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(pinAtOpen,
-				Footprint.of(new ArrayList<>(reads)),
+		return through(() -> serialization.commit(Footprint.of(reads),
 				writeBuffer.staged().asJava()));
 	}
 

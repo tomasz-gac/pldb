@@ -1,57 +1,41 @@
 package com.tgac.pldb.transaction;
 
-// ABOUTME: The regions a body of work read: EVERYTHING, or a set of probes —
-// ABOUTME: the certify question's scope, never interpreted by its carrier.
+// ABOUTME: The regions a body of work read, each with the pin captured at its
+// ABOUTME: first touch — the certify question's scope, never interpreted by its carrier.
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Relation;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * The read scope a certify question ranges over: {@link #EVERYTHING} when
- * the reads were not recorded (maximally conservative), or the set of
- * probe regions that were. A coarse {@link SimulatedSerialization} ignores it; a
- * finer one narrows its answer to the named relations or regions.
+ * The read scope a certify question ranges over: every probed region,
+ * paired with the {@link Pin} the source minted when that region was
+ * first read. The carrier never interprets the pins — the source
+ * answers every question about them at commit. An empty footprint
+ * certifies vacuously: a decision that stood on no reads cannot have
+ * stood on stale ones.
  */
 public final class Footprint {
 
-	public static final Footprint EVERYTHING = new Footprint(null);
+	private final Map<Call<Relation>, Pin> pins;
 
-	private final Set<Call<Relation>> regions;
-
-	private Footprint(Set<Call<Relation>> regions) {
-		this.regions = regions;
+	private Footprint(Map<Call<Relation>, Pin> pins) {
+		this.pins = pins;
 	}
 
-	public static Footprint of(Collection<Call<Relation>> regions) {
-		return new Footprint(Collections.unmodifiableSet(new LinkedHashSet<>(regions)));
+	public static Footprint of(Map<Call<Relation>, Pin> pins) {
+		return new Footprint(Collections.unmodifiableMap(new LinkedHashMap<>(pins)));
 	}
 
-	public boolean isEverything() {
-		return regions == null;
-	}
-
-	/** The probed regions; refuse on {@link #EVERYTHING} — check first. */
-	public Set<Call<Relation>> regions() {
-		if (regions == null) {
-			throw new IllegalStateException("EVERYTHING has no region enumeration");
-		}
-		return regions;
-	}
-
-	/** The relation names the regions mention; refuse on {@link #EVERYTHING}. */
-	public Set<String> relationNames() {
-		return regions().stream()
-				.map(region -> region.getRelation().getName())
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+	/** Each probed region with the pin captured at its first touch. */
+	public Map<Call<Relation>, Pin> pins() {
+		return pins;
 	}
 
 	@Override
 	public String toString() {
-		return regions == null ? "EVERYTHING" : regions.toString();
+		return pins.keySet().toString();
 	}
 }

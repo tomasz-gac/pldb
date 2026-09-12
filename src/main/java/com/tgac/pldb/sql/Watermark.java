@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
@@ -29,16 +30,17 @@ import lombok.Value;
 /**
  * Equips a source with SIMULATED serialization in plain standard SQL: a
  * private {@code watermark(relation, mark)} table with one lock row.
- * {@link #pin()} reads the snapshot's marks through the snapshot
- * connection. {@link #commit} runs on a FRESH connection from the
+ * {@link #pin} reads ONE region's mark through the snapshot connection
+ * at the region's first touch — the snapshot makes pin-before-read
+ * atomic for free. {@link #commit} runs on a FRESH connection from the
  * supplier — a snapshot cannot see the current world, and the proof is
  * exactly a question about the current world: lock the lock row
- * {@code FOR UPDATE} (serializing committers), compare the footprints'
- * relations against current marks, land the facts, bump the moved
- * relations, commit — one transaction, atomic. A relation the pin never
- * saw a row for cannot be verified once anything moved (a concurrent
- * first write is indistinguishable from none), so it conservatively
- * conflicts. {@link #schema} is the DDL door — run it before any
+ * {@code FOR UPDATE} (serializing committers), compare every footprint
+ * pin against the current marks, land the facts, bump the moved
+ * relations, commit — one transaction, atomic. A mark row is minted by
+ * a relation's first write, so a relation absent on BOTH sides of the
+ * comparison is proven unmoved — double absence is silence, not
+ * blindness. {@link #schema} is the DDL door — run it before any
  * transaction opens.
  */
 @Value
@@ -82,36 +84,34 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		source.close();
 	}
 
+	/** One region's mark as of its first read; {@code null} = no row = never written. */
 	@Value
-	private static class Marks implements Pin {
-		Map<String, Long> marks;
+	private static class Mark implements Pin {
+		Long mark;
 	}
 
 	@Override
-	public Pin pin() {
-		Map<String, Long> marks = new HashMap<>();
+	public Pin pin(Call<Relation> region) {
 		try (
 				PreparedStatement read = source.getConnection().prepareStatement(
-						"SELECT relation, mark FROM watermark");
-				ResultSet rows = read.executeQuery()
+						"SELECT mark FROM watermark WHERE relation = ?")
 		) {
-			while (rows.next()) {
-				marks.put(rows.getString(1), rows.getLong(2));
+			read.setString(1, region.getRelation().getName());
+			try (ResultSet row = read.executeQuery()) {
+				return new Mark(row.next() ? row.getLong(1) : null);
 			}
 		} catch (SQLException e) {
 			throw new IllegalStateException(id() + ": could not read the watermark", e);
 		}
-		return new Marks(marks);
 	}
 
 	@Override
-	public boolean commit(Pin pin, Footprint read, List<Literal> flush) {
-		Map<String, Long> pinned = ((Marks) pin).getMarks();
+	public boolean commit(Footprint read, List<Literal> flush) {
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {
 				Map<String, Long> current = lockAndReadMarks(commit);
-				if (!covers(pinned, current, read)) {
+				if (!covers(current, read)) {
 					commit.rollback();
 					return false;
 				}
@@ -155,18 +155,10 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		return current;
 	}
 
-	private static boolean covers(Map<String, Long> pinned, Map<String, Long> current,
-			Footprint read) {
-		if (current.getOrDefault(LOCK_ROW, 0L).equals(pinned.getOrDefault(LOCK_ROW, 0L))) {
-			return true;
-		}
-		if (read.isEverything()) {
-			return false;
-		}
-		for (String relation : read.relationNames()) {
-			Long pinMark = pinned.get(relation);
-			Long currentMark = current.get(relation);
-			if (currentMark == null || !currentMark.equals(pinMark)) {
+	private static boolean covers(Map<String, Long> current, Footprint read) {
+		for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
+			String relation = pinned.getKey().getRelation().getName();
+			if (!Objects.equals(current.get(relation), ((Mark) pinned.getValue()).getMark())) {
 				return false;
 			}
 		}

@@ -11,7 +11,7 @@ import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,7 @@ public abstract class AbstractTransaction implements Transaction {
 	final WriteBuffer writeBuffer;
 
 	public static AbstractTransaction over(SimulatedSerialization source) {
-		return new Simulated(WriteBuffer.over(source), source,
-				new ConcurrentLinkedQueue<>(), source.pin());
+		return new Simulated(WriteBuffer.over(source), source, new ConcurrentHashMap<>());
 	}
 
 	public static AbstractTransaction over(NativeSerialization source) {
