@@ -10,12 +10,15 @@ import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
+import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -115,32 +118,44 @@ public class AnswerStore {
 
 		Iterable<Answer> answers(Call<Relation> probe) {
 			Array<Term<Object>> args = Answers.positions(probe.getArguments());
-			Set<Reified<?>> candidates = candidates(probe.getRelation(), args);
-			return byImage.iterator()
-					.filter(row -> candidates == null || candidates.contains(row._1))
-					.filter(row -> matches(args, Answers.positions(row._1)))
-					.map(row -> Answer.of(row._1, row._2))
-					.collect(Array.collector());
+			HashSet<Reified<?>> candidates = candidates(probe.getRelation(), args);
+			ArrayList<Answer> matched = new ArrayList<>();
+			for (Tuple2<Reified<?>, Condition> row : byImage) {
+				if (candidates != null && !candidates.contains(row._1)) {
+					continue;
+				}
+				if (matches(args, Answers.positions(row._1))) {
+					matched.add(row.apply(Answer::of));
+				}
+			}
+			return matched;
 		}
 
 		long estimate(Call<Relation> probe) {
-			Set<Reified<?>> candidates =
+			HashSet<Reified<?>> candidates =
 					candidates(probe.getRelation(), Answers.positions(probe.getArguments()));
 			return candidates == null ? byImage.size() : candidates.size();
 		}
 
-		/** Ground indexed positions intersect their buckets; null means "all rows". */
-		private Set<Reified<?>> candidates(Relation relation, Array<Term<Object>> args) {
-			Set<Reified<?>> narrowed = null;
+		/**
+		 * Ground indexed positions intersect their buckets; null means "all
+		 * rows". The scratch is MUTABLE java — the stored index stays
+		 * persistent, the per-probe computation never does.
+		 */
+		private HashSet<Reified<?>> candidates(Relation relation, Array<Term<Object>> args) {
+			HashSet<Reified<?>> narrowed = null;
 			for (int i = 0; i < args.size(); i++) {
 				if (!relation.getArgs()[i].isIndexed() || !args.get(i).asVal().isDefined()) {
 					continue;
 				}
 				Object value = args.get(i).get();
-				Set<Reified<?>> bucket = byColumn.get(i)
-						.map(column -> column.matching(value))
-						.getOrElse(LinkedHashSet.empty());
-				narrowed = narrowed == null ? bucket : narrowed.intersect(bucket);
+				ColumnIndex column = byColumn.getOrElse(i, null);
+				HashSet<Reified<?>> bucket = column == null ? new HashSet<>() : column.matching(value);
+				if (narrowed == null) {
+					narrowed = bucket;
+				} else {
+					narrowed.retainAll(bucket);
+				}
 			}
 			return narrowed;
 		}
@@ -179,10 +194,13 @@ public class AnswerStore {
 			return new ColumnIndex(buckets.put(key, bucket.add(image)), wide);
 		}
 
-		/** The value's bucket plus every row free at this column. */
-		Set<Reified<?>> matching(Object value) {
+		/** The value's bucket plus every row free at this column, as mutable scratch. */
+		HashSet<Reified<?>> matching(Object value) {
 			Object key = value == null ? NULL_KEY : value;
-			return buckets.getOrElse(key, LinkedHashSet.empty()).union(wide);
+			HashSet<Reified<?>> matched = new HashSet<>();
+			buckets.getOrElse(key, LinkedHashSet.empty()).forEach(matched::add);
+			wide.forEach(matched::add);
+			return matched;
 		}
 	}
 }
