@@ -30,8 +30,13 @@ public class Simulated extends AbstractTransaction {
 
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
-		reads.computeIfAbsent(probe, serialization::pin);
-		return super.answers(probe);
+		Pinned<Iterable<Answer>> read = serialization.read(probe);
+		// keep the FIRST touch's pin: a later read under a moved world then
+		// fails covers at commit — the conservative direction; the dangerous
+		// inverse (fresh pin certifying stale data) is unrepresentable
+		// because pin and data arrive as one Pinned
+		reads.putIfAbsent(probe, read.getPin());
+		return writeBuffer.overlay(probe, read.getValue());
 	}
 
 	@Override

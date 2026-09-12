@@ -9,6 +9,7 @@ import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
+import com.tgac.pldb.transaction.Pinned;
 import com.tgac.pldb.transaction.SimulatedSerialization;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,9 +29,9 @@ import lombok.Value;
 /**
  * Equips a source with SIMULATED serialization in plain standard SQL: a
  * private {@code watermark(relation, mark)} table with one lock row.
- * {@link #pin} reads ONE region's mark through the snapshot connection
- * at the region's first touch — the snapshot makes pin-before-read
- * atomic for free. {@link #commit} runs on a FRESH connection from the
+ * {@link #read} answers a probe WITH its region's mark, mark captured
+ * first through the snapshot connection — the snapshot makes the
+ * ordering moot. {@link #commit} runs on a FRESH connection from the
  * supplier — a snapshot cannot see the current world, and the proof is
  * exactly a question about the current world: lock the lock row
  * {@code FOR UPDATE} (serializing committers), compare every footprint
@@ -88,13 +89,19 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		Long mark;
 	}
 
+	/** Mark BEFORE rows — capture-before, though a snapshot makes the order moot. */
 	@Override
-	public Pin pin(Call<Relation> region) {
+	public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
+		Pin mark = markOf(probe.getRelation().getName());
+		return Pinned.of(source.answers(probe), mark);
+	}
+
+	private Pin markOf(String relation) {
 		try (
 				PreparedStatement read = source.getConnection().prepareStatement(
 						"SELECT mark FROM watermark WHERE relation = ?")
 		) {
-			read.setString(1, region.getRelation().getName());
+			read.setString(1, relation);
 			try (ResultSet row = read.executeQuery()) {
 				return new Mark(row.next() ? row.getLong(1) : null);
 			}

@@ -57,12 +57,21 @@ public class WriteBuffer implements AnswerSource {
 
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
+		return overlay(probe, base.answers(probe));
+	}
+
+	/**
+	 * The staged delta unioned over an already-fetched base — for callers
+	 * that read the base themselves (a pinned read whose data must be the
+	 * rows its pin certifies).
+	 */
+	public Iterable<Answer> overlay(Call<Relation> probe, Iterable<Answer> baseAnswers) {
 		// TODO : There should be subsumption detection here if delta answers subsume base.
 		// Same-key rows ⊕-fold in the cell (a staged duplicate is inert, conditions
 		// join by absorption); a wide delta row shadowing a DIFFERENT base key is
 		// the open subsumption case above.
 		JoinMap<Reified<?>, Condition> folded = Stream.concat(
-						StreamSupport.stream(base.answers(probe).spliterator(), false),
+						StreamSupport.stream(baseAnswers.spliterator(), false),
 						StreamSupport.stream(delta.answers(probe).spliterator(), false))
 				.reduce(JoinMap.empty(Condition.RING),
 						(map, answer) -> map.append(answer.getReified(), answer.getCondition()).getOrElse(map),

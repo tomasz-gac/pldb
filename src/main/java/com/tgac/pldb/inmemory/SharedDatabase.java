@@ -9,6 +9,7 @@ import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
+import com.tgac.pldb.transaction.Pinned;
 import com.tgac.pldb.transaction.SimulatedSerialization;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,12 +79,12 @@ public final class SharedDatabase {
 	/** Exact per-relation marks: absence here is knowledge either way. */
 	private boolean covers(Footprint read) {
 		for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
-			Versioned versioned = ((MarksPin) pinned.getValue()).getVersioned();
-			if (current.getGlobal() == versioned.getGlobal()) {
+			MarksPin pin = (MarksPin) pinned.getValue();
+			if (current.getGlobal() == pin.getGlobal()) {
 				continue;
 			}
 			String relation = pinned.getKey().getRelation().getName();
-			if (!Objects.equals(current.getMarks().get(relation), versioned.getMarks().get(relation))) {
+			if (!Objects.equals(current.getMarks().get(relation), pin.getMarks().get(relation))) {
 				return false;
 			}
 		}
@@ -102,8 +103,9 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public Pin pin(Call<Relation> region) {
-			return new MarksPin(captured);
+		public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
+			return Pinned.of(captured.getValue().answers(probe),
+					new MarksPin(captured.getMarks(), captured.getGlobal()));
 		}
 
 		@Override
@@ -132,8 +134,15 @@ public final class SharedDatabase {
 		}
 	}
 
+	/**
+	 * The captured generations, WITHOUT the database value: pin equality
+	 * is world identity (marks and global generation), never a content
+	 * comparison — two pins of one world are equal, any commit between
+	 * them makes them not.
+	 */
 	@Value
 	private static class MarksPin implements Pin {
-		Versioned versioned;
+		Map<String, Long> marks;
+		long global;
 	}
 }

@@ -1,46 +1,48 @@
 package com.tgac.pldb.transaction;
 
-// ABOUTME: The pin-before-read contract: a Simulated transaction pins a region at
-// ABOUTME: its FIRST touch, before the read it certifies, and never twice.
+// ABOUTME: The pinned-read contract: every touch reads data WITH its pin, the
+// ABOUTME: footprint keeps the FIRST touch's pin, and commit sees exactly that one.
 
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Value;
 import org.junit.Test;
 
 public class PinAtFirstTouchTest {
 
-	/** Records the order of its door calls; answers nothing. */
+	@Value
+	private static class Generation implements Pin {
+		int generation;
+	}
+
+	/** Mints a FRESH generation pin per read; records its door calls. */
 	private static final class Recording implements SimulatedSerialization {
 		private final List<String> events = new ArrayList<>();
+		private final List<Pin> committed = new ArrayList<>();
+		private int generation;
 
 		@Override
-		public Pin pin(Call<Relation> region) {
-			events.add("pin:" + region.getRelation().getName());
-			return new Pin() {
-			};
+		public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
+			events.add("read:" + probe.getRelation().getName());
+			return Pinned.of(Collections.emptyList(), new Generation(generation++));
 		}
 
 		@Override
 		public boolean commit(Footprint read, List<Literal> flush) {
 			events.add("commit:" + read.pins().size());
+			committed.addAll(read.pins().values());
 			return true;
-		}
-
-		@Override
-		public Iterable<Answer> answers(Call<Relation> probe) {
-			events.add("answers:" + probe.getRelation().getName());
-			return Collections.emptyList();
 		}
 
 		@Override
@@ -66,15 +68,19 @@ public class PinAtFirstTouchTest {
 	}
 
 	@Test
-	public void aRegionPinsAtFirstTouchBeforeItsReadAndOnlyOnce() throws Exception {
+	public void everyTouchReadsButTheFootprintKeepsTheFirstPin() throws Exception {
 		Recording recording = new Recording();
 		try (Transaction transaction = AbstractTransaction.over(recording)) {
 			solve(transaction);
 			solve(transaction);
 			assertThat(transaction.commit().isSuccess()).isTrue();
 		}
+		// two touches, two reads (data is needed every time), ONE footprint
+		// entry carrying the FIRST read's pin — the later, fresher pin is
+		// discarded, the conservative direction
 		assertThat(recording.events).containsExactly(
-				"pin:person", "answers:person", "answers:person", "commit:1");
+				"read:person", "read:person", "commit:1");
+		assertThat(recording.committed).containsExactly(new Generation(0));
 	}
 
 	private static void solve(Transaction transaction) {
