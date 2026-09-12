@@ -186,6 +186,30 @@ public class LiveSourceTest {
 				.isTrue();
 	}
 
+	@Test
+	public void aSharedSourceServesEachTransactionTheCurrentWorld() throws Exception {
+		// TWO transactions over ONE live source: the first's reads must not
+		// poison the second's — a fresh pin beside source-cached stale rows
+		// would be the capture contract violated (data the pin never named)
+		Watermark shared = Watermark.over(
+				CachingSqlFetch.live("shared", connection()), this::connection);
+		Transaction first = AbstractTransaction.over(shared);
+		assertThat(names(first.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
+
+		try (
+				Transaction mover = transaction("mover")
+						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+		) {
+			assertThat(mover.commit().isSuccess()).isTrue();
+		}
+
+		Transaction second = AbstractTransaction.over(shared);
+		assertThat(names(second.answers(probe(person(null, lvar(), lvar())))))
+				.describedAs("the second transaction's first touch must read the CURRENT world,"
+						+ " not the first transaction's cached one")
+				.containsExactly("{Array({1}, {Ada})}");
+	}
+
 	private Transaction transaction(String id) {
 		return AbstractTransaction.over(
 				Watermark.over(CachingSqlFetch.live(id, connection()), this::connection));

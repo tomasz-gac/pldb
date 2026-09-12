@@ -63,11 +63,15 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 		Long max;
 	}
 
-	/** Pin BEFORE rows — capture-before; on the live lane the ordering is load-bearing. */
+	/**
+	 * Pin BEFORE rows, and the rows RAW — beneath the source's shared
+	 * cache — so pin and data are minted from one world; on the live
+	 * lane both orderings are load-bearing.
+	 */
 	@Override
 	public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
 		Pin pin = new RegionMax(maxVersion(source.getConnection(), probe));
-		return Pinned.of(source.answers(probe), pin);
+		return Pinned.of(source.getFetch().answers(probe), pin);
 	}
 
 	@Override

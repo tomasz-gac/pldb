@@ -49,10 +49,10 @@ import lombok.extern.slf4j.Slf4j;
 public class Watermark implements JdbcSource, SimulatedSerialization {
 	private static final String LOCK_ROW = "*";
 
-	JdbcSource source;
+	CachingSqlFetch source;
 	Supplier<Connection> commits;
 
-	public static Watermark over(JdbcSource source, Supplier<Connection> commits) {
+	public static Watermark over(CachingSqlFetch source, Supplier<Connection> commits) {
 		return new Watermark(source, commits);
 	}
 
@@ -91,11 +91,16 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		Long mark;
 	}
 
-	/** Mark BEFORE rows — capture-before, though a snapshot makes the order moot. */
+	/**
+	 * Mark BEFORE rows, and the rows RAW — beneath the source's shared
+	 * cache — so pin and data are minted from one world: a cached row
+	 * from an earlier reader beside a fresh mark would be data the pin
+	 * never named.
+	 */
 	@Override
 	public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
 		Pin mark = markOf(probe.getRelation().getName());
-		return Pinned.of(source.answers(probe), mark);
+		return Pinned.of(source.getFetch().answers(probe), mark);
 	}
 
 	private Pin markOf(String relation) {
