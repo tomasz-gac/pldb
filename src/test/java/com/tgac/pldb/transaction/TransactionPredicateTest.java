@@ -7,6 +7,7 @@ import static com.tgac.logic.unification.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.sql.Spy;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.sql.SerializableSource;
@@ -25,7 +26,7 @@ public class TransactionPredicateTest {
 
 	@Before
 	public void openDatabase() throws SQLException {
-		connection = DriverManager.getConnection("jdbc:h2:mem:");
+		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
 	}
 
 	@After

@@ -62,7 +62,7 @@ public class SqlPushdownTest {
 
 	@Before
 	public void loadH2() throws SQLException {
-		connection = DriverManager.getConnection("jdbc:h2:mem:");
+		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE person(id BIGINT, name VARCHAR(64))");
 			ddl.execute("INSERT INTO person VALUES (1, 'Ada'), (2, 'Alan'), (3, 'Kurt')");

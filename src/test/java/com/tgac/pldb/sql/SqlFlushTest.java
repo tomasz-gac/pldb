@@ -30,7 +30,7 @@ public class SqlFlushTest {
 
 	@Before
 	public void openDatabase() throws SQLException {
-		connection = DriverManager.getConnection("jdbc:h2:mem:");
+		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE person(id INT, name VARCHAR(64))");
 			ddl.execute("CREATE TABLE visited(city VARCHAR(64))");

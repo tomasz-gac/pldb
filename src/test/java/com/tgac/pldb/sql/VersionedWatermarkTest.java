@@ -27,7 +27,7 @@ import org.junit.Test;
 
 public class VersionedWatermarkTest {
 
-	private static final String URL = "jdbc:h2:mem:versioned;DB_CLOSE_DELAY=-1";
+	private static final String URL = Spy.url("jdbc:h2:mem:versioned;DB_CLOSE_DELAY=-1");
 
 	private final List<Connection> opened = new ArrayList<>();
 
