@@ -2,11 +2,9 @@ package com.tgac.pldb.transaction;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,7 +29,7 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		reads.computeIfAbsent(probe, serialization::pin);
 		return super.answers(probe);
 	}

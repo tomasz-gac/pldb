@@ -108,7 +108,7 @@ public class SqlTheoryBatteryTest {
 		return StreamSupport.stream(reference.answers(
 								Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
 						.spliterator(), false)
-				.map(answer -> Fact.of(relation, Answers.values(answer._1)));
+				.map(answer -> Fact.of(relation, Answers.values(answer.getReified())));
 	}
 
 	@Before

@@ -14,7 +14,6 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.tabling.Tabling;
 import com.tgac.logic.unification.MiniKanren;
@@ -26,7 +25,6 @@ import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.constraints.TableConstraints;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,8 +85,8 @@ public class Literal implements Goal, Bounded, Postable {
 		public Goal read(Literal lit) {
 			return lit.lookup((probe, anchor) ->
 					StreamSupport.stream(source.answers(probe).spliterator(), false)
-							.flatMap(answer -> answer._2.conjuncts().toJavaStream()
-									.map(conjunct -> (Goal) Residues.restate(answer._1, conjunct, anchor)))
+							.flatMap(answer -> answer.getCondition().conjuncts().toJavaStream()
+									.map(conjunct -> (Goal) Residues.restate(answer.getReified(), conjunct, anchor)))
 							.reduce(Goal::or)
 							.orElseGet(Goal::failure));
 		}
@@ -313,9 +311,9 @@ public class Literal implements Goal, Bounded, Postable {
 	}
 
 	/** One answer, forked per condition conjunct, each restated at the anchor. */
-	private static Goal deliver(Tuple2<Reified<?>, Condition> answer, Unifiable<?> anchor) {
-		return answer._2.conjuncts().toJavaStream()
-				.map(conjunct -> (Goal) Residues.restate(answer._1, conjunct, anchor))
+	private static Goal deliver(Answer answer, Unifiable<?> anchor) {
+		return answer.getCondition().conjuncts().toJavaStream()
+				.map(conjunct -> (Goal) Residues.restate(answer.getReified(), conjunct, anchor))
 				.reduce(Goal::or)
 				.orElseGet(Goal::failure);
 	}

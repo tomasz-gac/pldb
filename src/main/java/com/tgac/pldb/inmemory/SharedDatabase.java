@@ -4,14 +4,12 @@ package com.tgac.pldb.inmemory;
 // ABOUTME: values, opened as snapshots with simulated serialization per relation.
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
 import com.tgac.pldb.transaction.SimulatedSerialization;
-import io.vavr.Tuple2;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -114,7 +112,7 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+		public Iterable<Answer> answers(Call<Relation> probe) {
 			return captured.getValue().answers(probe);
 		}
 

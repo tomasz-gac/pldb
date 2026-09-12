@@ -4,10 +4,9 @@ import static com.tgac.functional.Exceptions.throwingBiOp;
 
 import com.tgac.functional.Streams;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.LVal;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.inmemory.events.ChangeType;
 import com.tgac.pldb.inmemory.events.FactsChanged;
 import com.tgac.pldb.relations.Answers;
@@ -71,7 +70,7 @@ public abstract class AbstractIndexedDatabase implements Database {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		// the index speaks Term vocabulary directly: a ground position keys
 		// its (indexed) bucket — null included, a null cell built a null
 		// bucket at insert — a free position selects nothing; non-indexed
@@ -85,7 +84,7 @@ public abstract class AbstractIndexedDatabase implements Database {
 		Relation relation = probe.getRelation();
 		Iterable<Fact> bucket = extractDataFromIndex(getIndices(relation,
 				Answers.positions(probe.getArguments())));
-		List<Tuple2<Reified<?>, Condition>> rows = StreamSupport.stream(bucket.spliterator(), false)
+		List<Answer> rows = StreamSupport.stream(bucket.spliterator(), false)
 				.map(Answers::answer)
 				.collect(Collectors.toList());
 		if (log.isDebugEnabled()) {

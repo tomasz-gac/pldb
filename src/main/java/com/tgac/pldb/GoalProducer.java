@@ -18,11 +18,9 @@ import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.tabling.Table;
 import com.tgac.logic.tabling.TableEntry;
 import com.tgac.logic.tabling.Tabling;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -50,14 +48,14 @@ public final class GoalProducer implements AnswerProducer {
 	}
 
 	@Override
-	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit) {
+	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Answer> emit) {
 		Unifiable<Object> anchor = lval(heads.map(Unifiable::getObjectUnifiable));
 		Goal seeded = Conjunction.of(
 				Residues.restate(probe.getArguments(), probe.getResidues(), anchor),
 				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));
 		return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
 				Residues.all(answerPkg, anchor).flatMap(answer ->
-						emit.emit(Tuple.of(answer._1, Condition.of(answer._2)))));
+						emit.emit(Answer.of(answer._1, Condition.of(answer._2)))));
 	}
 
 	@Override

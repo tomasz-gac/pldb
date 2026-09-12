@@ -10,8 +10,6 @@ import com.tgac.logic.unification.LVal;
 import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -28,8 +26,8 @@ import lombok.NoArgsConstructor;
 public final class Answers {
 
 	/** A fact as the answer shape: its row reified ground, conditioned ONE. */
-	public static Tuple2<Reified<?>, Condition> answer(Fact fact) {
-		return Tuple.of((Reified<?>) lval(fact.getValues()
+	public static Answer answer(Fact fact) {
+		return Answer.of((Reified<?>) lval(fact.getValues()
 				.map(Object.class::cast)
 				.map(LVal::lval)), Condition.ONE);
 	}

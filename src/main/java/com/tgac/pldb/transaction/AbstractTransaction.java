@@ -5,11 +5,9 @@ package com.tgac.pldb.transaction;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
@@ -52,7 +50,7 @@ public abstract class AbstractTransaction implements Transaction {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		return writeBuffer.answers(probe);
 	}
 

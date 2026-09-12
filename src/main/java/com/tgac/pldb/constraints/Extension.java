@@ -19,9 +19,9 @@ import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.collection.IndexedSeq;
 import java.util.List;
@@ -69,10 +69,10 @@ final class Extension {
 	}
 
 	/** Answers ⊕-folded per row: duplicate derivations factor by distributivity. */
-	static JoinMap<Reified<?>, Condition> fold(Iterable<Tuple2<Reified<?>, Condition>> answers) {
+	static JoinMap<Reified<?>, Condition> fold(Iterable<Answer> answers) {
 		return StreamSupport.stream(answers.spliterator(), false)
 				.reduce(JoinMap.empty(Condition.RING),
-						(l, r) -> r.apply(l::append).getOrElse(l),
+						(l, r) -> l.append(r.getReified(), r.getCondition()).getOrElse(l),
 						Exceptions.throwingBiOp(UnsupportedOperationException::new));
 	}
 

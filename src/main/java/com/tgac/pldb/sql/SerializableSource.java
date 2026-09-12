@@ -4,12 +4,10 @@ package com.tgac.pldb.sql;
 // ABOUTME: isolation, its backend's conflict dialect recognized at the commit door.
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.NativeSerialization;
-import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -94,7 +92,7 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		return inner.answers(probe);
 	}
 

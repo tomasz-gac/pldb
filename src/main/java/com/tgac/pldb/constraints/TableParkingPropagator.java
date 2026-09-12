@@ -25,10 +25,10 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerProducer;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -118,7 +118,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 */
 	private Fiber<JoinMap<Reified<?>, Condition>> extension(Call<Relation> probe, Package pkg) {
 		Scope sub = Scope.scope("TableParkingPropagatorProduction");
-		Queue<Tuple2<Reified<?>, Condition>> delivered = new ConcurrentLinkedQueue<>();
+		Queue<Answer> delivered = new ConcurrentLinkedQueue<>();
 		return Fiber.claim(sub, producer.apply(pkg).produce(probe, answer -> {
 					delivered.add(answer);
 					return Fiber.done(Nothing.nothing());

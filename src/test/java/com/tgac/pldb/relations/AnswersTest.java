@@ -7,8 +7,6 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import org.junit.Test;
 
@@ -20,10 +18,10 @@ public class AnswersTest {
 	@Test
 	public void aFactEncodesAsAGroundRowAtOne() {
 		Fact fact = Fact.of(person, Array.of(1L, "Alan"));
-		Tuple2<Reified<?>, Condition> answer = Answers.answer(fact);
-		assertThat(answer._2).isEqualTo(Condition.ONE);
-		assertThat(answer._1.isGround()).isTrue();
-		assertThat(Answers.values(answer._1).toJavaList()).containsExactly(1L, "Alan");
+		Answer answer = Answers.answer(fact);
+		assertThat(answer.getCondition()).isEqualTo(Condition.ONE);
+		assertThat(answer.getReified().isGround()).isTrue();
+		assertThat(Answers.values(answer.getReified()).toJavaList()).containsExactly(1L, "Alan");
 	}
 
 	@Test
@@ -31,7 +29,7 @@ public class AnswersTest {
 		// the braces gotcha: a reified term's toString renders decoration;
 		// the codec hands back the VALUES, never their rendering
 		Fact fact = Fact.of(person, Array.of(1L, "Alan"));
-		Object first = Answers.values(Answers.answer(fact)._1).get(0);
+		Object first = Answers.values(Answers.answer(fact).getReified()).get(0);
 		assertThat(first).isInstanceOf(Long.class).isEqualTo(1L);
 	}
 

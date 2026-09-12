@@ -6,13 +6,11 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.sql.compiler.FiniteDomainSqlCompiler;
 import com.tgac.pldb.sql.compiler.NogoodSqlCompiler;
-import io.vavr.Tuple2;
 import java.sql.Connection;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -99,7 +97,7 @@ public class CachingSqlFetch implements JdbcSource {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		return cached.answers(probe);
 	}
 

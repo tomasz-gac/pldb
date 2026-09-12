@@ -14,10 +14,9 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.goals.optimizer.Bounded;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.constraints.Support;
 import com.tgac.pldb.constraints.TableConstraints;
 import com.tgac.pldb.inmemory.Database;
@@ -26,7 +25,6 @@ import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -109,7 +107,7 @@ public class TableConstraintsTest {
 		// pricing at Long.MAX_VALUE
 		AnswerSource barrier = new AnswerSource() {
 			@Override
-			public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+			public Iterable<Answer> answers(Call<Relation> probe) {
 				return db.answers(probe);
 			}
 

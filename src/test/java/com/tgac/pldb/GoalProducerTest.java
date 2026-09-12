@@ -13,16 +13,15 @@ import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,8 +81,8 @@ public class GoalProducerTest {
 	}
 
 	/** Drive produce to completion, collecting the emissions. */
-	private static List<Tuple2<Reified<?>, Condition>> drain(AnswerProducer source, Call<Relation> probe) {
-		List<Tuple2<Reified<?>, Condition>> collected = new ArrayList<>();
+	private static List<Answer> drain(AnswerProducer source, Call<Relation> probe) {
+		List<Answer> collected = new ArrayList<>();
 		new BreadthFirstScheduler<>(source.produce(probe, answer -> {
 			collected.add(answer);
 			return Fiber.done(Nothing.nothing());
@@ -108,7 +107,7 @@ public class GoalProducerTest {
 		// answers it asked for, and the wrapped source is never re-hit
 		GoalProducer source = producer();
 		drain(source, probe(null, null));
-		List<Tuple2<Reified<?>, Condition>> narrow = drain(source, probe(2L, null));
+		List<Answer> narrow = drain(source, probe(2L, null));
 		assertThat(hits.get()).isEqualTo(1);
 		assertThat(narrow).hasSize(1);
 	}
@@ -117,7 +116,7 @@ public class GoalProducerTest {
 	public void duplicateArrivalsFoldInTheCell() {
 		// dedup is the cell join's own algebra: a duplicate arrival is an
 		// inert fold — no log entry, no emission
-		Tuple2<Reified<?>, Condition> row = db.answers(probe(2L, null)).iterator().next();
+		Answer row = db.answers(probe(2L, null)).iterator().next();
 		AnswerSource stuttering = probe -> Arrays.asList(row, row, row);
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();

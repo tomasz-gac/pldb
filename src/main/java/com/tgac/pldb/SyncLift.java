@@ -7,10 +7,8 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Emitter;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import lombok.Value;
 
 /**
@@ -27,9 +25,9 @@ class SyncLift implements AnswerProducer {
 	AnswerSource source;
 
 	@Override
-	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit) {
+	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Answer> emit) {
 		Fiber<Nothing> emissions = Fiber.done(Nothing.nothing());
-		for (Tuple2<Reified<?>, Condition> answer : source.answers(probe)) {
+		for (Answer answer : source.answers(probe)) {
 			emissions = emissions.flatMap(emitted -> emit.emit(answer));
 		}
 		return emissions;

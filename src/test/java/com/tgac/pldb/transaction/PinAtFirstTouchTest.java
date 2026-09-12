@@ -7,13 +7,11 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +38,7 @@ public class PinAtFirstTouchTest {
 		}
 
 		@Override
-		public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+		public Iterable<Answer> answers(Call<Relation> probe) {
 			events.add("answers:" + probe.getRelation().getName());
 			return Collections.emptyList();
 		}

@@ -18,11 +18,11 @@ import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.pldb.inmemory.Database;
@@ -31,7 +31,6 @@ import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -273,7 +272,7 @@ public class TableParkingPropagatorTest {
 		GoalProducer producing = GoalProducer.of(rRel(),
 				exclude(gi.unifies(2)), Array.of(gi, gt), Table.empty());
 		Call<Relation> wide = Call.of(rRel(), (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
-		List<Tuple2<Reified<?>, Condition>> canned = new ArrayList<>();
+		List<Answer> canned = new ArrayList<>();
 		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {
 			canned.add(answer);
 			return Fiber.done(Nothing.nothing());

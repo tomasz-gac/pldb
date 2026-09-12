@@ -5,9 +5,8 @@ package com.tgac.pldb;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 
 /**
  * A source of answers: what a relation lookup consumes. The probe IS the
@@ -26,7 +25,7 @@ import io.vavr.Tuple2;
  */
 public interface AnswerSource {
 
-	Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe);
+	Iterable<Answer> answers(Call<Relation> probe);
 
 	/**
 	 * Upper bound on the answers {@link #answers} would yield — the
@@ -35,12 +34,12 @@ public interface AnswerSource {
 	 * counts, backends with sized buckets should override.
 	 */
 	default long estimate(Call<Relation> probe) {
-		Iterable<Tuple2<Reified<?>, Condition>> bucket = answers(probe);
+		Iterable<Answer> bucket = answers(probe);
 		if (bucket instanceof java.util.Collection) {
 			return ((java.util.Collection<?>) bucket).size();
 		}
 		long n = 0;
-		for (@SuppressWarnings("unused") Tuple2<Reified<?>, Condition> a : bucket) {
+		for (@SuppressWarnings("unused") Answer a : bucket) {
 			n++;
 		}
 		return n;

@@ -11,9 +11,8 @@ import com.tgac.logic.goals.optimizer.CascadingOptimizer;
 import com.tgac.logic.goals.optimizer.Optimizer;
 import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.inmemory.Trigger;
@@ -21,7 +20,6 @@ import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +55,8 @@ public class PlannerTest {
 		}
 
 		@Override
-		public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
-			List<Tuple2<Reified<?>, Condition>> out = new ArrayList<>();
+		public Iterable<Answer> answers(Call<Relation> probe) {
+			List<Answer> out = new ArrayList<>();
 			inner.answers(probe).forEach(row -> {
 				yielded.incrementAndGet();
 				out.add(row);

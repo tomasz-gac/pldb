@@ -7,10 +7,8 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Emitter;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 
 /**
  * The seam's ASYNC kind — the primary kind for anything that computes or
@@ -27,7 +25,7 @@ import io.vavr.Tuple2;
  */
 public interface AnswerProducer {
 
-	Fiber<Nothing> produce(Call<Relation> probe, Emitter<Tuple2<Reified<?>, Condition>> emit);
+	Fiber<Nothing> produce(Call<Relation> probe, Emitter<Answer> emit);
 
 	/** Upper bound on produce's emissions — pricing, always synchronous. */
 	default long estimate(Call<Relation> probe) {

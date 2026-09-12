@@ -8,12 +8,12 @@ import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
 import java.util.List;
@@ -56,7 +56,7 @@ public class WriteBuffer implements AnswerSource {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		// TODO : There should be subsumption detection here if delta answers subsume base.
 		// Same-key rows ⊕-fold in the cell (a staged duplicate is inert, conditions
 		// join by absorption); a wide delta row shadowing a DIFFERENT base key is
@@ -65,10 +65,11 @@ public class WriteBuffer implements AnswerSource {
 						StreamSupport.stream(base.answers(probe).spliterator(), false),
 						StreamSupport.stream(delta.answers(probe).spliterator(), false))
 				.reduce(JoinMap.empty(Condition.RING),
-						(map, answer) -> answer.apply(map::append).getOrElse(map),
+						(map, answer) -> map.append(answer.getReified(), answer.getCondition()).getOrElse(map),
 						Exceptions.throwingBiOp(UnsupportedOperationException::new));
 		return IntStream.range(0, folded.size())
 				.mapToObj(folded::get)
+				.map(Answer::of)
 				.collect(Collectors.toList());
 	}
 

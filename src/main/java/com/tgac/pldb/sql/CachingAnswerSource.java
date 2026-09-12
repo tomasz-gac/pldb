@@ -5,14 +5,13 @@ package com.tgac.pldb.sql;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +61,7 @@ public final class CachingAnswerSource implements AnswerSource {
 	}
 
 	@Override
-	public synchronized Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public synchronized Iterable<Answer> answers(Call<Relation> probe) {
 		if (!covers(probe)) {
 			add(probe, delegate.answers(probe));
 			covered.computeIfAbsent(probe.getRelation(), r -> new ArrayList<>())
@@ -89,24 +88,24 @@ public final class CachingAnswerSource implements AnswerSource {
 				.anyMatch(prior -> prior.subsumes(probe));
 	}
 
-	private void add(Call<Relation> probe, Iterable<Tuple2<Reified<?>, Condition>> answers) {
+	private void add(Call<Relation> probe, Iterable<Answer> answers) {
 		// every incoming row matches the originating probe, so any resident
 		// duplicate does too: the probe pattern's own (indexed) bucket is the
 		// whole dedup universe
 		Relation relation = probe.getRelation();
-		Set<Tuple2<Reified<?>, Condition>> resident = new HashSet<>();
-		for (Tuple2<Reified<?>, Condition> fact : cache.answers(probe)) {
+		Set<Answer> resident = new HashSet<>();
+		for (Answer fact : cache.answers(probe)) {
 			resident.add(fact);
 		}
 		List<Fact> fresh = new ArrayList<>();
-		for (Tuple2<Reified<?>, Condition> answer : answers) {
-			if (!Condition.ONE.equals(answer._2)) {
+		for (Answer answer : answers) {
+			if (!Condition.ONE.equals(answer.getCondition())) {
 				// the pool is ground; a conditional answer cannot land without
 				// dropping its condition — under-delivery — so refuse
 				throw new IllegalStateException(
 						"conditional answers cannot land in the ground pool: " + answer);
 			}
-			Fact row = Fact.of(relation, Answers.values(answer._1));
+			Fact row = Fact.of(relation, Answers.values(answer.getReified()));
 			if (!resident.contains(answer)) {
 				fresh.add(row);
 			}

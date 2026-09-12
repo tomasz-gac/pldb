@@ -127,6 +127,6 @@ public interface Constraint extends Function2<FactsChanged, Database, Optional<S
 	/** The integrity tier reads GROUND rows: answers decoded back to facts. */
 	static Stream<Fact> scan(Database db, Call<Relation> probe) {
 		return StreamSupport.stream(db.answers(probe).spliterator(), false)
-				.map(answer -> Fact.of(probe.getRelation(), Answers.values(answer._1)));
+				.map(answer -> Fact.of(probe.getRelation(), Answers.values(answer.getReified())));
 	}
 }

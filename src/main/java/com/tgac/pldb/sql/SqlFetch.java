@@ -6,11 +6,10 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
-import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Property;
@@ -100,10 +99,10 @@ final class SqlFetch implements JdbcSource {
 	}
 
 	@Override
-	public synchronized Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public synchronized Iterable<Answer> answers(Call<Relation> probe) {
 		Relation relation = probe.getRelation();
 		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
-		List<Tuple2<Reified<?>, Condition>> answers = new ArrayList<>();
+		List<Answer> answers = new ArrayList<>();
 		for (Fact fact : rows(relation, args, push(relation, probe.getResidues()))) {
 			answers.add(Answers.answer(fact));
 		}

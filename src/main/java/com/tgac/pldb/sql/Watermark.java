@@ -4,14 +4,12 @@ package com.tgac.pldb.sql;
 // ABOUTME: private table; commit = one short lock-compare-flush-advance transaction.
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
 import com.tgac.pldb.transaction.SimulatedSerialization;
-import io.vavr.Tuple2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -195,7 +193,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public Iterable<Tuple2<Reified<?>, Condition>> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		return source.answers(probe);
 	}
 
