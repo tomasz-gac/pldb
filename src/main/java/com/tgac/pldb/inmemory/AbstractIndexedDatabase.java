@@ -88,7 +88,7 @@ public abstract class AbstractIndexedDatabase implements Database {
 				.map(Answers::answer)
 				.collect(Collectors.toList());
 		if (log.isDebugEnabled()) {
-			log.debug("{}{} -> {}", relation, probe.getArguments(), rows);
+			log.debug("{}{} → {} rows", relation.getName(), probe.getArguments(), rows.size());
 		}
 		return rows;
 	}
