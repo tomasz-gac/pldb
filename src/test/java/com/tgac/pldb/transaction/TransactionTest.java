@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.sql.CachingSqlFetch;
+import com.tgac.pldb.sql.SqlFetch;
 import com.tgac.pldb.sql.Watermark;
 import io.vavr.control.Try;
 import java.sql.Connection;
@@ -44,7 +44,7 @@ public class TransactionTest {
 
 	private static Transaction transaction(String id) throws Exception {
 		Connection connection = DriverManager.getConnection(URL);
-		return AbstractTransaction.over(Watermark.over(CachingSqlFetch.pinned(id, connection),
+		return AbstractTransaction.over(Watermark.over(SqlFetch.pinned(id, connection),
 				TransactionTest::commitConnection));
 	}
 

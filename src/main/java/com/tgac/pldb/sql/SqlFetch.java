@@ -5,6 +5,8 @@ package com.tgac.pldb.sql;
 
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Theory;
+import com.tgac.logic.finitedomain.FiniteDomainConstraints;
+import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Residues;
 import com.tgac.logic.unification.Any;
@@ -12,8 +14,11 @@ import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
+import com.tgac.pldb.sql.compiler.FiniteDomainSqlCompiler;
+import com.tgac.pldb.sql.compiler.NogoodSqlCompiler;
 import com.tgac.pldb.sql.compiler.SqlPredicate;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -38,11 +43,14 @@ import lombok.extern.slf4j.Slf4j;
  * read), compiles a probe's region through the registered per-family
  * compilers into the WHERE, and executes the SELECT. Holds no pool and no
  * ledger; every get is a round trip, and the estimate is the optimizer
- * barrier. Package-private: callers compose through {@link CachingSqlFetch}
- * — the caching is not optional equipment.
+ * barrier. Two compositions sit above it: plain solves take
+ * {@link CachingSqlFetch} (the coverage ledger); the certify kinds take
+ * this fetch RAW, because there the TRANSACTION's ledger is the cache
+ * and a shared row cache under a fresh pin would be data the pin never
+ * named.
  */
 @Slf4j
-final class SqlFetch implements JdbcSource {
+public final class SqlFetch implements JdbcSource {
 
 	private final String id;
 	@Getter
@@ -58,7 +66,7 @@ final class SqlFetch implements JdbcSource {
 		this.isolation = isolation;
 	}
 
-	static SqlFetch pinned(String id, Connection connection) {
+	public static SqlFetch pinned(String id, Connection connection) {
 		try {
 			connection.setAutoCommit(false);
 			// the pin promises AT LEAST a repeatable snapshot: raise a weaker
@@ -74,10 +82,17 @@ final class SqlFetch implements JdbcSource {
 			try (Statement anchor = connection.createStatement()) {
 				anchor.execute("SELECT 1");
 			}
-			return new SqlFetch(id, connection, connection.getTransactionIsolation());
+			return equipped(new SqlFetch(id, connection, connection.getTransactionIsolation()));
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not pin " + id, e);
 		}
+	}
+
+	/** The ENGINE-CORE compilers as equipment — the FD family pushes out of the box. */
+	private static SqlFetch equipped(SqlFetch fetch) {
+		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
+		fetch.compiling(NogoodConstraints.class, new NogoodSqlCompiler(fetch.compilers()));
+		return fetch;
 	}
 
 	/**
@@ -88,10 +103,10 @@ final class SqlFetch implements JdbcSource {
 	 * their rows and the commit-time proof. No long-lived transaction is
 	 * ever held — idle-in-transaction cannot occur.
 	 */
-	static SqlFetch live(String id, Connection connection) {
+	public static SqlFetch live(String id, Connection connection) {
 		try {
 			connection.setAutoCommit(true);
-			return new SqlFetch(id, connection, connection.getTransactionIsolation());
+			return equipped(new SqlFetch(id, connection, connection.getTransactionIsolation()));
 		} catch (SQLException e) {
 			throw new IllegalStateException("could not open live " + id, e);
 		}
@@ -106,8 +121,15 @@ final class SqlFetch implements JdbcSource {
 		return id;
 	}
 
-	void compiling(Class<?> family, SqlCompiler compiler) {
+	/** Registers the family's WHERE compiler; may OVERRIDE a built-in. */
+	public void compiling(Class<?> family, SqlCompiler compiler) {
 		compilers.put(family, compiler);
+	}
+
+	/** Binds column codecs through a template literal. */
+	public SqlFetch withCodec(Literal template) {
+		codecs.withCodec(template);
+		return this;
 	}
 
 	/** The LIVE registry view — cross-family compilers (nogoods) delegate through it. */

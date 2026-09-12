@@ -76,7 +76,7 @@ public class VersionedWatermarkTest {
 
 	private Transaction transaction(String id) {
 		return AbstractTransaction.over(
-				VersionedWatermark.over(CachingSqlFetch.live(id, connection()), this::connection));
+				VersionedWatermark.over(SqlFetch.live(id, connection()), this::connection));
 	}
 
 	private static Literal loan(AnswerSource db, Unifiable<String> member, Unifiable<String> copy) {

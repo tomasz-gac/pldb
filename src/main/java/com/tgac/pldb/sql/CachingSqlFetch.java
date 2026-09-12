@@ -3,14 +3,10 @@ package com.tgac.pldb.sql;
 // ABOUTME: The JDBC-backed AnswerSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
-import com.tgac.logic.finitedomain.FiniteDomainConstraints;
-import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import com.tgac.pldb.sql.compiler.FiniteDomainSqlCompiler;
-import com.tgac.pldb.sql.compiler.NogoodSqlCompiler;
 import java.sql.Connection;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -67,8 +63,6 @@ public class CachingSqlFetch implements JdbcSource {
 	}
 
 	private static CachingSqlFetch composed(SqlFetch fetch) {
-		fetch.compiling(FiniteDomainConstraints.class, new FiniteDomainSqlCompiler());
-		fetch.compiling(NogoodConstraints.class, new NogoodSqlCompiler(fetch.compilers()));
 		return new CachingSqlFetch(fetch, CachingAnswerSource.over(fetch));
 	}
 

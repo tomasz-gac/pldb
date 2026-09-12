@@ -49,10 +49,10 @@ import lombok.extern.slf4j.Slf4j;
 public class Watermark implements JdbcSource, SimulatedSerialization {
 	private static final String LOCK_ROW = "*";
 
-	CachingSqlFetch source;
+	SqlFetch source;
 	Supplier<Connection> commits;
 
-	public static Watermark over(CachingSqlFetch source, Supplier<Connection> commits) {
+	public static Watermark over(SqlFetch source, Supplier<Connection> commits) {
 		return new Watermark(source, commits);
 	}
 
@@ -77,7 +77,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 
 	@Override
 	public Codecs codecs() {
-		return source.codecs();
+		return source.getCodecs();
 	}
 
 	@Override
@@ -100,7 +100,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	@Override
 	public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
 		Pin mark = markOf(probe.getRelation().getName());
-		return Pinned.of(source.getFetch().answers(probe), mark);
+		return Pinned.of(source.answers(probe), mark);
 	}
 
 	private Pin markOf(String relation) {
@@ -129,7 +129,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 					commit.rollback();
 					return false;
 				}
-				SqlFlush.over(commit, source.codecs()).flush(flush);
+				SqlFlush.over(commit, source.getCodecs()).flush(flush);
 				advance(commit, flush);
 				commit.commit();
 				return true;

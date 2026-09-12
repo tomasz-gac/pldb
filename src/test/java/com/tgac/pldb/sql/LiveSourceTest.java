@@ -192,7 +192,7 @@ public class LiveSourceTest {
 		// poison the second's — a fresh pin beside source-cached stale rows
 		// would be the capture contract violated (data the pin never named)
 		Watermark shared = Watermark.over(
-				CachingSqlFetch.live("shared", connection()), this::connection);
+				SqlFetch.live("shared", connection()), this::connection);
 		Transaction first = AbstractTransaction.over(shared);
 		assertThat(names(first.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
 
@@ -212,6 +212,6 @@ public class LiveSourceTest {
 
 	private Transaction transaction(String id) {
 		return AbstractTransaction.over(
-				Watermark.over(CachingSqlFetch.live(id, connection()), this::connection));
+				Watermark.over(SqlFetch.live(id, connection()), this::connection));
 	}
 }

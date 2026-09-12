@@ -50,10 +50,10 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 	private static final String LOCK_ROW = "*";
 	private static final String VERSION_COLUMN = "version";
 
-	CachingSqlFetch source;
+	SqlFetch source;
 	Supplier<Connection> commits;
 
-	public static VersionedWatermark over(CachingSqlFetch source, Supplier<Connection> commits) {
+	public static VersionedWatermark over(SqlFetch source, Supplier<Connection> commits) {
 		return new VersionedWatermark(source, commits);
 	}
 
@@ -71,7 +71,7 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 	@Override
 	public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
 		Pin pin = new RegionMax(maxVersion(source.getConnection(), probe));
-		return Pinned.of(source.getFetch().answers(probe), pin);
+		return Pinned.of(source.answers(probe), pin);
 	}
 
 	@Override
@@ -91,7 +91,7 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 						return false;
 					}
 				}
-				SqlFlush.over(commit, source.codecs())
+				SqlFlush.over(commit, source.getCodecs())
 						.stamped(VERSION_COLUMN, stamp)
 						.flush(flush);
 				bumpLock(commit);
@@ -162,7 +162,7 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 
 	@Override
 	public Codecs codecs() {
-		return source.codecs();
+		return source.getCodecs();
 	}
 
 	@Override
