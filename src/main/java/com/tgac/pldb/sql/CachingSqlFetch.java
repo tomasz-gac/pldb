@@ -99,6 +99,11 @@ public class CachingSqlFetch implements JdbcSource {
 		return fetch.getCodecs();
 	}
 
+	/** The probe's region rendered as SQL — the certify side's door. */
+	RegionSql region(Call<Relation> probe) {
+		return fetch.region(probe);
+	}
+
 	@Override
 	public String id() {
 		return fetch.id();

@@ -36,13 +36,22 @@ import lombok.Value;
 public class SqlFlush {
 	Connection connection;
 	Codecs codecs;
+	String stampColumn;
+	Object stampValue;
 
 	public static SqlFlush over(Connection connection) {
-		return new SqlFlush(connection, Codecs.builtin());
+		return new SqlFlush(connection, Codecs.builtin(), null, null);
 	}
 
 	public static SqlFlush over(Connection connection, Codecs codecs) {
-		return new SqlFlush(connection, codecs);
+		return new SqlFlush(connection, codecs, null, null);
+	}
+
+	/** Every inserted row additionally carries {@code column = value} — the
+	 * version stamp of a certify kind; the column is the backend's private
+	 * surface, invisible to the schema. */
+	public SqlFlush stamped(String column, Object value) {
+		return new SqlFlush(connection, codecs, column, value);
 	}
 
 	public void flush(List<Literal> literals) {
@@ -66,19 +75,26 @@ public class SqlFlush {
 				for (int i = 0; i < row.getValues().size(); i++) {
 					statement.setObject(i + 1, row.getValues().get(i));
 				}
+				if (stampColumn != null) {
+					statement.setObject(row.getValues().size() + 1, stampValue);
+				}
 				statement.addBatch();
 			}
 			statement.executeBatch();
 		}
 	}
 
-	private static String insertSql(Relation relation) {
+	private String insertSql(Relation relation) {
 		String columns = Arrays.stream(relation.getArgs())
 				.map(Property::getName)
 				.collect(Collectors.joining(", "));
 		String holes = Arrays.stream(relation.getArgs())
 				.map(p -> "?")
 				.collect(Collectors.joining(", "));
+		if (stampColumn != null) {
+			columns = columns + ", " + stampColumn;
+			holes = holes + ", ?";
+		}
 		return "INSERT INTO " + relation.getName() + " (" + columns + ") VALUES (" + holes + ")";
 	}
 

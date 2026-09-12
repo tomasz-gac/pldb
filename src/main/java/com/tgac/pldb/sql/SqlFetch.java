@@ -186,42 +186,57 @@ final class SqlFetch implements JdbcSource {
 		};
 	}
 
-	private List<Fact> rows(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
+	/** The probe's region as SQL — the certify side's door to the one rendering. */
+	RegionSql region(Call<Relation> probe) {
+		Relation relation = probe.getRelation();
+		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
+		return regionSql(relation, args, push(relation, probe.getResidues()));
+	}
+
+	private RegionSql regionSql(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
 		Property<?>[] columns = relation.getArgs();
-		List<String> boundColumns = new ArrayList<>();
-		List<Object> boundValues = new ArrayList<>();
-		List<String> unboundColumns = new ArrayList<>();
-		List<Property<?>> unboundProperties = new ArrayList<>();
-		List<String> nullBoundColumns = new ArrayList<>();
+		List<String> conditions = new ArrayList<>();
+		List<Object> parameters = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
 			if (args.get(i).asVal().isDefined()) {
 				if (args.get(i).get() == null) {
 					requireNullable(relation, columns[i]);
-					nullBoundColumns.add(columns[i].getName());
+					conditions.add(columns[i].getName() + " IS NULL");
 				} else {
-					boundColumns.add(columns[i].getName());
-					boundValues.add(codecs.encode(relation, columns[i], args.get(i).get()));
+					conditions.add(columns[i].getName() + " = ?");
+					parameters.add(codecs.encode(relation, columns[i], args.get(i).get()));
 				}
-			} else {
+			}
+		}
+		for (SqlPredicate predicate : predicates) {
+			conditions.add(predicate.getFragment());
+			predicate.getParameters().forEach(parameters::add);
+		}
+		return new RegionSql(conditions, parameters);
+	}
+
+	private List<Fact> rows(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
+		Property<?>[] columns = relation.getArgs();
+		List<String> unboundColumns = new ArrayList<>();
+		List<Property<?>> unboundProperties = new ArrayList<>();
+		for (int i = 0; i < args.size(); i++) {
+			if (!args.get(i).asVal().isDefined()) {
 				unboundColumns.add(columns[i].getName());
 				unboundProperties.add(columns[i]);
 			}
 		}
-		StringBuilder sql = buildSqlStatement(relation, unboundColumns, boundColumns, nullBoundColumns, predicates);
+		RegionSql region = regionSql(relation, args, predicates);
+		// every position bound: nothing to project, the probe is an existence
+		// check — a blank select list would not compile
+		String sql = "SELECT " + (unboundColumns.isEmpty() ? "1" : String.join(", ", unboundColumns))
+				+ " FROM " + relation.getName() + region.whereClause();
 		if (log.isDebugEnabled()) {
-			List<Object> parameters = new ArrayList<>(boundValues);
-			predicates.forEach(predicate -> predicate.getParameters().forEach(parameters::add));
-			log.debug("{}: {} ← {}", id, sql, parameters);
+			log.debug("{}: {} ← {}", id, sql, region.getParameters());
 		}
-		try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
 			int index = 1;
-			for (Object bound : boundValues) {
-				statement.setObject(index++, bound);
-			}
-			for (SqlPredicate predicate : predicates) {
-				for (Object parameter : predicate.getParameters()) {
-					statement.setObject(index++, parameter);
-				}
+			for (Object parameter : region.getParameters()) {
+				statement.setObject(index++, parameter);
 			}
 			try (ResultSet rows = statement.executeQuery()) {
 				List<Fact> facts = new ArrayList<>();
@@ -270,27 +285,4 @@ final class SqlFetch implements JdbcSource {
 		}
 	}
 
-	private static StringBuilder buildSqlStatement(Relation relation, List<String> unboundColumns,
-			List<String> boundColumns, List<String> nullBoundColumns, List<SqlPredicate> predicates) {
-		// every position bound: nothing to project, the probe is an existence
-		// check — a blank select list would not compile
-		StringBuilder sql = new StringBuilder("SELECT ")
-				.append(unboundColumns.isEmpty() ? "1" : String.join(", ", unboundColumns))
-				.append(" FROM ")
-				.append(relation.getName());
-		List<String> conditions = new ArrayList<>();
-		for (String column : boundColumns) {
-			conditions.add(column + " = ?");
-		}
-		for (String column : nullBoundColumns) {
-			conditions.add(column + " IS NULL");
-		}
-		for (SqlPredicate predicate : predicates) {
-			conditions.add(predicate.getFragment());
-		}
-		if (!conditions.isEmpty()) {
-			sql.append(" WHERE ").append(String.join(" AND ", conditions));
-		}
-		return sql;
-	}
 }
