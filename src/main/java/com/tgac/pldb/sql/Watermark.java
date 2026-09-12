@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Equips a source with SIMULATED serialization in plain standard SQL: a
@@ -42,6 +43,7 @@ import lombok.Value;
  * blindness. {@link #schema} is the DDL door — run it before any
  * transaction opens.
  */
+@Slf4j
 @Value
 @AllArgsConstructor
 public class Watermark implements JdbcSource, SimulatedSerialization {
@@ -103,7 +105,9 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		) {
 			read.setString(1, relation);
 			try (ResultSet row = read.executeQuery()) {
-				return new Mark(row.next() ? row.getLong(1) : null);
+				Mark mark = new Mark(row.next() ? row.getLong(1) : null);
+				log.debug("{}: pin {} = {}", id(), relation, mark.getMark());
+				return mark;
 			}
 		} catch (SQLException e) {
 			throw new IllegalStateException(id() + ": could not read the watermark", e);
@@ -134,7 +138,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	/** The lock row first (the commit lock), then every mark, all current. */
-	private static Map<String, Long> lockAndReadMarks(Connection commit) throws SQLException {
+	private Map<String, Long> lockAndReadMarks(Connection commit) throws SQLException {
 		Map<String, Long> current = new HashMap<>();
 		try (
 				PreparedStatement lock = commit.prepareStatement(
@@ -157,25 +161,29 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 				current.put(rows.getString(1), rows.getLong(2));
 			}
 		}
+		log.debug("{}: commit lock taken, marks {}", id(), current);
 		return current;
 	}
 
-	private static boolean covers(Map<String, Long> current, Footprint read) {
+	private boolean covers(Map<String, Long> current, Footprint read) {
 		for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
 			String relation = pinned.getKey().getRelation().getName();
 			if (!Objects.equals(current.get(relation), ((Mark) pinned.getValue()).getMark())) {
+				log.debug("{}: {} moved — pinned {}, current {}", id(), relation,
+						((Mark) pinned.getValue()).getMark(), current.get(relation));
 				return false;
 			}
 		}
 		return true;
 	}
 
-	private static void advance(Connection commit, List<Literal> flushed) throws SQLException {
+	private void advance(Connection commit, List<Literal> flushed) throws SQLException {
 		Set<String> moved = new LinkedHashSet<>();
 		moved.add(LOCK_ROW);
 		for (Literal row : flushed) {
 			moved.add(row.getRel().getName());
 		}
+		log.debug("{}: advance {}", id(), moved);
 		for (String relation : moved) {
 			bump(commit, relation);
 		}

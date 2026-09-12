@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Simulated serialization at REGION grain: every table carries a
@@ -42,6 +43,7 @@ import lombok.Value;
  * kind writes must have the version column; a table without one
  * refuses loudly at its first read.
  */
+@Slf4j
 @Value
 @AllArgsConstructor
 public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
@@ -74,9 +76,13 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 			commit.setAutoCommit(false);
 			try {
 				long stamp = lockMark(commit) + 1;
+				log.debug("{}: commit lock taken, stamp {}", id(), stamp);
 				for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
 					Long current = maxVersion(commit, pinned.getKey());
 					if (!Objects.equals(current, ((RegionMax) pinned.getValue()).getMax())) {
+						log.debug("{}: region {}{} moved — pinned {}, current {}", id(),
+								pinned.getKey().getRelation().getName(), pinned.getKey().getArguments(),
+								((RegionMax) pinned.getValue()).getMax(), current);
 						commit.rollback();
 						return false;
 					}
@@ -107,8 +113,10 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 			}
 			try (ResultSet row = statement.executeQuery()) {
 				row.next();
-				long max = row.getLong(1);
-				return row.wasNull() ? null : max;
+				long value = row.getLong(1);
+				Long max = row.wasNull() ? null : value;
+				log.debug("{}: {} ← {} = {}", id(), sql, region.getParameters(), max);
+				return max;
 			}
 		} catch (SQLException e) {
 			throw new IllegalStateException(id() + ": could not read MAX(" + VERSION_COLUMN
