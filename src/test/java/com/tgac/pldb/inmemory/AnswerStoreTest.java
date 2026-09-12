@@ -92,7 +92,7 @@ public class AnswerStoreTest {
 		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, Answer.of(
-						(Reified<?>) lval(Array.of(Any.of(0), (Term<Object>) (Term<?>) lval("c9"))),
+						(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))),
 						Condition.ONE));
 
 		assertThat(images(store.answers(probe(lval("m2"), Any.of(1)))))
@@ -182,10 +182,14 @@ public class AnswerStoreTest {
 		// distinct claims, not duplicate derivations
 		Condition a = forbidding("m8");
 		Condition b = forbidding("m9");
-		Reified<?> memberWide = (Reified<?>) lval(Array.of(
-				(Term<Object>) (Term<?>) lval("m1"), Any.of(0)));
-		Reified<?> copyWide = (Reified<?>) lval(Array.of(
-				Any.of(0), (Term<Object>) (Term<?>) lval("c3")));
+		// Any numbering is by OCCURRENCE, not position: _.0 is the first free
+		// met walking the image, wherever it sits — loan(5,x) reifies to
+		// ({5}, _.0). It cannot be positional, because the number also
+		// carries coupling: loan(x,x) is (_.0, _.0). The store never reads
+		// the number (only free-vs-ground), so both images below are
+		// realistic probe shapes.
+		Reified<?> memberWide = (Reified<?>) lval(Array.of(lval("m1"), Any.of(0)));
+		Reified<?> copyWide = (Reified<?>) lval(Array.of(Any.of(0), lval("c3")));
 		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, Answer.of(memberWide, a))
 				.with(LOAN, Answer.of(copyWide, b));
