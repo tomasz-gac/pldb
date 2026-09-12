@@ -1,7 +1,7 @@
 package com.tgac.pldb.inmemory;
 
-// ABOUTME: The Call-native in-memory store: Answer rows keyed by reified image,
-// ABOUTME: conditions ⊕-fold, per-column Term buckets serve ground probes.
+// ABOUTME: The Call-native membership store: Answer rows keyed by reified image,
+// ABOUTME: conditions ⊕-fold; completeness is coverage's claim, worlds are pins'.
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
@@ -22,13 +22,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
- * The in-memory store, native to the seam's vocabulary: rows are
- * {@link Answer}s — a reified image with its {@link Condition}, ground
- * rows at ONE, wide rows carrying frees — keyed by the image, so a
- * duplicate derivation ⊕-folds its condition instead of duplicating
- * the row (image equality is alpha-equivalence: the cell's law).
- * Indexed columns keep per-value buckets in Term vocabulary (null is a
- * key; a row FREE at an indexed column lives in the wildcard set,
+ * The in-memory store, native to the seam's vocabulary. Its semantics
+ * is MEMBERSHIP, and only membership: a row is the claim "this image
+ * belongs to this relation, under this condition" — monotone and
+ * direction-free, so answers join their relation's rows wherever the
+ * probe that fetched them was narrow or wide, a wide row is the
+ * ∀-schema claim over its frees, and a duplicate image ⊕-folds its
+ * conditions (membership holds if EITHER derivation's guard does;
+ * image equality is alpha-equivalence). The two claims the store
+ * deliberately cannot speak live beside it: "these are ALL the rows
+ * matching a probe" is COVERAGE's, and "this extension, as of this
+ * world" is the PIN's — writes here never assert either.
+ *
+ * <p>Indexed columns keep per-value buckets in Term vocabulary (null
+ * is a key; a row free at an indexed column lives in the wildcard set,
  * matching every probe); {@link #answers} intersects the ground
  * indexed positions' buckets and filters the remaining bound
  * positions. Residues are ignored under the standing license — a
