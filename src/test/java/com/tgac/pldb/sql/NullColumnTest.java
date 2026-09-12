@@ -24,7 +24,7 @@ public class NullColumnTest {
 
 	@Before
 	public void openDatabase() throws SQLException {
-		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
+		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE person(id INT NOT NULL, name VARCHAR(64))");
 			ddl.execute("INSERT INTO person VALUES (1, 'Ada'), (2, NULL)");

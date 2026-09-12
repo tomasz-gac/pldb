@@ -34,7 +34,7 @@ import org.junit.Test;
 
 public class LiveSourceTest {
 
-	private static final String URL = Spy.url("jdbc:h2:mem:livetest;DB_CLOSE_DELAY=-1");
+	private static final String URL = "jdbc:h2:mem:livetest;DB_CLOSE_DELAY=-1";
 
 	private final List<Connection> opened = new ArrayList<>();
 

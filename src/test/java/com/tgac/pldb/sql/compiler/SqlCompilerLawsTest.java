@@ -29,7 +29,6 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Name;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.sql.Spy;
 import com.tgac.pldb.sql.SqlCompiler;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -73,7 +72,7 @@ public class SqlCompilerLawsTest {
 
 	@Before
 	public void loadH2() throws SQLException {
-		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
+		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE numbers(id BIGINT)");
 			StringBuilder values = new StringBuilder();

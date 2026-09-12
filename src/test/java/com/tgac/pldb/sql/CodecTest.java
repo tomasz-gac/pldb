@@ -39,7 +39,7 @@ public class CodecTest {
 
 	@Before
 	public void openDatabase() throws SQLException {
-		connection = DriverManager.getConnection(Spy.url("jdbc:h2:mem:"));
+		connection = DriverManager.getConnection("jdbc:h2:mem:");
 		try (Statement ddl = connection.createStatement()) {
 			ddl.execute("CREATE TABLE loan(id INT NOT NULL, due DATE NOT NULL)");
 			ddl.execute("CREATE TABLE event(at DATE NOT NULL, logged VARCHAR(8) NOT NULL)");

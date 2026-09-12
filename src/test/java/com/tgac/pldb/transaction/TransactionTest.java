@@ -8,7 +8,6 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.sql.Spy;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.sql.CachingSqlFetch;
@@ -26,7 +25,7 @@ import org.junit.Test;
 
 public class TransactionTest {
 
-	private static final String URL = Spy.url("jdbc:h2:mem:txtest;DB_CLOSE_DELAY=-1");
+	private static final String URL = "jdbc:h2:mem:txtest;DB_CLOSE_DELAY=-1";
 
 	@Before
 	public void resetSchema() throws SQLException {
