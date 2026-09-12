@@ -26,7 +26,7 @@ public class Property<T> {
 		return new Property<T>(name, indexed, true, nullable);
 	}
 
-	/** The column may hold SQL NULL; a null cell reads as {@link Null#VALUE}. */
+	/** The column may hold SQL NULL */
 	public Property<T> nullable() {
 		return new Property<T>(name, indexed, ground, true);
 	}

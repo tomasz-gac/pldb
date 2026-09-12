@@ -16,6 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 /**
  * Flushes facts through one JDBC connection by the same convention the
@@ -27,15 +30,12 @@ import java.util.stream.Collectors;
  * before any row lands. The caller owns the transaction: this face
  * neither commits nor rolls back.
  */
-public final class SqlFlush {
 
-	private final Connection connection;
-	private final Codecs codecs;
-
-	private SqlFlush(Connection connection, Codecs codecs) {
-		this.connection = connection;
-		this.codecs = codecs;
-	}
+@Value
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public class SqlFlush {
+	Connection connection;
+	Codecs codecs;
 
 	public static SqlFlush over(Connection connection) {
 		return new SqlFlush(connection, Codecs.builtin());

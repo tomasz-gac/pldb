@@ -167,11 +167,12 @@ public class Literal implements Goal, Bounded, Postable {
 		return new Builder(name);
 	}
 
-	public static final class Builder {
-		private final String name;
-		private final List<Property<?>> columns = new ArrayList<>();
-		private final List<Unifiable<?>> values = new ArrayList<>();
-		private final List<Boolean> projectedHere = new ArrayList<>();
+	@Value
+	public static class Builder {
+		String name;
+		List<Property<?>> columns = new ArrayList<>();
+		List<Unifiable<?>> values = new ArrayList<>();
+		List<Boolean> projectedHere = new ArrayList<>();
 
 		private Builder(String name) {
 			this.name = name;
@@ -198,7 +199,7 @@ public class Literal implements Goal, Bounded, Postable {
 			return modify(Property::ground);
 		}
 
-		/** Marks the LAST declared column nullable: NULL reads as {@link Null#VALUE}. */
+		/** Marks the LAST declared column nullable. */
 		public Builder nullable() {
 			return modify(Property::nullable);
 		}
