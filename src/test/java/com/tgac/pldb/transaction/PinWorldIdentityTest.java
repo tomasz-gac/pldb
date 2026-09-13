@@ -17,6 +17,7 @@ import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import java.util.Collections;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class PinWorldIdentityTest {
@@ -35,6 +36,41 @@ public class PinWorldIdentityTest {
 			anys[i] = Any.of(i);
 		}
 		return Call.of(relation, (Reified<?>) lval(Array.of(anys)));
+	}
+
+	private static Literal loan(Unifiable<Integer> id, Unifiable<String> copy) {
+		return Literal.relation(PinWorldIdentityTest.class, "loan")
+				.arg("id", id).indexed()
+				.arg("copy", copy)
+				.from(null);
+	}
+
+	@Test
+	public void aCommitElsewhereDoesNotDivideAnUntouchedRelationsPins() {
+		// the premise flow composes pins minted in DIFFERENT requests: a pin
+		// names the RELATION's world, so a commit that never touched it must
+		// leave later pins equal and the footprint union composable
+		SharedDatabase shared = SharedDatabase.empty();
+		Pin first = shared.open("a").read(probe()).getPin();
+
+		assertThat(shared.open("mover").commit(Footprint.empty(),
+				Collections.singletonList(loan(lval(1), lval("B"))))).isTrue();
+
+		Pin second = shared.open("b").read(probe()).getPin();
+		assertThat(second)
+				.describedAs("person never moved — its pins still name one world")
+				.isEqualTo(first);
+		Footprint composed = Footprint.of(probe(), first)
+				.union(Footprint.of(probe(), second));
+		assertThat(composed.pins()).hasSize(1);
+
+		assertThat(shared.open("mover2").commit(Footprint.empty(),
+				Collections.singletonList(person(lval(2), lval("Grace"))))).isTrue();
+		Pin third = shared.open("c").read(probe()).getPin();
+		Assertions.assertThatThrownBy(() ->
+						Footprint.of(probe(), first).union(Footprint.of(probe(), third)))
+				.describedAs("person moved — composing across its worlds refuses")
+				.isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test

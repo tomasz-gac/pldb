@@ -22,7 +22,7 @@ import lombok.Value;
  * {@link #open} takes a snapshot — free, the value IS the snapshot —
  * and hands it out as a {@link SimulatedSerialization} source: reads
  * come from the captured value forever (stable by construction), the
- * pin is the captured generations, and commit is the memory tier's
+ * pin is the probed relation's generation, and commit is the memory tier's
  * whole protocol in one synchronized block — prove the footprint's
  * relations unmoved, grow the current value by the flush, bump the
  * moved generations. The degenerate ideal of the simulated ladder:
@@ -34,13 +34,12 @@ public final class SharedDatabase {
 	private static class Versioned {
 		AnswerStore value;
 		Map<String, Long> marks;
-		long global;
 	}
 
 	private Versioned current;
 
 	private SharedDatabase(AnswerStore initial) {
-		this.current = new Versioned(initial, new HashMap<>(), 0);
+		this.current = new Versioned(initial, new HashMap<>());
 	}
 
 	public static SharedDatabase empty() {
@@ -68,19 +67,15 @@ public final class SharedDatabase {
 		for (Literal fact : flush) {
 			marks.merge(fact.getRel().getName(), 1L, Long::sum);
 		}
-		current = new Versioned(grown, marks, current.getGlobal() + 1);
+		current = new Versioned(grown, marks);
 		return true;
 	}
 
 	/** Exact per-relation marks: absence here is knowledge either way. */
 	private boolean covers(Footprint read) {
-		for (Map.Entry<Call<Relation>, Pin> pinned : read.pins().entrySet()) {
-			MarksPin pin = (MarksPin) pinned.getValue();
-			if (current.getGlobal() == pin.getGlobal()) {
-				continue;
-			}
-			String relation = pinned.getKey().getRelation().getName();
-			if (!Objects.equals(current.getMarks().get(relation), pin.getMarks().get(relation))) {
+		for (Pin pinned : read.pins().values()) {
+			MarkPin pin = (MarkPin) pinned;
+			if (!Objects.equals(current.getMarks().get(pin.getRelation()), pin.getMark())) {
 				return false;
 			}
 		}
@@ -100,8 +95,9 @@ public final class SharedDatabase {
 
 		@Override
 		public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
+			String relation = probe.getRelation().getName();
 			return Pinned.of(captured.getValue().answers(probe),
-					new MarksPin(captured.getMarks(), captured.getGlobal()));
+					new MarkPin(relation, captured.getMarks().get(relation)));
 		}
 
 		@Override
@@ -131,14 +127,16 @@ public final class SharedDatabase {
 	}
 
 	/**
-	 * The captured generations, WITHOUT the database value: pin equality
-	 * is world identity (marks and global generation), never a content
-	 * comparison — two pins of one world are equal, any commit between
-	 * them makes them not.
+	 * The probed RELATION's generation, WITHOUT the database value: pin
+	 * equality is world identity at relation grain, never a content
+	 * comparison — two pins of one unmoved relation are equal whatever
+	 * else committed between them, and any commit touching the relation
+	 * divides them. A null mark is the never-written relation: absence
+	 * is knowledge.
 	 */
 	@Value
-	private static class MarksPin implements Pin {
-		Map<String, Long> marks;
-		long global;
+	private static class MarkPin implements Pin {
+		String relation;
+		Long mark;
 	}
 }
