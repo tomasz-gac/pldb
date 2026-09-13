@@ -1,10 +1,11 @@
 package com.tgac.pldb.inmemory;
 
-// ABOUTME: The shared in-memory store: one mutable cell of persistent Database
+// ABOUTME: The shared in-memory store: one mutable cell of persistent AnswerStore
 // ABOUTME: values, opened as snapshots with simulated serialization per relation.
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
+import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
@@ -18,7 +19,7 @@ import lombok.Value;
 
 /**
  * The one history of an in-memory world: a mutable cell holding a
- * persistent {@link Database} value plus per-relation generations.
+ * persistent {@link AnswerStore} value plus per-relation generations.
  * {@link #open} takes a snapshot — free, the value IS the snapshot —
  * and hands it out as a {@link SimulatedSerialization} source: reads
  * come from the captured value forever (stable by construction), the
@@ -32,23 +33,19 @@ public final class SharedDatabase {
 
 	@Value
 	private static class Versioned {
-		Database value;
+		AnswerStore value;
 		Map<String, Long> marks;
 		long global;
 	}
 
 	private Versioned current;
 
-	private SharedDatabase(Database initial) {
+	private SharedDatabase(AnswerStore initial) {
 		this.current = new Versioned(initial, new HashMap<>(), 0);
 	}
 
 	public static SharedDatabase empty() {
-		return new SharedDatabase(ImmutableDatabase.empty());
-	}
-
-	public static SharedDatabase of(Database initial) {
-		return new SharedDatabase(initial);
+		return new SharedDatabase(AnswerStore.empty());
 	}
 
 	public SimulatedSerialization open(String id) {
@@ -67,10 +64,11 @@ public final class SharedDatabase {
 		if (!covers(read)) {
 			return false;
 		}
-		Database grown = current.getValue().withFacts(flush).get();
+		AnswerStore grown = current.getValue();
 		Map<String, Long> marks = new HashMap<>(current.getMarks());
 		for (Literal fact : flush) {
-			marks.merge(fact.fact().getRelation().getName(), 1L, Long::sum);
+			grown = grown.with(fact.getRel(), Answers.answer(fact.fact()));
+			marks.merge(fact.getRel().getName(), 1L, Long::sum);
 		}
 		current = new Versioned(grown, marks, current.getGlobal() + 1);
 		return true;
