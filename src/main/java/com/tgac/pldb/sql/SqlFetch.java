@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -199,18 +201,12 @@ public final class SqlFetch implements JdbcSource {
 				if (!(term instanceof Any)) {
 					return Optional.empty();
 				}
-				int occurrence = -1;
-				for (int i = 0; i < args.size(); i++) {
-					if (Objects.equals(args.get(i), term)) {
-						if (occurrence >= 0) {
-							return Optional.empty();
-						}
-						occurrence = i;
-					}
-				}
-				return occurrence >= 0
-						? Optional.of(relation.getArgs()[occurrence].getName())
-						: Optional.empty();
+				int[] matches = IntStream.range(0, args.length())
+						.filter(i -> term.equals(args.get(i)))
+						.toArray();
+				return matches.length == 1 ?
+						Optional.of(relation.getArgs()[matches[0]].getName()) :
+						Optional.empty();
 			}
 
 			@Override
