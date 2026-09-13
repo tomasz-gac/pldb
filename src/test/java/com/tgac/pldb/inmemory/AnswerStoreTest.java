@@ -57,7 +57,7 @@ public class AnswerStoreTest {
 
 	@Test
 	public void aGroundIndexedProbeServesItsBucket() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c2"))
@@ -71,7 +71,7 @@ public class AnswerStoreTest {
 
 	@Test
 	public void aNonIndexedBoundPositionFilters() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c2"));
@@ -82,7 +82,7 @@ public class AnswerStoreTest {
 
 	@Test
 	public void nullIsAnHonestBucketKey() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row(null, "c1"))
 				.with(LOAN, row("m1", "c2"));
@@ -93,7 +93,7 @@ public class AnswerStoreTest {
 
 	@Test
 	public void aRowFreeAtAnIndexedColumnMatchesEveryProbe() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, Answer.of(
@@ -107,7 +107,7 @@ public class AnswerStoreTest {
 
 	@Test
 	public void aDuplicateImageFoldsItsConditionInsteadOfDuplicating() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c1"));
@@ -136,7 +136,7 @@ public class AnswerStoreTest {
 		// the ground-pool refusal dies here: the store speaks the seam's
 		// whole entry shape, conditions included
 		Condition guarded = forbidding("m9");
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(row("m1", "c1").getReified(), guarded));
 
@@ -154,7 +154,7 @@ public class AnswerStoreTest {
 		assertThat(notM8).isNotEqualTo(notM9);
 
 		Reified<?> image = row("m1", "c1").getReified();
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(image, notM8))
 				.with(LOAN, Answer.of(image, notM9));
@@ -173,7 +173,7 @@ public class AnswerStoreTest {
 		// membership is direction-free: rows fetched under narrow probes are
 		// rows of the RELATION — the wide probe sees them all; only coverage
 		// (beside the store) may claim it saw everything
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m2", "c2"));
@@ -199,7 +199,7 @@ public class AnswerStoreTest {
 		// realistic probe shapes.
 		Reified<?> memberWide = (Reified<?>) lval(Array.of(lval("m1"), Any.of(0)));
 		Reified<?> copyWide = (Reified<?>) lval(Array.of(Any.of(0), lval("c3")));
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(memberWide, a))
 				.with(LOAN, Answer.of(copyWide, b));
@@ -234,7 +234,7 @@ public class AnswerStoreTest {
 		// the narrowing path: each column's bucket over-approximates alone —
 		// only their intersection names the row, and the estimate is exact
 		// on it
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, pair("a1", "b2"))
@@ -249,7 +249,7 @@ public class AnswerStoreTest {
 	public void anEmptyIntersectionAnswersNothingAndEstimatesZero() {
 		// both buckets are non-empty; their intersection is not "all rows"
 		// (the null sentinel) but the honest empty set
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, pair("a2", "b2"));
@@ -262,7 +262,7 @@ public class AnswerStoreTest {
 	public void aWildcardSurvivesTheIntersection() {
 		// a row free at one indexed column rides that column's wildcard set
 		// INTO the intersection: pair(a9, _) answers any b probe under a9
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, Answer.of(
@@ -275,26 +275,8 @@ public class AnswerStoreTest {
 	}
 
 	@Test
-	public void anyValueEqualityTokenKeysTheStore() {
-		// the tabling affinity made literal: the token is ANY value-equal
-		// key — a String here, exactly Tabling.call's relation doctrine —
-		// and indexing is the STORE's declaration, not the boundary's
-		AnswerStore<String> store = AnswerStore.<String> empty()
-				.indexed("edge", 0)
-				.with("edge", Answers.answer(Fact.of(LOAN, Array.of("a", "b"))))
-				.with("edge", Answers.answer(Fact.of(LOAN, Array.of("a", "c"))));
-
-		assertThat(images(store.answers(
-				Call.of("edge", (Reified<?>) lval(Array.of(lval("a"), Any.of(0)))))))
-				.hasSize(2);
-		assertThat(store.estimate(
-				Call.of("edge", (Reified<?>) lval(Array.of(lval("a"), Any.of(0))))))
-				.isEqualTo(2);
-	}
-
-	@Test
 	public void anUndeclaredTokenFullScansAndLateDeclarationRefuses() {
-		AnswerStore<Relation> store = AnswerStore.<Relation> empty()
+		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, row("m1", "c1"));
 
 		assertThat(images(store.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);
@@ -308,9 +290,9 @@ public class AnswerStoreTest {
 
 	@Test
 	public void insertsForkTheValueAndAncestorsKeepAnswering() {
-		AnswerStore<Relation> before = AnswerStore.<Relation> empty()
+		AnswerStore before = AnswerStore.empty()
 				.indexed(LOAN, 0).with(LOAN, row("m1", "c1"));
-		AnswerStore<Relation> after = before.with(LOAN, row("m1", "c2"));
+		AnswerStore after = before.with(LOAN, row("m1", "c2"));
 
 		assertThat(images(before.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);
 		assertThat(images(after.answers(probe(lval("m1"), Any.of(1))))).hasSize(2);

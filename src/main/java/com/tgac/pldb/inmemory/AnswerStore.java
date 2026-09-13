@@ -9,6 +9,7 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
@@ -49,16 +50,16 @@ import lombok.Value;
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class AnswerStore<T> {
+public class AnswerStore {
 
 	/** Null is a legitimate bucket key; vavr maps want a witness for it. */
 	private static final Object NULL_KEY = new Object();
 
-	Map<T, Rows> relations;
-	Map<T, Set<Integer>> indexing;
+	Map<Relation, Rows> relations;
+	Map<Relation, Set<Integer>> indexing;
 
-	public static <T> AnswerStore<T> empty() {
-		return new AnswerStore<>(LinkedHashMap.empty(), LinkedHashMap.empty());
+	public static AnswerStore empty() {
+		return new AnswerStore(LinkedHashMap.empty(), LinkedHashMap.empty());
 	}
 
 	/**
@@ -66,7 +67,7 @@ public class AnswerStore<T> {
 	 * equipment, never the boundary's. Before the token's first insert
 	 * only; an undeclared token full-scans, correctly.
 	 */
-	public AnswerStore<T> indexed(T relation, int... positions) {
+	public AnswerStore indexed(Relation relation, int... positions) {
 		if (relations.containsKey(relation)) {
 			throw new IllegalStateException(relation
 					+ ": declare indexing before the first insert");
@@ -75,37 +76,37 @@ public class AnswerStore<T> {
 		for (int position : positions) {
 			declared = declared.add(position);
 		}
-		return new AnswerStore<>(relations, indexing.put(relation, declared));
+		return new AnswerStore(relations, indexing.put(relation, declared));
 	}
 
-	public AnswerStore<T> with(T relation, Answer answer) {
+	public AnswerStore with(Relation relation, Answer answer) {
 		Rows rows = relations.getOrElse(relation, Rows.empty());
-		return new AnswerStore<>(
+		return new AnswerStore(
 				relations.put(relation, rows.with(positions(relation), answer)), indexing);
 	}
 
-	public AnswerStore<T> withAll(T relation, Iterable<Answer> answers) {
-		AnswerStore<T> grown = this;
+	public AnswerStore withAll(Relation relation, Iterable<Answer> answers) {
+		AnswerStore grown = this;
 		for (Answer answer : answers) {
 			grown = grown.with(relation, answer);
 		}
 		return grown;
 	}
 
-	public Iterable<Answer> answers(Call<T> probe) {
+	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
 				.map(rows -> rows.answers(positions(probe.getRelation()), probe))
 				.getOrElse(Array.empty());
 	}
 
 	/** Upper bound from the narrowest consulted bucket — exact when unfiltered. */
-	public long estimate(Call<T> probe) {
+	public long estimate(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
 				.map(rows -> rows.estimate(positions(probe.getRelation()), probe))
 				.getOrElse(0L);
 	}
 
-	private Set<Integer> positions(T relation) {
+	private Set<Integer> positions(Relation relation) {
 		return indexing.getOrElse(relation, LinkedHashSet.empty());
 	}
 
