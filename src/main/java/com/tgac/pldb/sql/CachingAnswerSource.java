@@ -4,29 +4,24 @@ package com.tgac.pldb.sql;
 // ABOUTME: pool, the ledger records probes as calls, Call.subsumes proves coverage.
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
-import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.inmemory.AnswerStore;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Relation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Subsumptive reuse over any delegate source — call subsumption at the data
  * boundary: wide serves narrow, never the reverse. Fetched answers land in
- * an in-memory pool (idempotently — rows are values), and the ledger records
- * each fetch AS ITS CALL. Soundness rides the seam's own law: the delegate
+ * an {@link AnswerStore} pool — idempotently by the store's own law
+ * (duplicate images ⊕-fold), conditions kept whole — and the ledger
+ * records each fetch AS ITS CALL. Soundness rides the seam's own law: the delegate
  * must return every answer matching the probe, so everything in the probe's
  * region landed and the claim is honest REGARDLESS of how much of the region
  * the delegate actually enforced — which is why the recorded probe is
@@ -44,7 +39,7 @@ public final class CachingAnswerSource implements AnswerSource {
 
 	private final AnswerSource delegate;
 
-	private Database cache = ImmutableDatabase.empty();
+	private AnswerStore cache = AnswerStore.empty();
 	private final Map<Relation, List<Call<Relation>>> covered = new HashMap<>();
 
 	public static CachingAnswerSource over(AnswerSource delegate) {
@@ -63,7 +58,10 @@ public final class CachingAnswerSource implements AnswerSource {
 	@Override
 	public synchronized Iterable<Answer> answers(Call<Relation> probe) {
 		if (!covers(probe)) {
-			add(probe, delegate.answers(probe));
+			// landing is idempotent by the store's own law: a duplicate image
+			// ⊕-folds inert, and a conditional answer lands WITH its guard —
+			// the pool speaks the seam's whole entry shape
+			cache = cache.withAll(probe.getRelation(), delegate.answers(probe));
 			covered.computeIfAbsent(probe.getRelation(), r -> new ArrayList<>())
 					.add(probe);
 		}
@@ -86,35 +84,6 @@ public final class CachingAnswerSource implements AnswerSource {
 		return covered.getOrDefault(probe.getRelation(), Collections.emptyList())
 				.stream()
 				.anyMatch(prior -> prior.subsumes(probe));
-	}
-
-	private void add(Call<Relation> probe, Iterable<Answer> answers) {
-		// every incoming row matches the originating probe, so any resident
-		// duplicate does too: the probe pattern's own (indexed) bucket is the
-		// whole dedup universe
-		Relation relation = probe.getRelation();
-		Set<Answer> resident = new HashSet<>();
-		for (Answer fact : cache.answers(probe)) {
-			resident.add(fact);
-		}
-		List<Fact> fresh = new ArrayList<>();
-		for (Answer answer : answers) {
-			if (!Condition.ONE.equals(answer.getCondition())) {
-				// the pool is ground; a conditional answer cannot land without
-				// dropping its condition — under-delivery — so refuse
-				throw new IllegalStateException(
-						"conditional answers cannot land in the ground pool: " + answer);
-			}
-			Fact row = Fact.of(relation, Answers.values(answer.getReified()));
-			if (!resident.contains(answer)) {
-				fresh.add(row);
-			}
-		}
-		if (!fresh.isEmpty()) {
-			cache = cache.withFacts(fresh)
-					.getOrElseThrow(e -> new IllegalStateException(
-							"could not land rows of " + relation.getName(), e));
-		}
 	}
 
 	@Override
