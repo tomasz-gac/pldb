@@ -9,7 +9,6 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
@@ -50,41 +49,64 @@ import lombok.Value;
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class AnswerStore {
+public class AnswerStore<T> {
 
 	/** Null is a legitimate bucket key; vavr maps want a witness for it. */
 	private static final Object NULL_KEY = new Object();
 
-	Map<Relation, Rows> relations;
+	Map<T, Rows> relations;
+	Map<T, Set<Integer>> indexing;
 
-	public static AnswerStore empty() {
-		return new AnswerStore(LinkedHashMap.empty());
+	public static <T> AnswerStore<T> empty() {
+		return new AnswerStore<>(LinkedHashMap.empty(), LinkedHashMap.empty());
 	}
 
-	public AnswerStore with(Relation relation, Answer answer) {
+	/**
+	 * Declares which positions bucket for a token's rows — the store's own
+	 * equipment, never the boundary's. Before the token's first insert
+	 * only; an undeclared token full-scans, correctly.
+	 */
+	public AnswerStore<T> indexed(T relation, int... positions) {
+		if (relations.containsKey(relation)) {
+			throw new IllegalStateException(relation
+					+ ": declare indexing before the first insert");
+		}
+		Set<Integer> declared = LinkedHashSet.empty();
+		for (int position : positions) {
+			declared = declared.add(position);
+		}
+		return new AnswerStore<>(relations, indexing.put(relation, declared));
+	}
+
+	public AnswerStore<T> with(T relation, Answer answer) {
 		Rows rows = relations.getOrElse(relation, Rows.empty());
-		return new AnswerStore(relations.put(relation, rows.with(relation, answer)));
+		return new AnswerStore<>(
+				relations.put(relation, rows.with(positions(relation), answer)), indexing);
 	}
 
-	public AnswerStore withAll(Relation relation, Iterable<Answer> answers) {
-		AnswerStore grown = this;
+	public AnswerStore<T> withAll(T relation, Iterable<Answer> answers) {
+		AnswerStore<T> grown = this;
 		for (Answer answer : answers) {
 			grown = grown.with(relation, answer);
 		}
 		return grown;
 	}
 
-	public Iterable<Answer> answers(Call<Relation> probe) {
+	public Iterable<Answer> answers(Call<T> probe) {
 		return relations.get(probe.getRelation())
-				.map(rows -> rows.answers(probe))
+				.map(rows -> rows.answers(positions(probe.getRelation()), probe))
 				.getOrElse(Array.empty());
 	}
 
 	/** Upper bound from the narrowest consulted bucket — exact when unfiltered. */
-	public long estimate(Call<Relation> probe) {
+	public long estimate(Call<T> probe) {
 		return relations.get(probe.getRelation())
-				.map(rows -> rows.estimate(probe))
+				.map(rows -> rows.estimate(positions(probe.getRelation()), probe))
 				.getOrElse(0L);
+	}
+
+	private Set<Integer> positions(T relation) {
+		return indexing.getOrElse(relation, LinkedHashSet.empty());
 	}
 
 	@Value
@@ -97,7 +119,7 @@ public class AnswerStore {
 			return new Rows(LinkedHashMap.empty(), HashMap.empty());
 		}
 
-		Rows with(Relation relation, Answer answer) {
+		Rows with(Set<Integer> positions, Answer answer) {
 			Reified<?> image = answer.getReified();
 			Condition folded = byImage.get(image)
 					.map(resident -> Condition.RING.plus(resident, answer.getCondition()))
@@ -107,8 +129,8 @@ public class AnswerStore {
 			}
 			Map<Integer, ColumnIndex> indexed = byColumn;
 			Array<Term<Object>> cells = Answers.positions(image);
-			for (int i = 0; i < relation.getArgs().length; i++) {
-				if (!relation.getArgs()[i].isIndexed()) {
+			for (int i = 0; i < cells.size(); i++) {
+				if (!positions.contains(i)) {
 					continue;
 				}
 				ColumnIndex column = indexed.getOrElse(i, ColumnIndex.empty());
@@ -117,9 +139,9 @@ public class AnswerStore {
 			return new Rows(byImage.put(image, folded), indexed);
 		}
 
-		Iterable<Answer> answers(Call<Relation> probe) {
+		Iterable<Answer> answers(Set<Integer> positions, Call<?> probe) {
 			Array<Term<Object>> args = Answers.positions(probe.getArguments());
-			HashSet<Reified<?>> candidates = candidates(probe.getRelation(), args);
+			HashSet<Reified<?>> candidates = candidates(positions, args);
 			return byImage.toJavaStream()
 					.filter(row -> candidates == null || candidates.contains(row._1))
 					.filter(row -> matches(args, Answers.positions(row._1)))
@@ -127,9 +149,9 @@ public class AnswerStore {
 					.collect(Collectors.toList());
 		}
 
-		long estimate(Call<Relation> probe) {
+		long estimate(Set<Integer> positions, Call<?> probe) {
 			HashSet<Reified<?>> candidates =
-					candidates(probe.getRelation(), Answers.positions(probe.getArguments()));
+					candidates(positions, Answers.positions(probe.getArguments()));
 			return candidates == null ? byImage.size() : candidates.size();
 		}
 
@@ -138,10 +160,10 @@ public class AnswerStore {
 		 * rows". The scratch is MUTABLE java — the stored index stays
 		 * persistent, the per-probe computation never does.
 		 */
-		private HashSet<Reified<?>> candidates(Relation relation, Array<Term<Object>> args) {
+		private HashSet<Reified<?>> candidates(Set<Integer> positions, Array<Term<Object>> args) {
 			HashSet<Reified<?>> narrowed = null;
 			for (int i = 0; i < args.size(); i++) {
-				if (!relation.getArgs()[i].isIndexed() || !args.get(i).asVal().isDefined()) {
+				if (!positions.contains(i) || !isGround(args.get(i))) {
 					continue;
 				}
 				Object value = args.get(i).get();
@@ -180,7 +202,7 @@ public class AnswerStore {
 		}
 
 		ColumnIndex with(Term<Object> cell, Reified<?> image) {
-			if (!cell.asVal().isDefined()) {
+			if (!isGround(cell)) {
 				return new ColumnIndex(buckets, wide.add(image));
 			}
 			Object key = cell.get() == null ? NULL_KEY : cell.get();
