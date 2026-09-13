@@ -11,6 +11,9 @@ import com.tgac.logic.unification.MiniKanren;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import io.vavr.collection.Array;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +33,42 @@ public final class Answers {
 		return Answer.of((Reified<?>) lval(fact.getValues()
 				.map(Object.class::cast)
 				.map(LVal::lval)), Condition.ONE);
+	}
+
+	/**
+	 * Whether {@code wide} SUBSUMES {@code narrow}: every instance the
+	 * narrow row claims is already claimed by the wide one, under a
+	 * condition at least as permissive — the licence to DROP the narrow
+	 * from a delivery. Dropping is the under-delivery direction, so both
+	 * checks are strict: the wide's frees must bind CONSISTENTLY (a
+	 * coupled {@code (x,x)} never subsumes {@code (1,2)}), a wide ground
+	 * cell must equal a ground narrow cell (a free narrow cell claims
+	 * more), and the wide's condition must ABSORB the narrow's (a guarded
+	 * wide never swallows an unconditional row).
+	 */
+	public static boolean subsumes(Answer wide, Answer narrow) {
+		Array<Term<Object>> w = positions(wide.getReified());
+		Array<Term<Object>> n = positions(narrow.getReified());
+		if (w.size() != n.size()) {
+			return false;
+		}
+		Map<Term<Object>, Term<Object>> binding = new HashMap<>();
+		for (int i = 0; i < w.size(); i++) {
+			Term<Object> wc = w.get(i);
+			Term<Object> nc = n.get(i);
+			if (wc.asVal().isDefined()) {
+				if (!nc.asVal().isDefined() || !Objects.equals(wc.get(), nc.get())) {
+					return false;
+				}
+			} else {
+				Term<Object> bound = binding.putIfAbsent(wc, nc);
+				if (bound != null && !bound.equals(nc)) {
+					return false;
+				}
+			}
+		}
+		Condition joined = Condition.RING.plus(wide.getCondition(), narrow.getCondition());
+		return joined.equals(wide.getCondition());
 	}
 
 	/** The row's raw values, positional. The row must be fully ground. */

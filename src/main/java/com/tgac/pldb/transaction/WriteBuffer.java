@@ -11,6 +11,7 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.AnswerStore;
+import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -65,13 +66,16 @@ public class WriteBuffer implements AnswerSource {
 	 * rows its pin certifies).
 	 */
 	public Iterable<Answer> overlay(Call<Relation> probe, Iterable<Answer> baseAnswers) {
-		// TODO : There should be subsumption detection here if delta answers subsume base.
-		// Same-key rows ⊕-fold in the cell (a staged duplicate is inert, conditions
-		// join by absorption); a wide delta row shadowing a DIFFERENT base key is
-		// the open subsumption case above.
+		// a staged row that SUBSUMES a base row (image with consistent
+		// bindings, condition absorbing) shadows it out of the delivery —
+		// same-key duplicates still ⊕-fold in the cell below
+		List<Answer> staged = StreamSupport.stream(delta.answers(probe).spliterator(), false)
+				.collect(Collectors.toList());
 		JoinMap<Reified<?>, Condition> folded = Stream.concat(
-						StreamSupport.stream(baseAnswers.spliterator(), false),
-						StreamSupport.stream(delta.answers(probe).spliterator(), false))
+						StreamSupport.stream(baseAnswers.spliterator(), false)
+								.filter(base -> staged.stream()
+										.noneMatch(wide -> Answers.subsumes(wide, base))),
+						staged.stream())
 				.reduce(JoinMap.empty(Condition.RING),
 						(map, answer) -> map.append(answer.getReified(), answer.getCondition()).getOrElse(map),
 						Exceptions.throwingBiOp(UnsupportedOperationException::new));
