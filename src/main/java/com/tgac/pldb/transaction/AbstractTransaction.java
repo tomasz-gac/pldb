@@ -29,8 +29,8 @@ import lombok.RequiredArgsConstructor;
 public abstract class AbstractTransaction implements Transaction {
 	final WriteBuffer writeBuffer;
 
-	public static AbstractTransaction over(SimulatedSerialization source) {
-		return new Simulated(WriteBuffer.over(source), source, new ConcurrentHashMap<>());
+	public static Simulated over(SimulatedSerialization source) {
+		return new Simulated(WriteBuffer.over(source), source, new ConcurrentHashMap<>(), Footprint.empty());
 	}
 
 	public static AbstractTransaction over(NativeSerialization source) {

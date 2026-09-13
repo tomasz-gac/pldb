@@ -16,21 +16,25 @@ import java.util.concurrent.ConcurrentMap;
  * source (pin and rows minted from one world) and every repeat serves
  * the same {@link Pinned} back, so the transaction is its own snapshot
  * at region grain: read stability by construction, no source consulted
- * twice for one region. Commit folds the ledger's pins into the
- * {@link Footprint} by {@link Footprint#union} — regions are distinct
- * keys, so the union never conflicts here; its refusal guards the
- * cross-part compositions to come.
+ * twice for one region. Commit proves the {@link #footprint()} of its
+ * own reads UNIONED with the {@link #requiring(Footprint) premise} —
+ * regions a client read in an EARLIER request, whose decision this
+ * write carries out: the commit stands on both, and either world
+ * having moved refuses it. The union's own refusal guards overlapping
+ * regions read at different worlds.
  */
 public class Simulated extends AbstractTransaction {
 
 	private final SimulatedSerialization serialization;
 	private final ConcurrentMap<Call<Relation>, Pinned<Iterable<Answer>>> reads;
+	private final Footprint premise;
 
 	Simulated(WriteBuffer writeBuffer, SimulatedSerialization serialization,
-			ConcurrentMap<Call<Relation>, Pinned<Iterable<Answer>>> reads) {
+			ConcurrentMap<Call<Relation>, Pinned<Iterable<Answer>>> reads, Footprint premise) {
 		super(writeBuffer);
 		this.serialization = serialization;
 		this.reads = reads;
+		this.premise = premise;
 	}
 
 	@Override
@@ -42,15 +46,30 @@ public class Simulated extends AbstractTransaction {
 	@Override
 	public Try<Transaction> withFacts(Collection<Literal> facts) {
 		return writeBuffer.withFacts(new ArrayList<>(facts))
-				.map(grown -> new Simulated(grown, serialization, reads));
+				.map(grown -> new Simulated(grown, serialization, reads, premise));
+	}
+
+	/** The ledger folded: every region this transaction read, at its pin. */
+	public Footprint footprint() {
+		return reads.entrySet().stream()
+				.map(read -> Footprint.of(read.getKey(), read.getValue().getPin()))
+				.reduce(Footprint.empty(), Footprint::union);
+	}
+
+	/**
+	 * The client's premise: regions read ELSEWHERE (an earlier request,
+	 * another transaction) that this commit must also prove unmoved —
+	 * the decision behind the write stood on them, whether or not this
+	 * transaction reads them itself. Premises accumulate by union.
+	 */
+	public Simulated requiring(Footprint required) {
+		return new Simulated(writeBuffer, serialization, reads, premise.union(required));
 	}
 
 	@Override
 	public Try<Nothing> commit() {
-		Footprint footprint = reads.entrySet().stream()
-				.map(read -> Footprint.of(read.getKey(), read.getValue().getPin()))
-				.reduce(Footprint.empty(), Footprint::union);
-		return through(() -> serialization.commit(footprint, writeBuffer.staged().asJava()));
+		return through(() -> serialization.commit(
+				footprint().union(premise), writeBuffer.staged().asJava()));
 	}
 
 	/** Ends the snapshot (the source's close rolls its read transaction back). */
