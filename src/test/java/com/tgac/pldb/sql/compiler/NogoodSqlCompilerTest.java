@@ -24,8 +24,8 @@ import com.tgac.logic.unification.Prefix;
 import com.tgac.logic.unification.Substitutions;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.constraints.TableConstraints;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -95,7 +95,7 @@ public class NogoodSqlCompilerTest {
 		// the REST of the disjunction would strengthen — whole or not at all
 		Property<Long> id = Property.of("id");
 		Relation r = Literal.relation(NogoodSqlCompilerTest.class, "r").arg("id", lvar()).from(null).getRel();
-		Posting posted = TableConstraints.posted(ImmutableDatabase.empty(), r, Array.of(x));
+		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Array.of(x));
 		assertThat(compiled(exclude(Posting.all(x.unifies(2L), posted)))).isEmpty();
 	}
 
@@ -148,7 +148,7 @@ public class NogoodSqlCompilerTest {
 		// flips the direction ONCE, at the conjunct boundary.
 		Property<Long> id = Property.of("id");
 		Relation r = Literal.relation(NogoodSqlCompilerTest.class, "r").arg("id", lvar()).from(null).getRel();
-		Posting posted = TableConstraints.posted(ImmutableDatabase.empty(), r, Array.of(x));
+		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Array.of(x));
 		Nogood refused = (Nogood) ((Posting.Activation) exclude(posted)).getItem();
 		Optional<SqlPredicate> partial = compiler().compile(first.combine(refused), this::column);
 		assertThat(partial).isPresent();

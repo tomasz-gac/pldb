@@ -12,8 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import io.vavr.Tuple;
 import java.util.Arrays;
@@ -130,7 +129,7 @@ public class RuleNegationTest {
 
 	@Test(timeout = 5000)
 	public void aNegatedRecursiveClosureFilters() {
-		Database db = ImmutableDatabase.empty()
+		AnswerStore db = AnswerStore.empty()
 				.withFacts(Arrays.asList(
 						edge(null, lval(1), lval(2)),
 						edge(null, lval(2), lval(3))))

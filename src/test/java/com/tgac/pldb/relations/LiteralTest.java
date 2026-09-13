@@ -13,8 +13,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
+import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +30,7 @@ public class LiteralTest {
 				.from(db);
 	}
 
-	private static final Database db = ImmutableDatabase.empty()
+	private static final AnswerStore db = AnswerStore.empty()
 			.withFacts(Arrays.asList(
 					person(null, lval(1), lval("Ada")),
 					person(null, lval(2), lval("Alan"))))
@@ -70,8 +70,12 @@ public class LiteralTest {
 
 	@Test
 	public void aHoledLiteralRefusesAtTheWriteDoorByName() {
-		assertThatThrownBy(() -> com.tgac.pldb.inmemory.ImmutableDatabase.empty()
-				.withFacts(person(null, lval(1), lvar())))
+		// the refusal travels as the door's Try value — the Conflict ruling's
+		// idiom — and .get() rethrows where a caller wants the throw
+		Try<AnswerStore> refused = AnswerStore.empty()
+				.withFacts(person(null, lval(1), lvar()));
+		assertThat(refused.isFailure()).isTrue();
+		assertThat(refused.getCause())
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("name");
@@ -84,7 +88,7 @@ public class LiteralTest {
 		Literal wideProbe = wide(null, lval(7),
 				lvar(), lvar(), lvar(), lvar(), lvar(), lvar(),
 				lvar(), lvar(), lvar(), lvar(), lvar());
-		Database wideDb = ImmutableDatabase.empty()
+		AnswerStore wideDb = AnswerStore.empty()
 				.withFacts(Arrays.asList(
 						wide(null, lval(7), lval("a"), lval("b"), lval("c"), lval("d"),
 								lval("e"), lval("f"), lval("g"), lval("h"), lval("i"),
@@ -170,7 +174,7 @@ public class LiteralTest {
 	public void theWriteDoorsAcceptLiteralsDirectly() {
 		// the API face: no  ceremony — the door converts, and the
 		// hole refusal arrives with the relation and column named
-		com.tgac.pldb.inmemory.Database db = com.tgac.pldb.inmemory.ImmutableDatabase.empty()
+		com.tgac.pldb.inmemory.AnswerStore db = com.tgac.pldb.inmemory.AnswerStore.empty()
 				.withFacts(Arrays.asList(
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))

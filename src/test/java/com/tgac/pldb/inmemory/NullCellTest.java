@@ -32,8 +32,8 @@ public class NullCellTest {
 				.from(db);
 	}
 
-	private static Database db() {
-		return ImmutableDatabase.empty().withFacts(Arrays.asList(
+	private static AnswerStore db() {
+		return AnswerStore.empty().withFacts(Arrays.asList(
 				person(null, lval(1), lval("Ada")),
 				person(null, lval(2), lval((String) null)),
 				tagged(null, lval(1), lval("core")),

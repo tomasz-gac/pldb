@@ -15,8 +15,7 @@ import com.tgac.logic.finitedomain.FiniteDomainConstraints;
 import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -49,7 +48,7 @@ public class SqlPushdownTest {
 	private static final Property<Long> id = Property.of("id");
 	private static final Property<String> name = Property.of("name");
 
-	private static final Database reference = ImmutableDatabase.empty()
+	private static final AnswerStore reference = AnswerStore.empty()
 			.withFacts(Arrays.asList(
 					person(null, lval(1L), lval("Ada")),
 					person(null, lval(2L), lval("Alan")),

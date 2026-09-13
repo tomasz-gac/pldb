@@ -13,14 +13,10 @@ import com.tgac.logic.goals.optimizer.OrderingOptimizer;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
-import com.tgac.pldb.inmemory.Trigger;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,12 +40,12 @@ public class PlannerTest {
 	private static final Property<Integer> parentId = Property.of("parentId");
 	private static final Property<Integer> childId = Property.of("childId");
 
-	/** Counts facts the index yields — the probe metric of query-planning.md §Phase 2. */
-	private static final class CountingDb implements Database {
-		private final Database inner;
+	/** Counts facts the source yields — the probe metric of query-planning.md §Phase 2. */
+	private static final class CountingSource implements AnswerSource {
+		private final AnswerStore inner;
 		private final AtomicLong yielded;
 
-		CountingDb(Database inner, AtomicLong yielded) {
+		CountingSource(AnswerStore inner, AtomicLong yielded) {
 			this.inner = inner;
 			this.yielded = yielded;
 		}
@@ -69,33 +65,18 @@ public class PlannerTest {
 			// pricing is exempt from the enumeration metric: it measures the SEARCH
 			return inner.estimate(probe);
 		}
-
-		@Override
-		public Try<Database> withFacts(List<Fact> facts) {
-			return inner.withFacts(facts).map(db -> new CountingDb(db, yielded));
-		}
-
-		@Override
-		public Try<Database> withoutFacts(List<Fact> facts) {
-			return inner.withoutFacts(facts).map(db -> new CountingDb(db, yielded));
-		}
-
-		@Override
-		public Database withTrigger(Trigger trigger) {
-			return new CountingDb(inner.withTrigger(trigger), yielded);
-		}
 	}
 
-	private static Database chain(AtomicLong counter) {
+	private static AnswerSource chain(AtomicLong counter) {
 		List<Literal> facts = new ArrayList<>();
 		for (int i = 0; i < N; i++) {
 			facts.add(parent(null, lval(i), lval(i + 1)));
 		}
-		return new CountingDb(ImmutableDatabase.empty(), counter).withFacts(facts).get();
+		return new CountingSource(AnswerStore.empty().withFacts(facts).get(), counter);
 	}
 
 	/** grandparent-of-39, deliberately mis-ordered: the unbound joins first. */
-	private static com.tgac.logic.goals.Goal misOrdered(Database db, Unifiable<Integer> gp) {
+	private static com.tgac.logic.goals.Goal misOrdered(AnswerSource db, Unifiable<Integer> gp) {
 		Unifiable<Integer> p = lvar();
 		return parent(db, gp, p)
 				.and(parent(db, p, lval(N - 1)));

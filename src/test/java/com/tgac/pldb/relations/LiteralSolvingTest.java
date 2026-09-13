@@ -15,8 +15,7 @@ import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import io.vavr.Tuple;
 import java.util.Arrays;
 import java.util.List;
@@ -33,8 +32,8 @@ public class LiteralSolvingTest {
 				.from(db);
 	}
 
-	private static Database edges(int[][] pairs) {
-		return ImmutableDatabase.empty()
+	private static AnswerStore edges(int[][] pairs) {
+		return AnswerStore.empty()
 				.withFacts(Arrays.stream(pairs)
 						.map(p -> edge(null, lval(p[0]), lval(p[1])))
 						.collect(Collectors.toList()))
@@ -59,7 +58,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void aRuleLiteralEnumerates() {
-		Database db = edges(new int[][]{{1, 2}, {1, 3}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {1, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		Literal direct = Literal.relation(LiteralSolvingTest.class, "direct")
@@ -71,7 +70,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void valueEqualMintsShareOneProduction() {
-		Database db = edges(new int[][]{{1, 2}, {1, 3}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {1, 3}});
 		AtomicInteger productions = new AtomicInteger();
 		Unifiable<Integer> one = lvar();
 		Unifiable<Integer> a = lvar();
@@ -102,7 +101,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void methodRecursionSealsAChain() {
-		Database db = edges(new int[][]{{1, 2}, {2, 3}, {3, 4}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {2, 3}, {3, 4}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
@@ -111,7 +110,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void methodRecursionSealsACycle() {
-		Database db = edges(new int[][]{{1, 2}, {2, 3}, {3, 1}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {2, 3}, {3, 1}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
@@ -120,7 +119,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void aDiamondFoldsDerivations() {
-		Database db = edges(new int[][]{{1, 2}, {1, 3}, {2, 4}, {3, 4}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {1, 3}, {2, 4}, {3, 4}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		assertThat(answers(x.unifies(1).and(reach(db, x, y)), y))
@@ -129,7 +128,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void aHoistedLiteralServesTwoKeys() {
-		Database db = edges(new int[][]{{1, 2}, {2, 3}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {2, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
 		Literal hoisted = reach(db, x, y);
@@ -147,7 +146,7 @@ public class LiteralSolvingTest {
 	public void tablesAreFreshPerSolve() {
 		// the residence doctrine: a solve roots its own table, so nothing is
 		// memoized across solves unless the caller threads a table forward
-		Database db = edges(new int[][]{{1, 2}});
+		AnswerStore db = edges(new int[][]{{1, 2}});
 		AtomicInteger productions = new AtomicInteger();
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
@@ -165,7 +164,7 @@ public class LiteralSolvingTest {
 		// warm start as the caller's explicit act: thread the same table into
 		// a second solve and the rule never re-derives — the capability the
 		// owned table used to provide, now a value the caller holds
-		Database db = edges(new int[][]{{1, 2}});
+		AnswerStore db = edges(new int[][]{{1, 2}});
 		AtomicInteger productions = new AtomicInteger();
 		Table retained = Table.empty();
 		Unifiable<Integer> x = lvar();
@@ -186,7 +185,7 @@ public class LiteralSolvingTest {
 
 	@Test(timeout = 5000)
 	public void ruleAnswersAgreeWithTheBareLookup() {
-		Database db = edges(new int[][]{{1, 2}, {1, 3}, {2, 4}});
+		AnswerStore db = edges(new int[][]{{1, 2}, {1, 3}, {2, 4}});
 		Unifiable<Integer> a = lvar();
 		Unifiable<Integer> b = lvar();
 		Unifiable<Integer> x = lvar();

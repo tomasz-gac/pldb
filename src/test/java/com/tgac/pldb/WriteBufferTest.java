@@ -9,7 +9,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.transaction.WriteBuffer;
 import java.util.Arrays;
@@ -25,7 +25,7 @@ public class WriteBufferTest {
 	}
 
 	private static AnswerSource base() {
-		return ImmutableDatabase.empty().withFacts(Arrays.asList(
+		return AnswerStore.empty().withFacts(Arrays.asList(
 				person(null, lval(1L), lval("Ada")),
 				person(null, lval(2L), lval("Alan")))).get();
 	}

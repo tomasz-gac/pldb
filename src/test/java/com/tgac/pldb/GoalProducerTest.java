@@ -20,8 +20,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -46,7 +45,7 @@ public class GoalProducerTest {
 		return person((AnswerSource) null, lvar(), lvar()).getRel();
 	}
 
-	private final Database db = ImmutableDatabase.empty()
+	private final AnswerStore db = AnswerStore.empty()
 			.withFacts(Arrays.asList(
 					person((AnswerSource) null, lval(1L), lval("Ada")),
 					person((AnswerSource) null, lval(2L), lval("Alan")),

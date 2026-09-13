@@ -12,8 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -34,8 +33,8 @@ public class ProjectedTest {
 				.from(db);
 	}
 
-	private static Database db() {
-		return ImmutableDatabase.empty().withFacts(
+	private static AnswerStore db() {
+		return AnswerStore.empty().withFacts(
 				person(null, lval(1), lval("Ada")),
 				person(null, lval(2), lval("Ada")),
 				person(null, lval(3), lval("Kurt")),

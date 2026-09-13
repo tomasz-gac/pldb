@@ -19,8 +19,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.constraints.Support;
 import com.tgac.pldb.constraints.TableConstraints;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -78,7 +77,7 @@ public class TableConstraintsTest {
 	private static final Property<String> label = Property.of("label");
 	private static final Property<Integer> price = Property.of("price");
 
-	private static final Database db = ImmutableDatabase.empty()
+	private static final AnswerStore db = AnswerStore.empty()
 			.withFacts(Arrays.asList(
 					r(null, lval(1), lval("a")),
 					r(null, lval(2), lval("b")),

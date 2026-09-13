@@ -22,8 +22,7 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
@@ -84,7 +83,7 @@ public class SqlTheoryBatteryTest {
 	private static final Property<Long> lo = Property.of("lo");
 	private static final Property<Long> hi = Property.of("hi");
 
-	private static final Database reference = ImmutableDatabase.empty()
+	private static final AnswerStore reference = AnswerStore.empty()
 			.withFacts(Arrays.asList(
 					person(null, lval(1L), lval("Ada")),
 					person(null, lval(2L), lval("Alan")),
