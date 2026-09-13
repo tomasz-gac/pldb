@@ -41,7 +41,7 @@ import org.junit.Test;
 public class TableConstraintsTest {
 
 	private static Literal r(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
-		return Literal.relation("r")
+		return Literal.relation(TableConstraintsTest.class, "r")
 				.arg("item", item).indexed()
 				.arg("tag", tag).indexed()
 				.from(db);
@@ -52,7 +52,7 @@ public class TableConstraintsTest {
 	}
 
 	private static Literal s(AnswerSource db, Unifiable<String> label, Unifiable<Integer> price) {
-		return Literal.relation("s")
+		return Literal.relation(TableConstraintsTest.class, "s")
 				.arg("label", label).indexed()
 				.arg("price", price).indexed()
 				.from(db);
@@ -63,7 +63,7 @@ public class TableConstraintsTest {
 	}
 
 	private static Literal t(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
-		return Literal.relation("t")
+		return Literal.relation(TableConstraintsTest.class, "t")
 				.arg("item", item).indexed()
 				.arg("tag", tag).indexed()
 				.from(db);

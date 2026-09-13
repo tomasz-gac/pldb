@@ -37,7 +37,7 @@ public class NullColumnTest {
 	}
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(NullColumnTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);

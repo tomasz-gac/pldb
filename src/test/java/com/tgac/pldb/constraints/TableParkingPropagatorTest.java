@@ -42,7 +42,7 @@ import org.junit.Test;
 public class TableParkingPropagatorTest {
 
 	private static Literal r(AnswerSource db, Unifiable<Integer> item, Unifiable<String> tag) {
-		return Literal.relation("r")
+		return Literal.relation(TableParkingPropagatorTest.class, "r")
 				.arg("item", item).indexed()
 				.arg("tag", tag).indexed()
 				.from(db);
@@ -64,7 +64,7 @@ public class TableParkingPropagatorTest {
 
 	/** The reference relation as a rule: the body is the db lookup over the heads. */
 	private static Posting posted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.relation("rr")
+		return Literal.relation(TableParkingPropagatorTest.class, "rr")
 				.arg("item", i)
 				.arg("tag", t)
 				.solving(r(db, i, t)).posted();
@@ -118,7 +118,7 @@ public class TableParkingPropagatorTest {
 
 	/** A rule ignoring its tag: one row under the guard item ≠ 2. */
 	private static Posting guardedPosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.relation("guardedR")
+		return Literal.relation(TableParkingPropagatorTest.class, "guardedR")
 				.arg("item", i)
 				.arg("tag", t)
 				.solving(exclude(i.unifies(2))).posted();
@@ -154,7 +154,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting twoGuardsPosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.relation("twoGuardsR")
+		return Literal.relation(TableParkingPropagatorTest.class, "twoGuardsR")
 				.arg("item", i)
 				.arg("tag", t)
 				.solving(exclude(i.unifies(2)).or(exclude(i.unifies(3)))).posted();
@@ -172,7 +172,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting widePosted(Unifiable<Integer> i, Unifiable<String> t) {
-		return Literal.relation("wideR")
+		return Literal.relation(TableParkingPropagatorTest.class, "wideR")
 				.arg("item", i)
 				.arg("tag", t)
 				.solving(i.unifies(1)).posted();
@@ -190,7 +190,7 @@ public class TableParkingPropagatorTest {
 	}
 
 	private static Posting diagonalPosted(Unifiable<String> l, Unifiable<String> r) {
-		return Literal.relation("diagR")
+		return Literal.relation(TableParkingPropagatorTest.class, "diagR")
 				.arg("l", l)
 				.arg("r", r)
 				.solving(l.unifies(r)).posted();
@@ -203,7 +203,7 @@ public class TableParkingPropagatorTest {
 		// and all — instead of parking on the choice between two rows
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Posting tautology = Literal.relation("tautR")
+		Posting tautology = Literal.relation(TableParkingPropagatorTest.class, "tautR")
 				.arg("item", x)
 				.arg("tag", y)
 				.solving(Goal.success().or(x.unifies(1).and(y.unifies("b")))).posted();
@@ -238,7 +238,7 @@ public class TableParkingPropagatorTest {
 		// re-woken record discharges by entailment — the tag stays open
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> t = lvar();
-		Posting mixed = Literal.relation("mixedR")
+		Posting mixed = Literal.relation(TableParkingPropagatorTest.class, "mixedR")
 				.arg("item", x)
 				.arg("tag", t)
 				.solving(x.unifies(7).or(x.unifies(8).and(t.unifies("a")))).posted();
@@ -252,7 +252,7 @@ public class TableParkingPropagatorTest {
 		// answer's residue
 		Unifiable<Integer> i = lvar();
 		Unifiable<String> y = lvar();
-		Posting guarded = Literal.relation("condR")
+		Posting guarded = Literal.relation(TableParkingPropagatorTest.class, "condR")
 				.arg("item", i)
 				.arg("tag", y)
 				.solving(i.unifies(7).and(exclude(y.unifies("q")))
@@ -293,7 +293,7 @@ public class TableParkingPropagatorTest {
 		// keeps reify (and enforcement, S3's stage) out of this receipt
 		Unifiable<Integer> x = lvar();
 		Unifiable<String> y = lvar();
-		Posting mixed = Literal.relation("mixedTopR")
+		Posting mixed = Literal.relation(TableParkingPropagatorTest.class, "mixedTopR")
 				.arg("item", x)
 				.arg("tag", y)
 				.solving(x.unifies(7).or(x.unifies(8).and(y.unifies("a")))).posted();

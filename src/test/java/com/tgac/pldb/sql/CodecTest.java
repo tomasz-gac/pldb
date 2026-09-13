@@ -52,7 +52,7 @@ public class CodecTest {
 	}
 
 	private static Literal loan(AnswerSource db, Unifiable<Integer> id, Unifiable<LocalDate> due) {
-		return Literal.relation("loan")
+		return Literal.relation(CodecTest.class, "loan")
 				.arg("id", id).indexed()
 				.arg("due", due)
 				.from(db);
@@ -61,7 +61,7 @@ public class CodecTest {
 	/** One Java type, TWO wire encodings in one relation — the codec is a
 	 * property of the COLUMN, addressed through the defining method. */
 	private static Literal event(AnswerSource db, Unifiable<LocalDate> at, Unifiable<LocalDate> logged) {
-		return Literal.relation("event")
+		return Literal.relation(CodecTest.class, "event")
 				.arg("at", at).indexed()
 				.arg("logged", logged)
 				.from(db);
@@ -133,7 +133,7 @@ public class CodecTest {
 
 	@Test
 	public void aStructuralValueKeepsTheModellingRefusal() {
-		Literal bad = Literal.relation("loan")
+		Literal bad = Literal.relation(CodecTest.class, "loan")
 				.arg("id", lval(1)).indexed()
 				.arg("due", lval((Object) Arrays.asList(1, 2)))
 				.from(null);
@@ -150,7 +150,7 @@ public class CodecTest {
 		}
 		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)) {
 			Unifiable<String> name = lvar();
-			Literal.relation("person").arg("id", lvar()).indexed().arg("name", name).from(source)
+			Literal.relation(CodecTest.class, "person").arg("id", lvar()).indexed().arg("name", name).from(source)
 					.solve(name).collect(Collectors.toList());
 			assertThatThrownBy(() -> source.withCodec(loan(null, lvar(), AS_DATE.arg())))
 					.isInstanceOf(IllegalStateException.class)

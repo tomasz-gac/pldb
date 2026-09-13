@@ -44,7 +44,10 @@ public class NamespacedRelationTest {
 		assertThat(loan(Lending.class))
 				.describedAs("the same shape under another namespace is another relation")
 				.isNotEqualTo(loan(Billing.class));
-		assertThat(loan(Lending.class).getName()).isEqualTo("Lending.loan");
+		assertThat(loan(Lending.class).getName())
+				.describedAs("the physical name stays bare — tables and mark rows never see the namespace")
+				.isEqualTo("loan");
+		assertThat(((RelationN) loan(Lending.class)).getNamespace()).isEqualTo("Lending");
 	}
 
 	@Test

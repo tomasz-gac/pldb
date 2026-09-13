@@ -22,7 +22,7 @@ import org.junit.Test;
 public class PinWorldIdentityTest {
 
 	private static Literal person(Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(PinWorldIdentityTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(null);

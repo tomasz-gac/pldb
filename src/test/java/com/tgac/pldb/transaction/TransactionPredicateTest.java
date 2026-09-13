@@ -34,7 +34,7 @@ public class TransactionPredicateTest {
 	}
 
 	private static Literal orphan(AnswerSource db, Unifiable<Integer> id) {
-		return Literal.relation("orphan").arg("id", id).from(db);
+		return Literal.relation(TransactionPredicateTest.class, "orphan").arg("id", id).from(db);
 	}
 
 	/** No orphan table exists, so the flush inside commit fails for real. */

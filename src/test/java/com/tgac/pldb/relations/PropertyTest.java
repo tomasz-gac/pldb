@@ -33,7 +33,7 @@ public class PropertyTest {
 	@Test
 	public void lookupIdentityIsTheNameRegardlessOfFlags() {
 		Property<Integer> id = Property.of("id");
-		Relation rel = Literal.relation("r")
+		Relation rel = Literal.relation(PropertyTest.class, "r")
 				.arg("id", lvar()).indexed().ground()
 				.arg("tag", lvar())
 				.from(null).getRel();
@@ -46,7 +46,7 @@ public class PropertyTest {
 
 	@Test
 	public void flaggedCopiesOfOneNameAreStillDuplicatesInARelation() {
-		assertThatThrownBy(() -> Literal.relation("r")
+		assertThatThrownBy(() -> Literal.relation(PropertyTest.class, "r")
 				.arg("id", lvar()).indexed()
 				.arg("id", lvar()).ground()
 				.from(null))

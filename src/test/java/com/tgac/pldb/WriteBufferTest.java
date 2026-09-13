@@ -21,7 +21,7 @@ import org.junit.Test;
 public class WriteBufferTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
-		return Literal.relation("person").arg("id", id).indexed().arg("name", name).from(db);
+		return Literal.relation(WriteBufferTest.class, "person").arg("id", id).indexed().arg("name", name).from(db);
 	}
 
 	private static AnswerSource base() {

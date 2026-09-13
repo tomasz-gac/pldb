@@ -43,11 +43,11 @@ public class SqlFlushTest {
 	}
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person").arg("id", id).indexed().arg("name", name).from(db);
+		return Literal.relation(SqlFlushTest.class, "person").arg("id", id).indexed().arg("name", name).from(db);
 	}
 
 	private static Literal visited(AnswerSource db, Unifiable<Object> city) {
-		return Literal.relation("visited").arg("city", city).from(db);
+		return Literal.relation(SqlFlushTest.class, "visited").arg("city", city).from(db);
 	}
 
 	private List<String> namesReadBack() throws Exception {

@@ -47,7 +47,7 @@ public class NullableColumnTest {
 	 * and the column stays a plain {@code Unifiable<String>}.
 	 */
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(NullableColumnTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name).nullable()
 				.from(db);
@@ -129,7 +129,7 @@ public class NullableColumnTest {
 
 	/** The catcher stays for columns NOT declared nullable. */
 	private static Literal strict(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(NullableColumnTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);

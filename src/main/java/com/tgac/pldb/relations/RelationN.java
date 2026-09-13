@@ -17,12 +17,18 @@ import lombok.Value;
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RelationN implements Relation {
+	/** IDENTITY only — the physical name ({@link #getName}) never carries it. */
+	String namespace;
 	String name;
 	Property<?>[] args;
 
 	public static RelationN of(String name, Property<?>... args) {
+		return of("", name, args);
+	}
+
+	public static RelationN of(String namespace, String name, Property<?>... args) {
 		validateProperties(args);
-		return new RelationN(name, args);
+		return new RelationN(namespace, name, args);
 	}
 
 	public static void validateProperties(Property<?>... args) {

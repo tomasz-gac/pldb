@@ -36,7 +36,7 @@ import org.junit.Test;
 public class SqlPushdownTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(SqlPushdownTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);

@@ -80,14 +80,14 @@ public class VersionedWatermarkTest {
 	}
 
 	private static Literal loan(AnswerSource db, Unifiable<String> member, Unifiable<String> copy) {
-		return Literal.relation("loan")
+		return Literal.relation(VersionedWatermarkTest.class, "loan")
 				.arg("member", member).indexed()
 				.arg("copy", copy)
 				.from(db);
 	}
 
 	private static Literal book(AnswerSource db, Unifiable<String> isbn, Unifiable<String> title) {
-		return Literal.relation("book")
+		return Literal.relation(VersionedWatermarkTest.class, "book")
 				.arg("isbn", isbn).indexed()
 				.arg("title", title)
 				.from(db);
@@ -147,7 +147,7 @@ public class VersionedWatermarkTest {
 	}
 
 	private static Literal invoice(AnswerSource db, Unifiable<String> member, Unifiable<Long> day) {
-		return Literal.relation("invoice")
+		return Literal.relation(VersionedWatermarkTest.class, "invoice")
 				.arg("member", member)
 				.arg("due", day)
 				.from(db);

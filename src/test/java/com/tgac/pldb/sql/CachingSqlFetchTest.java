@@ -33,7 +33,7 @@ import org.junit.Test;
 public class CachingSqlFetchTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(CachingSqlFetchTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);

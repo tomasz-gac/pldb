@@ -13,7 +13,7 @@ public class SelfNegationProbeTest {
 
 	/** p(x) :- x=1, NOT p(x) — the recursion deferred, so the engine meets it. */
 	private static Literal selfNeg(Unifiable<Integer> x) {
-		return Literal.relation("selfNeg")
+		return Literal.relation(SelfNegationProbeTest.class, "selfNeg")
 				.arg("x", x)
 				.solving(x.unifies(1).and(defer(() -> exclude(selfNeg(x)))));
 	}

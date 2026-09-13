@@ -23,7 +23,7 @@ import org.junit.Test;
 public class ImmutableDatabaseTest {
 
 	private static Literal man(AnswerSource db, Unifiable<String> name) {
-		return Literal.relation("man")
+		return Literal.relation(ImmutableDatabaseTest.class, "man")
 				.arg("name", name)
 				.from(db);
 	}
@@ -33,7 +33,7 @@ public class ImmutableDatabaseTest {
 	}
 
 	private static Literal woman(AnswerSource db, Unifiable<String> name) {
-		return Literal.relation("woman")
+		return Literal.relation(ImmutableDatabaseTest.class, "woman")
 				.arg("name", name)
 				.from(db);
 	}
@@ -43,7 +43,7 @@ public class ImmutableDatabaseTest {
 	}
 
 	private static Literal parent(AnswerSource db, Unifiable<String> name, Unifiable<String> child) {
-		return Literal.relation("parent")
+		return Literal.relation(ImmutableDatabaseTest.class, "parent")
 				.arg("name", name)
 				.arg("child", child)
 				.from(db);
@@ -54,7 +54,7 @@ public class ImmutableDatabaseTest {
 	}
 
 	private static Literal tree(AnswerSource db, Unifiable<Integer> id, Unifiable<Integer> parentId, Unifiable<String> data) {
-		return Literal.relation("tree")
+		return Literal.relation(ImmutableDatabaseTest.class, "tree")
 				.arg("id", id)
 				.arg("parentId", parentId)
 				.arg("data", data)

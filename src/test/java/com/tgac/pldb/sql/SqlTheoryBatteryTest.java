@@ -57,7 +57,7 @@ import org.junit.Test;
 public class SqlTheoryBatteryTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(SqlTheoryBatteryTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
@@ -68,7 +68,7 @@ public class SqlTheoryBatteryTest {
 	}
 
 	private static Literal edge(AnswerSource db, Unifiable<Long> lo, Unifiable<Long> hi) {
-		return Literal.relation("edge")
+		return Literal.relation(SqlTheoryBatteryTest.class, "edge")
 				.arg("lo", lo).indexed()
 				.arg("hi", hi).indexed()
 				.from(db);

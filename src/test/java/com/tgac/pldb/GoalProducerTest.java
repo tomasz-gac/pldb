@@ -18,6 +18,8 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
+import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.inmemory.Database;
 import com.tgac.pldb.inmemory.ImmutableDatabase;
 import com.tgac.pldb.relations.Literal;
@@ -33,11 +35,11 @@ import org.junit.Test;
 public class GoalProducerTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Long> id, Unifiable<String> name) {
-		return Literal.relation("person").arg("id", id).arg("name", name).from(db);
+		return Literal.relation(GoalProducerTest.class, "person").arg("id", id).arg("name", name).from(db);
 	}
 
 	private static Literal person(AnswerProducer p, Unifiable<Long> id, Unifiable<String> name) {
-		return Literal.relation("person").arg("id", id).arg("name", name).produced(p);
+		return Literal.relation(GoalProducerTest.class, "person").arg("id", id).arg("name", name).produced(p);
 	}
 
 	private static Relation personRel() {
@@ -116,7 +118,9 @@ public class GoalProducerTest {
 	public void duplicateArrivalsFoldInTheCell() {
 		// dedup is the cell join's own algebra: a duplicate arrival is an
 		// inert fold — no log entry, no emission
-		Answer row = db.answers(probe(2L, null)).iterator().next();
+		// minted directly: the db's unindexed probe over-delivers by license,
+		// so iterator().next() was order-dependent debris
+		Answer row = Answers.answer(Fact.of(personRel(), Array.of((Object) 2L, "Alan")));
 		AnswerSource stuttering = probe -> Arrays.asList(row, row, row);
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();

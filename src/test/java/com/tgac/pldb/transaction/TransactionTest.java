@@ -57,14 +57,14 @@ public class TransactionTest {
 	}
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(TransactionTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
 	}
 
 	private static Literal book(AnswerSource db, Unifiable<String> isbn, Unifiable<String> title) {
-		return Literal.relation("book")
+		return Literal.relation(TransactionTest.class, "book")
 				.arg("isbn", isbn).indexed()
 				.arg("title", title)
 				.from(db);

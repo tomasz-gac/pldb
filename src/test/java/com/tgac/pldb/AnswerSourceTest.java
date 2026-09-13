@@ -20,7 +20,7 @@ import org.junit.Test;
 public class AnswerSourceTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(AnswerSourceTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);

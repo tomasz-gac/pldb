@@ -20,14 +20,14 @@ import org.junit.Test;
 public class TransactionMemoryTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(TransactionMemoryTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
 	}
 
 	private static Literal book(AnswerSource db, Unifiable<String> isbn, Unifiable<String> title) {
-		return Literal.relation("book")
+		return Literal.relation(TransactionMemoryTest.class, "book")
 				.arg("isbn", isbn).indexed()
 				.arg("title", title)
 				.from(db);

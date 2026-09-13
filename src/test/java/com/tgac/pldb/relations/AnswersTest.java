@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class AnswersTest {
 
-	private final Relation person = Literal.relation("person")
+	private final Relation person = Literal.relation(AnswersTest.class, "person")
 			.arg("id", lvar()).arg("name", lvar()).from(null).getRel();
 
 	@Test

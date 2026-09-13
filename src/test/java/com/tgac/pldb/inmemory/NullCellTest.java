@@ -18,7 +18,7 @@ import org.junit.Test;
 public class NullCellTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(NullCellTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name).nullable()
 				.from(db);
@@ -26,7 +26,7 @@ public class NullCellTest {
 
 	/** name INDEXED and nullable: a null cell must key its bucket. */
 	private static Literal tagged(AnswerSource db, Unifiable<Integer> id, Unifiable<String> tag) {
-		return Literal.relation("tagged")
+		return Literal.relation(NullCellTest.class, "tagged")
 				.arg("id", id).indexed()
 				.arg("tag", tag).indexed().nullable()
 				.from(db);

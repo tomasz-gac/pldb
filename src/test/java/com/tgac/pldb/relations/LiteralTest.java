@@ -24,7 +24,7 @@ public class LiteralTest {
 
 	/** The function-shaped definition: one method, names once, no relation constant. */
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(LiteralTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
@@ -101,7 +101,7 @@ public class LiteralTest {
 			Unifiable<String> c4, Unifiable<String> c5, Unifiable<String> c6,
 			Unifiable<String> c7, Unifiable<String> c8, Unifiable<String> c9,
 			Unifiable<String> c10, Unifiable<String> c11) {
-		return Literal.relation("wide")
+		return Literal.relation(LiteralTest.class, "wide")
 				.arg("k", k).indexed()
 				.arg("c1", c1)
 				.arg("c2", c2)
@@ -119,7 +119,7 @@ public class LiteralTest {
 
 	@Test
 	public void tailModifiersComposeOnTheLastColumn() {
-		Literal lit = Literal.relation("flags")
+		Literal lit = Literal.relation(LiteralTest.class, "flags")
 				.arg("k", lvar()).indexed().ground()
 				.arg("v", lvar())
 				.from(db);
@@ -132,14 +132,14 @@ public class LiteralTest {
 
 	@Test
 	public void aModifierWithoutAColumnRefuses() {
-		assertThatThrownBy(() -> Literal.relation("early").indexed())
+		assertThatThrownBy(() -> Literal.relation(LiteralTest.class, "early").indexed())
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("early");
 	}
 
 	@Test
 	public void aGroundColumnRefusesAnUnboundArgAtApplication() {
-		Literal lit = Literal.relation("strict")
+		Literal lit = Literal.relation(LiteralTest.class, "strict")
 				.arg("k", lvar()).ground()
 				.from(db);
 		assertThatThrownBy(() -> lit.solve(lvar()).collect(Collectors.toList()))
@@ -150,7 +150,7 @@ public class LiteralTest {
 	@Test
 	public void aGroundColumnAdmitsABoundArg() {
 		Unifiable<Integer> k = lvar();
-		Literal lit = Literal.relation("strictOk")
+		Literal lit = Literal.relation(LiteralTest.class, "strictOk")
 				.arg("k", k).ground()
 				.solving(k.unifies(5));
 		assertThat(answers(k.unifies(5).and(lit), k)).containsExactly("{5}");
@@ -158,7 +158,7 @@ public class LiteralTest {
 
 	@Test
 	public void aDuplicateColumnRefusesByName() {
-		assertThatThrownBy(() -> Literal.relation("dup")
+		assertThatThrownBy(() -> Literal.relation(LiteralTest.class, "dup")
 				.arg("k", lvar())
 				.arg("k", lvar())
 				.from(db))
@@ -172,12 +172,12 @@ public class LiteralTest {
 		// hole refusal arrives with the relation and column named
 		com.tgac.pldb.inmemory.Database db = com.tgac.pldb.inmemory.ImmutableDatabase.empty()
 				.withFacts(Arrays.asList(
-						Literal.relation("person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
-						Literal.relation("person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
+						Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
+						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
 				.get();
 		org.assertj.core.api.Assertions.assertThat(db.estimate(
 						com.tgac.logic.tabling.Call.of(
-								Literal.relation("person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),
+								Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),
 								(com.tgac.logic.unification.Reified<?>) lval(io.vavr.collection.Array.of(
 										com.tgac.logic.unification.Any.of(0), com.tgac.logic.unification.Any.of(1))))))
 				.isEqualTo(2);

@@ -35,7 +35,7 @@ import org.junit.Test;
 public class DatabaseWithRelationsTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name, Unifiable<String> surname, Unifiable<Gender> gender) {
-		return Literal.relation("person")
+		return Literal.relation(DatabaseWithRelationsTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name).indexed()
 				.arg("surname", surname)
@@ -48,7 +48,7 @@ public class DatabaseWithRelationsTest {
 	}
 
 	private static Literal parent(AnswerSource db, Unifiable<Integer> parentId, Unifiable<Integer> childId) {
-		return Literal.relation("parent")
+		return Literal.relation(DatabaseWithRelationsTest.class, "parent")
 				.arg("parentId", parentId).indexed()
 				.arg("childId", childId).indexed()
 				.from(db);

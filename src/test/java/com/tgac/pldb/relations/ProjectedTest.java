@@ -21,14 +21,14 @@ import org.junit.Test;
 public class ProjectedTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(ProjectedTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
 	}
 
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-		return Literal.relation("edge")
+		return Literal.relation(ProjectedTest.class, "edge")
 				.arg("src", src).indexed()
 				.arg("dst", dst)
 				.from(db);
@@ -107,7 +107,7 @@ public class ProjectedTest {
 	}
 
 	private static Literal linked(AnswerSource db, Unifiable<Integer> node, Unifiable<Integer> via) {
-		return Literal.relation("linked")
+		return Literal.relation(ProjectedTest.class, "linked")
 				.arg("node", node)
 				.arg("via", via)
 				.solving(edge(db, node, via));
@@ -116,7 +116,7 @@ public class ProjectedTest {
 	/** The marker is a JOIN variable in the body: used twice, the projection
 	 * must not sever the join — that is the leak that broke availableCopy. */
 	private static Literal reciprocal(AnswerSource db, Unifiable<Integer> node, Unifiable<Integer> via) {
-		return Literal.relation("reciprocal")
+		return Literal.relation(ProjectedTest.class, "reciprocal")
 				.arg("node", node)
 				.arg("via", via)
 				.solving(edge(db, node, via).and(edge(db, via, node)));
@@ -133,7 +133,7 @@ public class ProjectedTest {
 
 	@Test
 	public void projectedOnAGroundColumnRefuses() {
-		assertThatThrownBy(() -> Literal.relation("person")
+		assertThatThrownBy(() -> Literal.relation(ProjectedTest.class, "person")
 				.arg("id", projected()).ground()
 				.arg("name", lvar())
 				.from(null))

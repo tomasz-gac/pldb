@@ -47,7 +47,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 public class PostgresFactSourceTest {
 
 	private static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-		return Literal.relation("person")
+		return Literal.relation(PostgresFactSourceTest.class, "person")
 				.arg("id", id).indexed()
 				.arg("name", name)
 				.from(db);
@@ -58,7 +58,7 @@ public class PostgresFactSourceTest {
 	}
 
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-		return Literal.relation("edge")
+		return Literal.relation(PostgresFactSourceTest.class, "edge")
 				.arg("src", src).indexed()
 				.arg("dst", dst).indexed()
 				.from(db);
@@ -204,7 +204,7 @@ public class PostgresFactSourceTest {
 	 * park and answers would go conditional.
 	 */
 	private static Literal reach(AnswerSource backing, Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.relation("reachable")
+		return Literal.relation(PostgresFactSourceTest.class, "reachable")
 				.arg("src", x)
 				.arg("dst", y)
 				.solving(edge(backing, x, y)

@@ -27,7 +27,7 @@ import org.junit.Test;
 public class LiteralSolvingTest {
 
 	private static Literal edge(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-		return Literal.relation("edge")
+		return Literal.relation(LiteralSolvingTest.class, "edge")
 				.arg("src", src).indexed()
 				.arg("dst", dst).indexed()
 				.from(db);
@@ -43,7 +43,7 @@ public class LiteralSolvingTest {
 
 	/** The residence arc's target: recursion by calling the METHOD. */
 	private static Literal reach(AnswerSource db, Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.relation("reach")
+		return Literal.relation(LiteralSolvingTest.class, "reach")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y)
@@ -62,7 +62,7 @@ public class LiteralSolvingTest {
 		Database db = edges(new int[][]{{1, 2}, {1, 3}});
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal direct = Literal.relation("direct")
+		Literal direct = Literal.relation(LiteralSolvingTest.class, "direct")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y));
@@ -91,7 +91,7 @@ public class LiteralSolvingTest {
 
 	private static Literal counted(AnswerSource db, AtomicInteger productions,
 			Unifiable<Integer> x, Unifiable<Integer> y) {
-		return Literal.relation("counted")
+		return Literal.relation(LiteralSolvingTest.class, "counted")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(defer(() -> {
@@ -191,7 +191,7 @@ public class LiteralSolvingTest {
 		Unifiable<Integer> b = lvar();
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
-		Literal viaRule = Literal.relation("viaRule")
+		Literal viaRule = Literal.relation(LiteralSolvingTest.class, "viaRule")
 				.arg("from", x)
 				.arg("to", y)
 				.solving(edge(db, x, y));

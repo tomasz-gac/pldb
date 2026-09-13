@@ -30,7 +30,7 @@ import org.junit.Test;
 public class PlannerTest {
 
 	private static Literal parent(AnswerSource db, Unifiable<Integer> parentId, Unifiable<Integer> childId) {
-		return Literal.relation("parentP")
+		return Literal.relation(PlannerTest.class, "parentP")
 				.arg("parentId", parentId).indexed()
 				.arg("childId", childId).indexed()
 				.from(db);

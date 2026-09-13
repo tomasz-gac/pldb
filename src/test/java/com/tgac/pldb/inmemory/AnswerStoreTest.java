@@ -36,7 +36,7 @@ import org.junit.Test;
 
 public class AnswerStoreTest {
 
-	private static final Relation LOAN = Literal.relation("loan")
+	private static final Relation LOAN = Literal.relation(AnswerStoreTest.class, "loan")
 			.arg("member", lvar()).indexed()
 			.arg("copy", lvar())
 			.from(null)
@@ -216,7 +216,7 @@ public class AnswerStoreTest {
 				.containsExactly("{Array(_.0, {c3})}");
 	}
 
-	private static final Relation PAIR = Literal.relation("pair")
+	private static final Relation PAIR = Literal.relation(AnswerStoreTest.class, "pair")
 			.arg("a", lvar()).indexed()
 			.arg("b", lvar()).indexed()
 			.from(null)
@@ -276,7 +276,7 @@ public class AnswerStoreTest {
 	}
 
 	private static Literal loan(Unifiable<String> member, Unifiable<String> copy) {
-		return Literal.relation("loan")
+		return Literal.relation(AnswerStoreTest.class, "loan")
 				.arg("member", member).indexed()
 				.arg("copy", copy)
 				.from(null);

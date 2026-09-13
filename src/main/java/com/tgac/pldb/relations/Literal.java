@@ -161,31 +161,27 @@ public class Literal implements Goal, Bounded, Postable {
 	 * solve — and a half-built literal is not a goal, so applying one is
 	 * unrepresentable.
 	 */
-	public static Builder relation(String name) {
-		return new Builder(name);
-	}
-
 	/**
-	 * The namespaced door: the class qualifies the name
-	 * ({@code Rules.loan}), so two authors' vocabularies cannot collide in
-	 * tabling, knowledge identity, or any name-keyed boundary. The
-	 * physical spelling is the source's business — today's SQL convention
-	 * meets the dot loudly (a schema-qualified name it cannot serve), and
-	 * the mapping equipment arrives when a physical rename is first
-	 * needed.
+	 * The one door, namespaced: the class joins the relation's IDENTITY —
+	 * two authors' vocabularies cannot collide in tabling, knowledge
+	 * identity, or the store — while the physical name stays the bare
+	 * string: tables, endpoints, and mark rows are the backend's world
+	 * and spell the name alone.
 	 */
 	public static Builder relation(Class<?> namespace, String name) {
-		return new Builder(namespace.getSimpleName() + "." + name);
+		return new Builder(namespace.getSimpleName(), name);
 	}
 
 	@Value
 	public static class Builder {
+		String namespace;
 		String name;
 		List<Property<?>> columns = new ArrayList<>();
 		List<Unifiable<?>> values = new ArrayList<>();
 		List<Boolean> projectedHere = new ArrayList<>();
 
-		private Builder(String name) {
+		private Builder(String namespace, String name) {
+			this.namespace = namespace;
 			this.name = name;
 		}
 
@@ -225,7 +221,7 @@ public class Literal implements Goal, Bounded, Postable {
 		}
 
 		private Relation relation() {
-			return RelationN.of(name, columns.toArray(new Property<?>[0]));
+			return RelationN.of(namespace, name, columns.toArray(new Property<?>[0]));
 		}
 
 		public Literal from(AnswerSource source) {
@@ -268,7 +264,7 @@ public class Literal implements Goal, Bounded, Postable {
 				return full;
 			}
 			return new Literal(
-					RelationN.of(name + "[" + keptNames + "]", keptColumns.toArray(new Property<?>[0])),
+					RelationN.of(namespace, name + "[" + keptNames + "]", keptColumns.toArray(new Property<?>[0])),
 					Array.ofAll(keptValues),
 					new RuleReading(full));
 		}
