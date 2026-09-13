@@ -21,14 +21,20 @@ kinds:
   check it (Oracle's SERIALIZABLE is snapshot isolation in costume and
   admits write skew; it must not wear the interface).
 - **simulated serialization** (`SimulatedSerialization`, transaction
-  `Simulated`): serialization reproduced above the backend. `pin()`
-  names the snapshot at open; `commit(pin, footprint, flush)` runs one
-  short transaction of the source's own — take the commit lock, prove
-  the footprint's regions unmoved since the pin, land the flush,
-  record the movement — or answer false with nothing landed. Owning:
-  works on any backend with a working row lock, deterministic
-  conflicts, testable without a container; the price is one private
-  table.
+  `Simulated`): serialization reproduced above the backend. `pin(region)`
+  names ONE region's version, captured at the region's FIRST touch —
+  the footprint is pinned, never the world, so nothing enumerates the
+  source's surface; `commit(footprint, flush)` runs one short
+  transaction of the source's own — take the commit lock, prove every
+  footprint region unmoved since ITS pin, land the flush, record the
+  movement — or answer false with nothing landed. THE ORDERING IS THE
+  SOUNDNESS: a pin is captured before the reads it certifies
+  (capture-after would pass the proof on stale data under a fresh
+  pin); a snapshot-reading source satisfies it for free, a
+  snapshot-less one (a REST resource and its ETag) must mint the
+  validator with the response. Owning: works on any backend with a
+  working row lock, deterministic conflicts, testable without a
+  container; the price is one private table.
 
 A source with neither capability has no `over` to call — the refusal
 is a compile error, because a transaction exists FOR its write face;
@@ -51,20 +57,23 @@ the snapshot's own, which its backend both stabilizes and certifies.
   immutable store over a base that is merely shared. Appends mint new
   values; ancestors and siblings stay true; same-key answers ⊕-fold in
   a JoinMap cell. `staged()` is the flush list.
-- **`Pin`**: an opaque snapshot token — minted by a source, meaningful
-  only handed back to it. Nothing else ever interprets one.
-- **`Footprint`**: the regions a transaction read — the probes
-  (`Call<Relation>`) its literals minted, collected at the one seam
-  every read path crosses (applied literals, the trial's posted
-  probes, aggregate sub-solves all bottom out in `answers(Call)`).
-  The RECORDER is the `Simulated` transaction's own `answers`
-  override — the WriteBuffer beneath it only unions, and the `Native`
-  transaction records nothing. `EVERYTHING` when unrecorded — the raw
-  door's maximally conservative justification. One shared monotone log
-  per transaction: any read may justify any staged fact — an
-  over-approximation that costs retries, never soundness. Batch-level
-  footprints were built and torn down: prefixes of one monotone log
-  certify identically to the log itself.
+- **`Pin`**: an opaque region-version token — minted by a source,
+  meaningful only handed back to it. Nothing else ever interprets one.
+- **`Footprint`**: the regions a transaction read, each with the pin
+  captured at its first touch — the probes (`Call<Relation>`) its
+  literals minted, collected at the one seam every read path crosses
+  (applied literals, the trial's posted probes, aggregate sub-solves
+  all bottom out in `answers(Call)`). The RECORDER is the `Simulated`
+  transaction's own `answers` override — pin first, then delegate the
+  read; the WriteBuffer beneath it only unions, and the `Native`
+  transaction records nothing. Recording and reading are the same act,
+  so an unrecorded read is unrepresentable (`EVERYTHING` died with the
+  world pin) and the EMPTY footprint certifies vacuously — a decision
+  that stood on no reads cannot have stood on stale ones. One shared
+  monotone map per transaction: any read may justify any staged fact —
+  an over-approximation that costs retries, never soundness.
+  Batch-level footprints were built and torn down: prefixes of one
+  monotone log certify identically to the log itself.
 - **`Conflict`**: the commit's refusal — the world moved past this
   snapshot; the caller's move is an ordinary re-solve against a fresh
   transaction, where the anomaly reappears as a named denial.
@@ -72,14 +81,17 @@ the snapshot's own, which its backend both stabilizes and certifies.
 ## The instances
 
 - **`Watermark`** (simulated, any SQL): a private
-  `watermark(relation, mark)` table with one lock row — `'*'`, which
-  is both the commit lock (one `FOR UPDATE` row, portable, single
-  lock order) and the global mark (bumped every commit, so the fast
-  path is one equality and a relation with no row is still
-  refusable). Certify compares only the footprint's relations; the
-  commit runs on a FRESH connection, because proving "unmoved" means
-  reading the CURRENT world and a snapshot by definition refuses to
-  show it (found as an H2 deadlock, not derived).
+  `watermark(relation, mark)` table with one lock row — `'*'`, the
+  commit lock (one `FOR UPDATE` row, portable, single lock order),
+  bumped every commit as the global movement counter. `pin(region)` is
+  one row's SELECT through the snapshot connection (pin-before-read
+  for free); certify compares each footprint pin against the current
+  mark, and a mark row is minted by a relation's first write, so
+  absence on BOTH sides proves the relation unmoved — double absence
+  is silence, not blindness. The commit runs on a FRESH connection,
+  because proving "unmoved" means reading the CURRENT world and a
+  snapshot by definition refuses to show it (found as an H2 deadlock,
+  not derived).
 - **`SerializableSource`** (native, JDBC): grants SERIALIZABLE, vouches
   for its backend, recognizes SQLSTATE 40001 (the standard shared by
   PG, MySQL, SQL Server) or a supplied dialect.
