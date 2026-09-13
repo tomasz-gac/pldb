@@ -10,8 +10,7 @@ import com.tgac.logic.tabling.JoinMap;
 import com.tgac.logic.unification.Reified;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.inmemory.Database;
-import com.tgac.pldb.inmemory.ImmutableDatabase;
+import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -38,11 +37,11 @@ import lombok.Value;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class WriteBuffer implements AnswerSource {
 	AnswerSource base;
-	Database delta;
+	AnswerStore delta;
 	Array<Literal> staged;
 
 	public static WriteBuffer over(AnswerSource base) {
-		return new WriteBuffer(base, ImmutableDatabase.empty(), Array.empty());
+		return new WriteBuffer(base, AnswerStore.empty(), Array.empty());
 	}
 
 	public Try<WriteBuffer> withFacts(List<Literal> facts) {
