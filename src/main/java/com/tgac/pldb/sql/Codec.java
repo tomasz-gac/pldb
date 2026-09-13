@@ -3,10 +3,8 @@ package com.tgac.pldb.sql;
 // ABOUTME: One column's two-way translation: a value flattens to a
 // ABOUTME: JDBC-representable on write and re-forms from it on read.
 
-import com.tgac.logic.unification.LVar;
-import com.tgac.logic.unification.Name;
 import com.tgac.logic.unification.Unifiable;
-import io.vavr.control.Option;
+import com.tgac.pldb.relations.MagicVar;
 import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -58,25 +56,9 @@ public final class Codec<T> {
 
 	/** A fresh variable everywhere except {@code withCodec}, which reads the wrapper. */
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-	static final class Arg<T> implements Unifiable<T> {
+	static final class Arg<T> extends MagicVar<T> {
 
 		@Getter(AccessLevel.PACKAGE)
 		private final Codec<T> codec;
-		private final Unifiable<T> variable = LVar.lvar();
-
-		@Override
-		public Option<LVar<T>> asVar() {
-			return variable.asVar();
-		}
-
-		@Override
-		public Option<Name<T>> asName() {
-			return variable.asName();
-		}
-
-		@Override
-		public String toString() {
-			return variable.toString();
-		}
 	}
 }

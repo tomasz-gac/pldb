@@ -18,6 +18,7 @@ import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
@@ -272,6 +273,30 @@ public class AnswerStoreTest {
 		assertThat(images(store.answers(pairProbe(lval("a9"), lval("b5")))))
 				.containsExactly("{Array({a9}, _.0)}");
 		assertThat(store.answers(pairProbe(lval("a1"), lval("b5")))).isEmpty();
+	}
+
+	private static Literal loan(Unifiable<String> member, Unifiable<String> copy) {
+		return Literal.relation("loan")
+				.arg("member", member).indexed()
+				.arg("copy", copy)
+				.from(null);
+	}
+
+	@Test
+	public void aTemplateLiteralWithMarkersDeclaresTheIndex() {
+		// the address-book flex: the defining method carries the marker into
+		// the store's declaration, same pattern as withCodec and projected()
+		AnswerStore store = AnswerStore.empty()
+				.indexed(loan(AnswerStore.indexed(), lvar()))
+				.with(LOAN, row("m1", "c1"))
+				.with(LOAN, row("m2", "c2"));
+
+		assertThat(store.estimate(probe(lval("m1"), Any.of(1))))
+				.describedAs("the marked member column buckets — the estimate is its bucket's")
+				.isEqualTo(1);
+		assertThatThrownBy(() -> AnswerStore.empty().indexed(loan(lvar(), lvar())))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("no indexed() marker");
 	}
 
 	@Test

@@ -3,10 +3,7 @@ package com.tgac.pldb.relations;
 // ABOUTME: The projection marker: an ∃-projected column stated inline — a real
 // ABOUTME: fresh variable everywhere except the builder, which sees the wrapper.
 
-import com.tgac.logic.unification.LVar;
-import com.tgac.logic.unification.Name;
 import com.tgac.logic.unification.Unifiable;
-import io.vavr.control.Option;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -19,9 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@code exclude} an honest ¬∃. Fresh per call: two markers never
  * couple.
  */
-public final class Projected<T> implements Unifiable<T> {
+public final class Projected<T> extends MagicVar<T> {
 
-	private final Unifiable<T> variable = LVar.lvar();
 	private final AtomicBoolean claimed = new AtomicBoolean();
 
 	private Projected() {
@@ -41,20 +37,5 @@ public final class Projected<T> implements Unifiable<T> {
 
 	public static <T> Unifiable<T> projected() {
 		return new Projected<>();
-	}
-
-	@Override
-	public Option<LVar<T>> asVar() {
-		return variable.asVar();
-	}
-
-	@Override
-	public Option<Name<T>> asName() {
-		return variable.asName();
-	}
-
-	@Override
-	public String toString() {
-		return variable.toString();
 	}
 }

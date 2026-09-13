@@ -8,8 +8,11 @@ import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.MagicVar;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.collection.Array;
@@ -18,6 +21,7 @@ import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -65,6 +69,31 @@ public class AnswerStore implements AnswerSource {
 
 	public static AnswerStore empty() {
 		return new AnswerStore(LinkedHashMap.empty(), LinkedHashMap.empty());
+	}
+
+	/** The index marker: rides a template literal's slot into {@link #indexed(Literal)}. */
+	public static <T> Unifiable<T> indexed() {
+		return new IndexedColumn<>();
+	}
+
+	/**
+	 * Declares indexing through a template literal — positions carrying an
+	 * {@link #indexed()} marker bucket; the defining method is the address
+	 * book, the signature type-checks the slots.
+	 */
+	public AnswerStore indexed(Literal template) {
+		int declared = 0;
+		int[] positions = new int[template.getArgs().size()];
+		for (int i = 0; i < template.getArgs().size(); i++) {
+			if (template.getArgs().get(i) instanceof IndexedColumn) {
+				positions[declared++] = i;
+			}
+		}
+		if (declared == 0) {
+			throw new IllegalStateException(template.getRel().getName()
+					+ ": the template carries no indexed() marker — nothing to declare");
+		}
+		return indexed(template.getRel(), Arrays.copyOf(positions, declared));
 	}
 
 	/**
@@ -115,6 +144,10 @@ public class AnswerStore implements AnswerSource {
 
 	private Set<Integer> positions(Relation relation) {
 		return indexing.getOrElse(relation, LinkedHashSet.empty());
+	}
+
+	/** A fresh variable everywhere except {@link #indexed(Literal)}. */
+	private static final class IndexedColumn<T> extends MagicVar<T> {
 	}
 
 	@Value
