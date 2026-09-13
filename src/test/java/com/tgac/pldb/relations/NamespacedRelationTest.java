@@ -1,0 +1,65 @@
+package com.tgac.pldb.relations;
+
+// ABOUTME: The namespaced door: the class qualifies the name, so same-shaped
+// ABOUTME: relations from two vocabularies stay distinct everywhere identity keys.
+
+import static com.tgac.logic.unification.LVar.lvar;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.tgac.logic.tabling.Call;
+import com.tgac.logic.unification.Any;
+import com.tgac.logic.unification.Reified;
+import com.tgac.pldb.inmemory.AnswerStore;
+import io.vavr.collection.Array;
+import org.junit.Test;
+
+import static com.tgac.logic.unification.LVal.lval;
+
+public class NamespacedRelationTest {
+
+	/** Two authors' vocabularies, same bare name, same shape. */
+	private static final class Lending {
+	}
+
+	private static final class Billing {
+	}
+
+	private static Relation loan(Class<?> namespace) {
+		return Literal.relation(namespace, "loan")
+				.arg("member", lvar()).indexed()
+				.arg("copy", lvar())
+				.from(null)
+				.getRel();
+	}
+
+	private static Call<Relation> everything(Relation relation) {
+		return Call.of(relation, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+	}
+
+	@Test
+	public void theSameMintIsTheSameRelationAndNamespacesDivide() {
+		assertThat(loan(Lending.class))
+				.describedAs("two mints of one defining shape stay one relation")
+				.isEqualTo(loan(Lending.class));
+		assertThat(loan(Lending.class))
+				.describedAs("the same shape under another namespace is another relation")
+				.isNotEqualTo(loan(Billing.class));
+		assertThat(loan(Lending.class).getName()).isEqualTo("Lending.loan");
+	}
+
+	@Test
+	public void namespacedTwinsKeepSeparateExtensions() {
+		// the silent-merge hazard made unrepresentable: same bare name, same
+		// columns, two namespaces — the store keys them apart
+		Answer row = Answers.answer(Fact.of(loan(Lending.class),
+				Array.of((Object) "m1", "c1")));
+		AnswerStore store = AnswerStore.empty()
+				.with(loan(Lending.class), row);
+
+		assertThat(store.answers(everything(loan(Lending.class)))).hasSize(1);
+		assertThat(store.answers(everything(loan(Billing.class))))
+				.describedAs("Billing's loan never sees Lending's rows")
+				.isEmpty();
+	}
+
+}

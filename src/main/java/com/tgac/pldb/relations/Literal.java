@@ -165,6 +165,19 @@ public class Literal implements Goal, Bounded, Postable {
 		return new Builder(name);
 	}
 
+	/**
+	 * The namespaced door: the class qualifies the name
+	 * ({@code Rules.loan}), so two authors' vocabularies cannot collide in
+	 * tabling, knowledge identity, or any name-keyed boundary. The
+	 * physical spelling is the source's business — today's SQL convention
+	 * meets the dot loudly (a schema-qualified name it cannot serve), and
+	 * the mapping equipment arrives when a physical rename is first
+	 * needed.
+	 */
+	public static Builder relation(Class<?> namespace, String name) {
+		return new Builder(namespace.getSimpleName() + "." + name);
+	}
+
 	@Value
 	public static class Builder {
 		String name;
