@@ -7,7 +7,6 @@ import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
@@ -18,7 +17,6 @@ import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.GoalProducer;
 import com.tgac.logic.unification.Any;
-import com.tgac.logic.unification.Unifiable;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
@@ -59,7 +57,6 @@ public class AnswerStoreTest {
 	@Test
 	public void aGroundIndexedProbeServesItsBucket() {
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c2"))
 				.with(LOAN, row("m2", "c3"));
@@ -73,7 +70,6 @@ public class AnswerStoreTest {
 	@Test
 	public void aNonIndexedBoundPositionFilters() {
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c2"));
 
@@ -84,7 +80,6 @@ public class AnswerStoreTest {
 	@Test
 	public void nullIsAnHonestBucketKey() {
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row(null, "c1"))
 				.with(LOAN, row("m1", "c2"));
 
@@ -95,7 +90,6 @@ public class AnswerStoreTest {
 	@Test
 	public void aRowFreeAtAnIndexedColumnMatchesEveryProbe() {
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, Answer.of(
 						(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))),
@@ -109,7 +103,6 @@ public class AnswerStoreTest {
 	@Test
 	public void aDuplicateImageFoldsItsConditionInsteadOfDuplicating() {
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c1"));
 
@@ -138,7 +131,6 @@ public class AnswerStoreTest {
 		// whole entry shape, conditions included
 		Condition guarded = forbidding("m9");
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(row("m1", "c1").getReified(), guarded));
 
 		assertThat(store.answers(probe(lval("m1"), Any.of(1))).iterator().next().getCondition())
@@ -156,7 +148,6 @@ public class AnswerStoreTest {
 
 		Reified<?> image = row("m1", "c1").getReified();
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(image, notM8))
 				.with(LOAN, Answer.of(image, notM9));
 
@@ -175,7 +166,6 @@ public class AnswerStoreTest {
 		// rows of the RELATION — the wide probe sees them all; only coverage
 		// (beside the store) may claim it saw everything
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m2", "c2"));
 
@@ -201,7 +191,6 @@ public class AnswerStoreTest {
 		Reified<?> memberWide = (Reified<?>) lval(Array.of(lval("m1"), Any.of(0)));
 		Reified<?> copyWide = (Reified<?>) lval(Array.of(Any.of(0), lval("c3")));
 		AnswerStore store = AnswerStore.empty()
-				.indexed(LOAN, 0)
 				.with(LOAN, Answer.of(memberWide, a))
 				.with(LOAN, Answer.of(copyWide, b));
 
@@ -236,7 +225,6 @@ public class AnswerStoreTest {
 		// only their intersection names the row, and the estimate is exact
 		// on it
 		AnswerStore store = AnswerStore.empty()
-				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, pair("a1", "b2"))
 				.with(PAIR, pair("a2", "b1"));
@@ -251,7 +239,6 @@ public class AnswerStoreTest {
 		// both buckets are non-empty; their intersection is not "all rows"
 		// (the null sentinel) but the honest empty set
 		AnswerStore store = AnswerStore.empty()
-				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, pair("a2", "b2"));
 
@@ -264,7 +251,6 @@ public class AnswerStoreTest {
 		// a row free at one indexed column rides that column's wildcard set
 		// INTO the intersection: pair(a9, _) answers any b probe under a9
 		AnswerStore store = AnswerStore.empty()
-				.indexed(PAIR, 0, 1)
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, Answer.of(
 						(Reified<?>) lval(Array.of(lval("a9"), Any.of(0))),
@@ -275,48 +261,31 @@ public class AnswerStoreTest {
 		assertThat(store.answers(pairProbe(lval("a1"), lval("b5")))).isEmpty();
 	}
 
-	private static Literal loan(Unifiable<String> member, Unifiable<String> copy) {
-		return Literal.relation(AnswerStoreTest.class, "loan")
-				.arg("member", member).indexed()
-				.arg("copy", copy)
-				.from(null);
-	}
+	private static final Relation FLAGLESS = Literal.relation(AnswerStoreTest.class, "flagless")
+			.arg("member", lvar())
+			.arg("copy", lvar())
+			.from(null)
+			.getRel();
 
 	@Test
-	public void aTemplateLiteralWithMarkersDeclaresTheIndex() {
-		// the address-book flex: the defining method carries the marker into
-		// the store's declaration, same pattern as withCodec and projected()
+	public void anUnflaggedRelationFullScansCorrectly() {
+		// no indexed() declarations on the relation — the store consults the
+		// access-pattern contract and finds none: every probe walks all rows
 		AnswerStore store = AnswerStore.empty()
-				.indexed(loan(AnswerStore.indexed(), lvar()))
-				.with(LOAN, row("m1", "c1"))
-				.with(LOAN, row("m2", "c2"));
+				.with(FLAGLESS, Answers.answer(Fact.of(FLAGLESS, Array.of("m1", "c1"))))
+				.with(FLAGLESS, Answers.answer(Fact.of(FLAGLESS, Array.of("m2", "c2"))));
 
-		assertThat(store.estimate(probe(lval("m1"), Any.of(1))))
-				.describedAs("the marked member column buckets — the estimate is its bucket's")
-				.isEqualTo(1);
-		assertThatThrownBy(() -> AnswerStore.empty().indexed(loan(lvar(), lvar())))
-				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("no indexed() marker");
-	}
-
-	@Test
-	public void anUndeclaredTokenFullScansAndLateDeclarationRefuses() {
-		AnswerStore store = AnswerStore.empty()
-				.with(LOAN, row("m1", "c1"));
-
-		assertThat(images(store.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);
-		assertThat(store.estimate(probe(lval("m1"), Any.of(1))))
-				.describedAs("no index declared — the estimate is the full scan's")
-				.isEqualTo(1);
-		assertThatThrownBy(() -> store.indexed(LOAN, 0))
-				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("before the first insert");
+		Call<Relation> bound = Call.of(FLAGLESS,
+				(Reified<?>) lval(Array.of((Term<?>) lval("m1"), Any.of(0))));
+		assertThat(images(store.answers(bound))).hasSize(1);
+		assertThat(store.estimate(bound))
+				.describedAs("no declared pattern — the estimate is the full scan's")
+				.isEqualTo(2);
 	}
 
 	@Test
 	public void insertsForkTheValueAndAncestorsKeepAnswering() {
-		AnswerStore before = AnswerStore.empty()
-				.indexed(LOAN, 0).with(LOAN, row("m1", "c1"));
+		AnswerStore before = AnswerStore.empty().with(LOAN, row("m1", "c1"));
 		AnswerStore after = before.with(LOAN, row("m1", "c2"));
 
 		assertThat(images(before.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);

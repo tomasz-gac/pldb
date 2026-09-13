@@ -8,11 +8,8 @@ import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
-import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Literal;
-import com.tgac.pldb.relations.MagicVar;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.Tuple;
 import io.vavr.collection.Array;
@@ -21,7 +18,6 @@ import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -43,11 +39,12 @@ import lombok.Value;
  * matching a probe" is COVERAGE's, and "this extension, as of this
  * world" is the PIN's — writes here never assert either.
  *
- * <p>Indexed columns keep per-value buckets in Term vocabulary (null
- * is a key; a row free at an indexed column lives in the wildcard set,
- * matching every probe); {@link #answers} intersects the ground
- * indexed positions' buckets and filters the remaining bound
- * positions. Residues are ignored under the standing license — a
+ * <p>The RELATION's declared access pattern is the index spec: columns
+ * flagged {@code indexed()} keep per-value buckets in Term vocabulary
+ * (null is a key; a row free at an indexed column lives in the
+ * wildcard set, matching every probe); {@link #answers} intersects the
+ * ground indexed positions' buckets and filters the remaining bound
+ * positions. An unflagged relation full-scans, correctly. Residues are ignored under the standing license — a
  * source may only over-deliver, and here over-delivery costs a walk.
  * Couplings between frees are likewise over-delivered; the consumer's
  * restate filters. The value is PERSISTENT: every insert mints a new
@@ -65,58 +62,15 @@ public class AnswerStore implements AnswerSource {
 	private static final Object NULL_KEY = new Object();
 
 	Map<Relation, Rows> relations;
-	Map<Relation, Set<Integer>> indexing;
 
 	public static AnswerStore empty() {
-		return new AnswerStore(LinkedHashMap.empty(), LinkedHashMap.empty());
-	}
-
-	/** The index marker: rides a template literal's slot into {@link #indexed(Literal)}. */
-	public static <T> Unifiable<T> indexed() {
-		return new IndexedColumn<>();
-	}
-
-	/**
-	 * Declares indexing through a template literal — positions carrying an
-	 * {@link #indexed()} marker bucket; the defining method is the address
-	 * book, the signature type-checks the slots.
-	 */
-	public AnswerStore indexed(Literal template) {
-		int declared = 0;
-		int[] positions = new int[template.getArgs().size()];
-		for (int i = 0; i < template.getArgs().size(); i++) {
-			if (template.getArgs().get(i) instanceof IndexedColumn) {
-				positions[declared++] = i;
-			}
-		}
-		if (declared == 0) {
-			throw new IllegalStateException(template.getRel().getName()
-					+ ": the template carries no indexed() marker — nothing to declare");
-		}
-		return indexed(template.getRel(), Arrays.copyOf(positions, declared));
-	}
-
-	/**
-	 * Declares which positions bucket for a token's rows — the store's own
-	 * equipment, never the boundary's. Before the token's first insert
-	 * only; an undeclared token full-scans, correctly.
-	 */
-	public AnswerStore indexed(Relation relation, int... positions) {
-		if (relations.containsKey(relation)) {
-			throw new IllegalStateException(relation
-					+ ": declare indexing before the first insert");
-		}
-		Set<Integer> declared = LinkedHashSet.empty();
-		for (int position : positions) {
-			declared = declared.add(position);
-		}
-		return new AnswerStore(relations, indexing.put(relation, declared));
+		return new AnswerStore(LinkedHashMap.empty());
 	}
 
 	public AnswerStore with(Relation relation, Answer answer) {
 		Rows rows = relations.getOrElse(relation, Rows.empty());
 		return new AnswerStore(
-				relations.put(relation, rows.with(positions(relation), answer)), indexing);
+				relations.put(relation, rows.with(positions(relation), answer)));
 	}
 
 	public AnswerStore withAll(Relation relation, Iterable<Answer> answers) {
@@ -142,12 +96,15 @@ public class AnswerStore implements AnswerSource {
 				.getOrElse(0L);
 	}
 
-	private Set<Integer> positions(Relation relation) {
-		return indexing.getOrElse(relation, LinkedHashSet.empty());
-	}
-
-	/** A fresh variable everywhere except {@link #indexed(Literal)}. */
-	private static final class IndexedColumn<T> extends MagicVar<T> {
+	/** The relation's declared access pattern IS the index spec. */
+	private static Set<Integer> positions(Relation relation) {
+		Set<Integer> declared = LinkedHashSet.empty();
+		for (int i = 0; i < relation.getArgs().length; i++) {
+			if (relation.getArgs()[i].isIndexed()) {
+				declared = declared.add(i);
+			}
+		}
+		return declared;
 	}
 
 	@Value
