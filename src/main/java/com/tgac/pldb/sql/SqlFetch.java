@@ -3,6 +3,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: The SQL polling source: one pinned connection, the compiler registry,
 // ABOUTME: the probe's pattern+region compiled to SELECT..WHERE — every answer a round trip.
 
+import com.tgac.functional.Streams;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Theory;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -183,12 +185,12 @@ public final class SqlFetch implements JdbcSource {
 	}
 
 	/**
-	 * An atom's name resolves to a column THROUGH THE IMAGE: {@code Any}
-	 * numbering is by occurrence, not position ({@code loan(5, x)} is
-	 * {@code ({5}, _.0)} — the free at column 1 numbered 0), so the
-	 * resolver finds where the number occurs among the probe's args. A
-	 * COUPLED number — occurring at two positions — refuses: the atom's
-	 * meaning spans columns, and an unpushed atom only over-delivers.
+	 * An atom's name resolves to the column WHERE IT SITS IN THE IMAGE — a
+	 * linear equality scan over the probe's args (Any equality is by
+	 * value, so the atom's term matches its own occurrence). Only
+	 * variables name columns; a term sitting at TWO positions is a
+	 * coupling whose meaning spans columns — refused, and an unpushed
+	 * atom only over-delivers.
 	 */
 	private static SqlCompiler.ColumnResolver columnResolver(Relation relation, IndexedSeq<Term<Object>> args) {
 		return new SqlCompiler.ColumnResolver() {
@@ -197,11 +199,9 @@ public final class SqlFetch implements JdbcSource {
 				if (!(term instanceof Any)) {
 					return Optional.empty();
 				}
-				int number = ((Any<?>) term).getNumber();
 				int occurrence = -1;
 				for (int i = 0; i < args.size(); i++) {
-					Term<Object> cell = args.get(i);
-					if (cell instanceof Any && ((Any<?>) cell).getNumber() == number) {
+					if (Objects.equals(args.get(i), term)) {
 						if (occurrence >= 0) {
 							return Optional.empty();
 						}
