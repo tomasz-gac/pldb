@@ -142,7 +142,7 @@ public final class SqlFetch implements JdbcSource {
 		Relation relation = probe.getRelation();
 		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
 		List<Answer> answers = new ArrayList<>();
-		for (Fact fact : rows(relation, args, push(relation, probe.getResidues()))) {
+		for (Fact fact : rows(relation, args, push(relation, args, probe.getResidues()))) {
 			answers.add(Answers.answer(fact));
 		}
 		return answers;
@@ -166,9 +166,9 @@ public final class SqlFetch implements JdbcSource {
 	}
 
 	/** Every registered family's atoms through its compiler; misses stay local. */
-	private List<SqlPredicate> push(Relation relation, Residues region) {
+	private List<SqlPredicate> push(Relation relation, IndexedSeq<Term<Object>> args, Residues region) {
 		List<SqlPredicate> predicates = new ArrayList<>();
-		SqlCompiler.ColumnResolver resolver = columnResolver(relation);
+		SqlCompiler.ColumnResolver resolver = columnResolver(relation, args);
 		for (Tuple2<Class<?>, Theory<?>> family : region.getTheories()) {
 			SqlCompiler compiler = compilers.get(family._1);
 			if (compiler == null) {
@@ -182,18 +182,35 @@ public final class SqlFetch implements JdbcSource {
 		return predicates;
 	}
 
-	/** Positional names resolve to columns: {@code _.i} is the i-th property. */
-	private static SqlCompiler.ColumnResolver columnResolver(Relation relation) {
+	/**
+	 * An atom's name resolves to a column THROUGH THE IMAGE: {@code Any}
+	 * numbering is by occurrence, not position ({@code loan(5, x)} is
+	 * {@code ({5}, _.0)} — the free at column 1 numbered 0), so the
+	 * resolver finds where the number occurs among the probe's args. A
+	 * COUPLED number — occurring at two positions — refuses: the atom's
+	 * meaning spans columns, and an unpushed atom only over-delivers.
+	 */
+	private static SqlCompiler.ColumnResolver columnResolver(Relation relation, IndexedSeq<Term<Object>> args) {
 		return new SqlCompiler.ColumnResolver() {
 			@Override
 			public Optional<String> columnOf(Term<?> term) {
 				if (!(term instanceof Any)) {
 					return Optional.empty();
 				}
-				int position = ((Any<?>) term).getNumber();
-				return position >= 0 && position < relation.getArgs().length ?
-						Optional.of(relation.getArgs()[position].getName()) :
-						Optional.empty();
+				int number = ((Any<?>) term).getNumber();
+				int occurrence = -1;
+				for (int i = 0; i < args.size(); i++) {
+					Term<Object> cell = args.get(i);
+					if (cell instanceof Any && ((Any<?>) cell).getNumber() == number) {
+						if (occurrence >= 0) {
+							return Optional.empty();
+						}
+						occurrence = i;
+					}
+				}
+				return occurrence >= 0
+						? Optional.of(relation.getArgs()[occurrence].getName())
+						: Optional.empty();
 			}
 
 			@Override
@@ -212,7 +229,7 @@ public final class SqlFetch implements JdbcSource {
 	RegionSql region(Call<Relation> probe) {
 		Relation relation = probe.getRelation();
 		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
-		return regionSql(relation, args, push(relation, probe.getResidues()));
+		return regionSql(relation, args, push(relation, args, probe.getResidues()));
 	}
 
 	private RegionSql regionSql(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
