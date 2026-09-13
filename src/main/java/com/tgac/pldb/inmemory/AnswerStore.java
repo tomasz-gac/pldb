@@ -8,7 +8,9 @@ import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
+import com.tgac.pldb.Writer;
 import com.tgac.pldb.relations.Answer;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -17,6 +19,8 @@ import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import io.vavr.control.Try;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -57,7 +61,7 @@ import lombok.Value;
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class AnswerStore implements AnswerSource {
+public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 
 	/** Null is a legitimate bucket key; vavr maps want a witness for it. */
 	private static final Object NULL_KEY = new Object();
@@ -72,6 +76,18 @@ public class AnswerStore implements AnswerSource {
 		Rows rows = relations.getOrElse(relation, Rows.empty());
 		return new AnswerStore(
 				relations.put(relation, rows.with(positions(relation), answer)));
+	}
+
+	/** The write face: literals land as ground rows of their own relations. */
+	@Override
+	public Try<AnswerStore> withFacts(Collection<Literal> facts) {
+		return Try.of(() -> {
+			AnswerStore grown = this;
+			for (Literal fact : facts) {
+				grown = grown.with(fact.getRel(), Answers.answer(fact.fact()));
+			}
+			return grown;
+		});
 	}
 
 	public AnswerStore withAll(Relation relation, Iterable<Answer> answers) {

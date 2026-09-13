@@ -5,7 +5,6 @@ package com.tgac.pldb.inmemory;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
@@ -64,10 +63,9 @@ public final class SharedDatabase {
 		if (!covers(read)) {
 			return false;
 		}
-		AnswerStore grown = current.getValue();
+		AnswerStore grown = current.getValue().withFacts(flush).get();
 		Map<String, Long> marks = new HashMap<>(current.getMarks());
 		for (Literal fact : flush) {
-			grown = grown.with(fact.getRel(), Answers.answer(fact.fact()));
 			marks.merge(fact.getRel().getName(), 1L, Long::sum);
 		}
 		current = new Versioned(grown, marks, current.getGlobal() + 1);
