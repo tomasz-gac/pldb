@@ -52,6 +52,9 @@ public final class Answers {
 		if (w.size() != n.size()) {
 			return false;
 		}
+		if (!narrow.getCondition().absorbedBy(wide.getCondition())) {
+			return false;
+		}
 		Map<Term<Object>, Term<Object>> binding = new HashMap<>();
 		for (int i = 0; i < w.size(); i++) {
 			Term<Object> wc = w.get(i);
@@ -67,8 +70,7 @@ public final class Answers {
 				}
 			}
 		}
-		Condition joined = Condition.RING.plus(wide.getCondition(), narrow.getCondition());
-		return joined.equals(wide.getCondition());
+		return true;
 	}
 
 	/** The row's raw values, positional. The row must be fully ground. */
