@@ -187,12 +187,15 @@ public final class SqlFetch implements JdbcSource {
 	}
 
 	/**
-	 * An atom's name resolves to the column WHERE IT SITS IN THE IMAGE — a
-	 * linear equality scan over the probe's args (Any equality is by
-	 * value, so the atom's term matches its own occurrence). Only
-	 * variables name columns; a term sitting at TWO positions is a
-	 * coupling whose meaning spans columns — refused, and an unpushed
-	 * atom only over-delivers.
+	 * An atom's name resolves to the FIRST column it occupies in the
+	 * image (Any equality is by value, so the term matches its own
+	 * occurrences). Only variables name columns. A COUPLED variable —
+	 * two occurrences — resolves to its first: every valid row satisfies
+	 * the coupling, so the constraint at any one occurrence is implied
+	 * and can never exclude a valid row; the other occurrences add no
+	 * semantic narrowing (rows disagreeing between them are coupling-
+	 * invalid and die at the local restate, as the unpushed coupling
+	 * itself already does).
 	 */
 	private static SqlCompiler.ColumnResolver columnResolver(Relation relation, IndexedSeq<Term<Object>> args) {
 		return new SqlCompiler.ColumnResolver() {
@@ -201,12 +204,10 @@ public final class SqlFetch implements JdbcSource {
 				if (!(term instanceof Any)) {
 					return Optional.empty();
 				}
-				int[] matches = IntStream.range(0, args.length())
+				return IntStream.range(0, args.length())
 						.filter(i -> term.equals(args.get(i)))
-						.toArray();
-				return matches.length == 1 ?
-						Optional.of(relation.getArgs()[matches[0]].getName()) :
-						Optional.empty();
+						.mapToObj(i -> relation.getArgs()[i].getName())
+						.findFirst();
 			}
 
 			@Override

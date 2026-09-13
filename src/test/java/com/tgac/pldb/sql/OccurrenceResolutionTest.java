@@ -63,6 +63,30 @@ public class OccurrenceResolutionTest {
 	}
 
 	@Test
+	public void aCoupledVariableResolvesToItsFirstOccurrence() throws SQLException {
+		// pair(x, x) with dom(x): the constraint at ANY occurrence is implied
+		// by the coupling, so the push narrows on column a and the coupling
+		// itself filters locally — answers agree with the by-hand oracle
+		try (Statement seed = connection.createStatement()) {
+			seed.execute("INSERT INTO pair VALUES (2, 2), (3, 3), (5, 2)");
+		}
+		try (CachingSqlFetch pushed = CachingSqlFetch.pinned("h2-coupled", connection)) {
+			Unifiable<Long> x = lvar();
+			List<Long> agreed = dom(x, range(2L, 5L))
+					.and(pair(pushed, x, x))
+					.solve(x)
+					.map(Term::get)
+					.sorted()
+					.collect(Collectors.toList());
+			assertThat(agreed).containsExactly(2L, 3L);
+		} catch (SQLException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	@Test
 	public void aBoundArgBeforeAConstrainedFreeStillAgreesWithTheOracle() {
 		try (CachingSqlFetch pushed = CachingSqlFetch.pinned("h2-occ", connection)) {
 			assertThat(boundThenConstrained(pushed))
