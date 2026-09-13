@@ -33,7 +33,7 @@ public final class SharedDatabase {
 	@Value
 	private static class Versioned {
 		AnswerStore value;
-		Map<String, Long> marks;
+		Map<Relation, Long> marks;
 	}
 
 	private Versioned current;
@@ -63,9 +63,9 @@ public final class SharedDatabase {
 			return false;
 		}
 		AnswerStore grown = current.getValue().withFacts(flush).get();
-		Map<String, Long> marks = new HashMap<>(current.getMarks());
+		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
 		for (Literal fact : flush) {
-			marks.merge(fact.getRel().getName(), 1L, Long::sum);
+			marks.merge(fact.getRel(), 1L, Long::sum);
 		}
 		current = new Versioned(grown, marks);
 		return true;
@@ -95,7 +95,7 @@ public final class SharedDatabase {
 
 		@Override
 		public Pinned<Iterable<Answer>> read(Call<Relation> probe) {
-			String relation = probe.getRelation().getName();
+			Relation relation = probe.getRelation();
 			return Pinned.of(captured.getValue().answers(probe),
 					new MarkPin(relation, captured.getMarks().get(relation)));
 		}
@@ -132,11 +132,14 @@ public final class SharedDatabase {
 	 * comparison — two pins of one unmoved relation are equal whatever
 	 * else committed between them, and any commit touching the relation
 	 * divides them. A null mark is the never-written relation: absence
-	 * is knowledge.
+	 * is knowledge. The relation rides WHOLE — namespace-bearing
+	 * identity, so same-named strangers never share a world — and any
+	 * wire crossing marshals it through the serialization that minted
+	 * the pin, which is where class names stop.
 	 */
 	@Value
 	private static class MarkPin implements Pin {
-		String relation;
+		Relation relation;
 		Long mark;
 	}
 }

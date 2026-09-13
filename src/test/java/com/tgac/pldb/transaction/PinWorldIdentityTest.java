@@ -73,6 +73,31 @@ public class PinWorldIdentityTest {
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
+	/** A stranger's relation wearing the same bare name, other namespace. */
+	private static final class Elsewhere {
+		private static Literal person(Unifiable<Integer> id, Unifiable<String> name) {
+			return Literal.relation(Elsewhere.class, "person")
+					.arg("id", id).indexed()
+					.arg("name", name)
+					.from(null);
+		}
+	}
+
+	@Test
+	public void aSameNamedRelationInAnotherNamespaceDoesNotDividePins() {
+		// the pin holds the RELATION, not its bare name: a commit to
+		// Elsewhere.person must not move this namespace's person
+		SharedDatabase shared = SharedDatabase.empty();
+		Pin first = shared.open("a").read(probe()).getPin();
+
+		assertThat(shared.open("mover").commit(Footprint.empty(),
+				Collections.singletonList(Elsewhere.person(lval(1), lval("Imposter"))))).isTrue();
+
+		assertThat(shared.open("b").read(probe()).getPin())
+				.describedAs("the other namespace's person is a different relation — one world here")
+				.isEqualTo(first);
+	}
+
 	@Test
 	public void pinsOfOneWorldAreEqualAndACommitDividesThem() {
 		SharedDatabase shared = SharedDatabase.empty();

@@ -79,6 +79,53 @@ public class PremiseTest {
 	}
 
 	@Test
+	public void aPremiseOverlappingTheOwnFootprintComposesWhenTheWorldsAgree() throws Exception {
+		// premise and the commit's own ledger both read person, from
+		// snapshots of ONE world: the union sees equal pins on the shared
+		// region and the commit lands
+		SharedDatabase store = SharedDatabase.empty();
+		Footprint premise;
+		try (Simulated get = AbstractTransaction.over(store.open("get"))) {
+			solveNames(get);
+			premise = get.footprint();
+		}
+
+		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
+		solveNames(post);
+		Try<?> landed = post
+				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.get().commit();
+		assertThat(landed.isSuccess()).isTrue();
+	}
+
+	@Test
+	public void aPremiseOverlappingTheOwnFootprintRefusesAcrossWorlds() throws Exception {
+		// the same overlap after person MOVED: the commit's own snapshot
+		// read a newer person than the premise did — the union meets two
+		// pins on one region and refuses at composition, before certify
+		SharedDatabase store = SharedDatabase.empty();
+		Footprint premise;
+		try (Simulated get = AbstractTransaction.over(store.open("get"))) {
+			solveNames(get);
+			premise = get.footprint();
+		}
+
+		assertThat(AbstractTransaction.over(store.open("mover"))
+				.withFacts(Collections.singletonList(person(null, lval(2), lval("Alan"))))
+				.get().commit().isSuccess()).isTrue();
+
+		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
+		solveNames(post);
+		Try<?> refused = post
+				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.get().commit();
+		assertThat(refused.isFailure()).isTrue();
+		assertThat(refused.getCause())
+				.describedAs("the premise and the own read saw different person worlds")
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
+	@Test
 	public void aStalePremiseRefusesTheCommitEvenThoughItsOwnReadsHold() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
 		Footprint premise;
