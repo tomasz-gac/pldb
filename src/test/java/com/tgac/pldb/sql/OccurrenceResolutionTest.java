@@ -65,10 +65,11 @@ public class OccurrenceResolutionTest {
 	@Test
 	public void aCoupledVariableResolvesToItsFirstOccurrence() throws SQLException {
 		// pair(x, x) with dom(x): the constraint at ANY occurrence is implied
-		// by the coupling, so the push narrows on column a and the coupling
-		// itself filters locally — answers agree with the by-hand oracle
+		// by the coupling, so the push narrows on column a; (2, 9) SURVIVES
+		// the push (a=2 is in the domain) and only the local coupling filter
+		// kills it — answers agree with the by-hand oracle
 		try (Statement seed = connection.createStatement()) {
-			seed.execute("INSERT INTO pair VALUES (2, 2), (3, 3), (5, 2)");
+			seed.execute("INSERT INTO pair VALUES (2, 2), (3, 3), (2, 9)");
 		}
 		try (CachingSqlFetch pushed = CachingSqlFetch.pinned("h2-coupled", connection)) {
 			Unifiable<Long> x = lvar();
