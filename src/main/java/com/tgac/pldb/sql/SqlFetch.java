@@ -30,6 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -201,13 +202,18 @@ public final class SqlFetch implements JdbcSource {
 		return new SqlCompiler.ColumnResolver() {
 			@Override
 			public Optional<String> columnOf(Term<?> term) {
+				return columnsOf(term).stream().findFirst();
+			}
+
+			@Override
+			public List<String> columnsOf(Term<?> term) {
 				if (!(term instanceof Any)) {
-					return Optional.empty();
+					return Collections.emptyList();
 				}
 				return IntStream.range(0, args.length())
 						.filter(i -> term.equals(args.get(i)))
 						.mapToObj(i -> relation.getArgs()[i].getName())
-						.findFirst();
+						.collect(Collectors.toList());
 			}
 
 			@Override

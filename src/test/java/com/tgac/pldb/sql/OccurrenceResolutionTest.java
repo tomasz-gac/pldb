@@ -63,13 +63,14 @@ public class OccurrenceResolutionTest {
 	}
 
 	@Test
-	public void aCoupledVariableResolvesToItsFirstOccurrence() throws SQLException {
-		// pair(x, x) with dom(x): the constraint at ANY occurrence is implied
-		// by the coupling, so the push narrows on column a; (2, 9) SURVIVES
-		// the push (a=2 is in the domain) and only the local coupling filter
-		// kills it — answers agree with the by-hand oracle
+	public void aCoupledVariablePushesEveryOccurrence() throws SQLException {
+		// pair(x, x) with dom(x): the domain conjoins across BOTH columns —
+		// bandwidth is what pushdown is for, and rows disagreeing between
+		// coupled columns are never valid answers. (2, 9) dies at the PUSH
+		// now (b=9 outside the domain); (2, 3) survives it — both in the
+		// domain, unequal — and only the local coupling filter kills it
 		try (Statement seed = connection.createStatement()) {
-			seed.execute("INSERT INTO pair VALUES (2, 2), (3, 3), (2, 9)");
+			seed.execute("INSERT INTO pair VALUES (2, 2), (3, 3), (2, 9), (2, 3)");
 		}
 		try (CachingSqlFetch pushed = CachingSqlFetch.pinned("h2-coupled", connection)) {
 			Unifiable<Long> x = lvar();

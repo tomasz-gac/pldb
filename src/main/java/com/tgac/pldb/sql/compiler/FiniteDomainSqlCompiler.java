@@ -47,12 +47,23 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 		return Optional.empty();
 	}
 
+	/** The domain conjoins across EVERY occurrence of a coupled target —
+	 * rows disagreeing between coupled columns are never valid answers,
+	 * so the extra conjuncts buy bandwidth without dropping any. */
 	private static Optional<SqlPredicate> imposition(Imposition<?, ?> atom, ColumnResolver columns) {
-		Optional<String> column = columns.columnOf(atom.getTarget());
-		if (!column.isPresent() || !(atom.getValue() instanceof Domain)) {
+		List<String> occupied = columns.columnsOf(atom.getTarget());
+		if (occupied.isEmpty() || !(atom.getValue() instanceof Domain)) {
 			return Optional.empty();
 		}
-		return domain(column.get(), (Domain<?>) atom.getValue());
+		List<SqlPredicate> conjuncts = new ArrayList<>();
+		for (String column : occupied) {
+			Optional<SqlPredicate> compiled = domain(column, (Domain<?>) atom.getValue());
+			if (!compiled.isPresent()) {
+				return Optional.empty();
+			}
+			conjuncts.add(compiled.get());
+		}
+		return Optional.of(conjuncts.size() == 1 ? conjuncts.get(0) : SqlPredicate.and(conjuncts));
 	}
 
 	@SuppressWarnings("unchecked")

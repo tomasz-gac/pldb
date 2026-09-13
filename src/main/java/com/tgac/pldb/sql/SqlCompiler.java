@@ -6,6 +6,8 @@ package com.tgac.pldb.sql;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.sql.compiler.SqlPredicate;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,17 +23,29 @@ import java.util.Optional;
  * is always correct: the atom's narrowing stays local, enforced by
  * propagation over the returned rows.
  *
- * <p>Atoms arrive with their watched terms renamed to POSITIONAL names:
- * the resolver answers {@code _.i} with the i-th column, and ground terms
- * with nothing — a compiler reads its operands through it and never sees
- * tables.
+ * <p>Atoms name the probe's frees by their reified terms; the resolver
+ * answers with the column(s) the term OCCUPIES IN THE IMAGE, and ground
+ * terms with nothing — a compiler reads its operands through it and
+ * never sees tables. A coupled variable occupies several columns:
+ * {@link ColumnResolver#columnsOf} lists them all, and conjoining a
+ * constraint across every occurrence is lawful — rows disagreeing
+ * between coupled columns are never valid answers, so the conjunct
+ * drops only what the local coupling filter would drop.
  */
 public interface SqlCompiler {
 
 	Optional<SqlPredicate> compile(Atom<?> atom, ColumnResolver columns);
 
 	interface ColumnResolver {
+		/** The FIRST column the term occupies — for one-column-per-operand shapes. */
 		Optional<String> columnOf(Term<?> term);
+
+		/** EVERY column the term occupies — for fan-out conjuncts over couplings. */
+		default List<String> columnsOf(Term<?> term) {
+			return columnOf(term)
+					.map(Collections::singletonList)
+					.orElse(Collections.emptyList());
+		}
 
 		/** Whether the named column is declared nullable; false when unknown. */
 		default boolean nullable(String column) {
