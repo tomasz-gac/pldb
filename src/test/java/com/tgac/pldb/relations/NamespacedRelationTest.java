@@ -47,7 +47,9 @@ public class NamespacedRelationTest {
 		assertThat(loan(Lending.class).getName())
 				.describedAs("the physical name stays bare — tables and mark rows never see the namespace")
 				.isEqualTo("loan");
-		assertThat(((RelationN) loan(Lending.class)).getNamespace()).isEqualTo("Lending");
+		assertThat(((RelationN) loan(Lending.class)).getNamespace())
+				.describedAs("the FULL class name — package-distinct twins must divide too")
+				.isEqualTo(Lending.class.getName());
 	}
 
 	@Test

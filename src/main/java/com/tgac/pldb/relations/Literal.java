@@ -169,7 +169,7 @@ public class Literal implements Goal, Bounded, Postable {
 	 * and spell the name alone.
 	 */
 	public static Builder relation(Class<?> namespace, String name) {
-		return new Builder(namespace.getSimpleName(), name);
+		return new Builder(namespace.getName(), name);
 	}
 
 	@Value
