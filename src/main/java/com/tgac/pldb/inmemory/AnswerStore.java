@@ -7,6 +7,7 @@ import com.tgac.logic.tabling.Call;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
+import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
@@ -46,11 +47,15 @@ import lombok.Value;
  * source may only over-deliver, and here over-delivery costs a walk.
  * Couplings between frees are likewise over-delivered; the consumer's
  * restate filters. The value is PERSISTENT: every insert mints a new
- * store, ancestors keep answering as before.
+ * store, ancestors keep answering as before — which is why the
+ * inherited object-identity {@link #id()} is right: each value IS its
+ * data (same object, same extension — the sound direction), and a
+ * store playing the shared-backend role gets its declared name from
+ * the HANDLE that shares it, never from the value.
  */
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class AnswerStore {
+public class AnswerStore implements AnswerSource {
 
 	/** Null is a legitimate bucket key; vavr maps want a witness for it. */
 	private static final Object NULL_KEY = new Object();
@@ -93,6 +98,7 @@ public class AnswerStore {
 		return grown;
 	}
 
+	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
 				.map(rows -> rows.answers(positions(probe.getRelation()), probe))
@@ -100,6 +106,7 @@ public class AnswerStore {
 	}
 
 	/** Upper bound from the narrowest consulted bucket — exact when unfiltered. */
+	@Override
 	public long estimate(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
 				.map(rows -> rows.estimate(positions(probe.getRelation()), probe))
