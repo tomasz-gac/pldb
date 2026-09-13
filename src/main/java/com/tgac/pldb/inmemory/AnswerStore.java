@@ -11,13 +11,13 @@ import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.Tuple;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
 import io.vavr.collection.Set;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -44,8 +44,9 @@ import lombok.Value;
  * (null is a key; a row free at an indexed column lives in the
  * wildcard set, matching every probe); {@link #answers} intersects the
  * ground indexed positions' buckets and filters the remaining bound
- * positions. An unflagged relation full-scans, correctly. Residues are ignored under the standing license — a
- * source may only over-deliver, and here over-delivery costs a walk.
+ * positions. An unflagged relation full-scans, correctly. Residues
+ * are ignored under the standing license — a source may only
+ * over-deliver, and here over-delivery costs a walk.
  * Couplings between frees are likewise over-delivered; the consumer's
  * restate filters. The value is PERSISTENT: every insert mints a new
  * store, ancestors keep answering as before — which is why the
@@ -85,7 +86,7 @@ public class AnswerStore implements AnswerSource {
 	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
 				.map(rows -> rows.answers(positions(probe.getRelation()), probe))
-				.getOrElse(Array.empty());
+				.getOrElse(Collections.emptyList());
 	}
 
 	/** Upper bound from the narrowest consulted bucket — exact when unfiltered. */
@@ -96,12 +97,12 @@ public class AnswerStore implements AnswerSource {
 				.getOrElse(0L);
 	}
 
-	/** The relation's declared access pattern IS the index spec. */
-	private static Set<Integer> positions(Relation relation) {
-		Set<Integer> declared = LinkedHashSet.empty();
+	/** The relation's declared access pattern IS the index spec — plain scratch. */
+	private static HashSet<Integer> positions(Relation relation) {
+		HashSet<Integer> declared = new HashSet<>();
 		for (int i = 0; i < relation.getArgs().length; i++) {
 			if (relation.getArgs()[i].isIndexed()) {
-				declared = declared.add(i);
+				declared.add(i);
 			}
 		}
 		return declared;
@@ -117,7 +118,7 @@ public class AnswerStore implements AnswerSource {
 			return new Rows(LinkedHashMap.empty(), HashMap.empty());
 		}
 
-		Rows with(Set<Integer> positions, Answer answer) {
+		Rows with(HashSet<Integer> positions, Answer answer) {
 			Reified<?> image = answer.getReified();
 			Condition folded = byImage.get(image)
 					.map(resident -> Condition.RING.plus(resident, answer.getCondition()))
@@ -137,7 +138,7 @@ public class AnswerStore implements AnswerSource {
 			return new Rows(byImage.put(image, folded), indexed);
 		}
 
-		Iterable<Answer> answers(Set<Integer> positions, Call<?> probe) {
+		Iterable<Answer> answers(HashSet<Integer> positions, Call<?> probe) {
 			Array<Term<Object>> args = Answers.positions(probe.getArguments());
 			HashSet<Reified<?>> candidates = candidates(positions, args);
 			return byImage.toJavaStream()
@@ -147,7 +148,7 @@ public class AnswerStore implements AnswerSource {
 					.collect(Collectors.toList());
 		}
 
-		long estimate(Set<Integer> positions, Call<?> probe) {
+		long estimate(HashSet<Integer> positions, Call<?> probe) {
 			HashSet<Reified<?>> candidates =
 					candidates(positions, Answers.positions(probe.getArguments()));
 			return candidates == null ? byImage.size() : candidates.size();
@@ -158,7 +159,7 @@ public class AnswerStore implements AnswerSource {
 		 * rows". The scratch is MUTABLE java — the stored index stays
 		 * persistent, the per-probe computation never does.
 		 */
-		private HashSet<Reified<?>> candidates(Set<Integer> positions, Array<Term<Object>> args) {
+		private HashSet<Reified<?>> candidates(HashSet<Integer> positions, Array<Term<Object>> args) {
 			HashSet<Reified<?>> narrowed = null;
 			for (int i = 0; i < args.size(); i++) {
 				if (!positions.contains(i) || !isGround(args.get(i))) {
@@ -179,9 +180,9 @@ public class AnswerStore implements AnswerSource {
 		/** Every bound probe position: the row's cell equals it, or the cell is free. */
 		private static boolean matches(Array<Term<Object>> probe, Array<Term<Object>> cells) {
 			return IntStream.range(0, probe.size())
-					.mapToObj(i -> Tuple.of(probe.get(i), cells.get(i)))
-					.filter(p -> isGround(p._1))
-					.noneMatch(p -> isGround(p._2) && !Objects.equals(p._1.get(), p._2.get()));
+					.filter(i -> isGround(probe.get(i)))
+					.noneMatch(i -> isGround(cells.get(i))
+							&& !Objects.equals(probe.get(i).get(), cells.get(i).get()));
 		}
 	}
 
@@ -212,7 +213,7 @@ public class AnswerStore implements AnswerSource {
 		HashSet<Reified<?>> matching(Object value) {
 			Object key = value == null ? NULL_KEY : value;
 			HashSet<Reified<?>> matched = new HashSet<>();
-			buckets.getOrElse(key, LinkedHashSet.empty()).forEach(matched::add);
+			buckets.get(key).forEach(bucket -> bucket.forEach(matched::add));
 			wide.forEach(matched::add);
 			return matched;
 		}
