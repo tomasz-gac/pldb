@@ -146,6 +146,43 @@ public class VersionedWatermarkTest {
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
+	@Test
+	public void aDeleteInsideThePinnedRegionBounces() throws Exception {
+		// the delete-tolerance half of the pin pair: the deleted row is NOT
+		// the region's MAX, so the old pin's MAX still matches — only the
+		// row count betrays that the region moved
+		try (
+				Transaction w1 = transaction("w1")
+						.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+		) {
+			assertThat(w1.commit().isSuccess()).isTrue();
+		}
+		try (
+				Transaction w2 = transaction("w2")
+						.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c2")))).get()
+		) {
+			assertThat(w2.commit().isSuccess()).isTrue();
+		}
+
+		Transaction reader = transaction("reader");
+		assertThat(loansOf(reader, "m1")).containsExactly("{c1}", "{c2}");
+
+		// the administrative delete — compaction's stand-in, stamped by
+		// nothing: row c1 carries version 1, below the region's MAX of 2
+		try (
+				Connection admin = connection();
+				Statement delete = admin.createStatement()
+		) {
+			delete.execute("DELETE FROM loan WHERE member = 'm1' AND copy = 'c1'");
+		}
+
+		Transaction staged = reader.withFacts(Collections.singletonList(
+				loan(null, lval("m2"), lval("c9")))).get();
+		assertThat(staged.commit().getCause())
+				.describedAs("a row left the pinned region — MAX alone cannot see it, the pair must")
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
 	private static Literal invoice(AnswerSource db, Unifiable<String> member, Unifiable<Long> day) {
 		return Literal.relation(VersionedWatermarkTest.class, "invoice")
 				.arg("member", member)
