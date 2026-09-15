@@ -40,7 +40,7 @@ public class PropertyTest {
 
 		// the bare constant finds the flagged copy's column
 		assertThat(rel.indexOf(id)).contains(0);
-		Fact fact = Fact.of(rel, Array.of(7, "a"));
+		Answer fact = Answers.answer(rel, Array.of(7, "a"));
 		assertThat(fact.get(id)).contains(7);
 	}
 

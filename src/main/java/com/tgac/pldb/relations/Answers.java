@@ -28,9 +28,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Answers {
 
-	/** A fact as the answer shape: its row reified ground, conditioned ONE. */
-	public static Answer answer(Fact fact) {
-		return Answer.of((Reified<?>) lval(fact.getValues()
+	/** A ground row as the answer shape: values reified, conditioned ONE. */
+	public static Answer answer(Relation relation, Array<?> values) {
+		return Answer.of(relation, (Reified<?>) lval(values
 				.map(Object.class::cast)
 				.map(LVal::lval)), Condition.ONE);
 	}

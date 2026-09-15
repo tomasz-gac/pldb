@@ -20,7 +20,6 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
@@ -41,7 +40,7 @@ public class AnswerStoreTest {
 			.getRel();
 
 	private static Answer row(Object member, Object copy) {
-		return Answers.answer(Fact.of(LOAN, Array.of(member, copy)));
+		return Answers.answer(LOAN, Array.of(member, copy));
 	}
 
 	private static Call<Relation> probe(Term<?> member, Term<?> copy) {
@@ -123,7 +122,7 @@ public class AnswerStoreTest {
 	public void aRowFreeAtAnIndexedColumnMatchesEveryProbe() {
 		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, row("m1", "c1"))
-				.with(LOAN, Answer.of(
+				.with(LOAN, Answer.of(LOAN,
 						(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))),
 						Condition.ONE));
 
@@ -163,7 +162,7 @@ public class AnswerStoreTest {
 		// whole entry shape, conditions included
 		Condition guarded = forbidding("m9");
 		AnswerStore store = AnswerStore.empty()
-				.with(LOAN, Answer.of(row("m1", "c1").getReified(), guarded));
+				.with(LOAN, Answer.of(LOAN, row("m1", "c1").getReified(), guarded));
 
 		assertThat(store.answers(probe(lval("m1"), Any.of(1))).iterator().next().getCondition())
 				.isEqualTo(guarded);
@@ -180,8 +179,8 @@ public class AnswerStoreTest {
 
 		Reified<?> image = row("m1", "c1").getReified();
 		AnswerStore store = AnswerStore.empty()
-				.with(LOAN, Answer.of(image, notM8))
-				.with(LOAN, Answer.of(image, notM9));
+				.with(LOAN, Answer.of(LOAN, image, notM8))
+				.with(LOAN, Answer.of(LOAN, image, notM9));
 
 		Iterable<Answer> answers = store.answers(probe(lval("m1"), Any.of(1)));
 		assertThat(images(answers)).hasSize(1);
@@ -223,8 +222,8 @@ public class AnswerStoreTest {
 		Reified<?> memberWide = (Reified<?>) lval(Array.of(lval("m1"), Any.of(0)));
 		Reified<?> copyWide = (Reified<?>) lval(Array.of(Any.of(0), lval("c3")));
 		AnswerStore store = AnswerStore.empty()
-				.with(LOAN, Answer.of(memberWide, a))
-				.with(LOAN, Answer.of(copyWide, b));
+				.with(LOAN, Answer.of(LOAN, memberWide, a))
+				.with(LOAN, Answer.of(LOAN, copyWide, b));
 
 		Iterable<Answer> overlap = store.answers(probe(lval("m1"), lval("c3")));
 		assertThat(images(overlap)).containsExactly("{Array({m1}, _.0)}", "{Array(_.0, {c3})}");
@@ -244,7 +243,7 @@ public class AnswerStoreTest {
 			.getRel();
 
 	private static Answer pair(Object a, Object b) {
-		return Answers.answer(Fact.of(PAIR, Array.of(a, b)));
+		return Answers.answer(PAIR, Array.of(a, b));
 	}
 
 	private static Call<Relation> pairProbe(Term<?> a, Term<?> b) {
@@ -284,7 +283,7 @@ public class AnswerStoreTest {
 		// INTO the intersection: pair(a9, _) answers any b probe under a9
 		AnswerStore store = AnswerStore.empty()
 				.with(PAIR, pair("a1", "b1"))
-				.with(PAIR, Answer.of(
+				.with(PAIR, Answer.of(PAIR,
 						(Reified<?>) lval(Array.of(lval("a9"), Any.of(0))),
 						Condition.ONE));
 
@@ -304,8 +303,8 @@ public class AnswerStoreTest {
 		// no indexed() declarations on the relation — the store consults the
 		// access-pattern contract and finds none: every probe walks all rows
 		AnswerStore store = AnswerStore.empty()
-				.with(FLAGLESS, Answers.answer(Fact.of(FLAGLESS, Array.of("m1", "c1"))))
-				.with(FLAGLESS, Answers.answer(Fact.of(FLAGLESS, Array.of("m2", "c2"))));
+				.with(FLAGLESS, Answers.answer(FLAGLESS, Array.of("m1", "c1")))
+				.with(FLAGLESS, Answers.answer(FLAGLESS, Array.of("m2", "c2")));
 
 		Call<Relation> bound = Call.of(FLAGLESS,
 				(Reified<?>) lval(Array.of((Term<?>) lval("m1"), Any.of(0))));

@@ -14,7 +14,6 @@ import com.tgac.logic.unification.Any;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -147,9 +146,7 @@ public final class SqlFetch implements JdbcSource {
 		Relation relation = probe.getRelation();
 		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
 		List<Answer> answers = new ArrayList<>();
-		for (Fact fact : rows(relation, args, push(relation, args, probe.getResidues()))) {
-			answers.add(Answers.answer(fact));
-		}
+		answers.addAll(rows(relation, args, push(relation, args, probe.getResidues())));
 		return answers;
 	}
 
@@ -257,7 +254,7 @@ public final class SqlFetch implements JdbcSource {
 		return new RegionSql(conditions, parameters);
 	}
 
-	private List<Fact> rows(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
+	private List<Answer> rows(Relation relation, IndexedSeq<Term<Object>> args, List<SqlPredicate> predicates) {
 		Property<?>[] columns = relation.getArgs();
 		List<String> unboundColumns = new ArrayList<>();
 		List<Property<?>> unboundProperties = new ArrayList<>();
@@ -281,7 +278,7 @@ public final class SqlFetch implements JdbcSource {
 				statement.setObject(index++, parameter);
 			}
 			try (ResultSet rows = statement.executeQuery()) {
-				List<Fact> facts = new ArrayList<>();
+				List<Answer> facts = new ArrayList<>();
 				while (rows.next()) {
 					Object[] values = new Object[unboundColumns.size()];
 					for (int i = 0; i < values.length; i++) {
@@ -296,7 +293,7 @@ public final class SqlFetch implements JdbcSource {
 						}
 					}
 					Array<Object> vals = mergeValuesWithSupplied(args, values);
-					facts.add(Fact.of(relation, Array.ofAll(vals)));
+					facts.add(Answers.answer(relation, Array.ofAll(vals)));
 				}
 				return facts;
 			}

@@ -3,7 +3,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: The JDBC write face: asserted facts land as INSERTs, retracted facts
 // ABOUTME: leave as by-fact DELETEs — one schema convention, one codec registry.
 
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -57,13 +57,8 @@ public class SqlFlush {
 	}
 
 	public void flush(List<Literal> literals) {
-		List<Fact> facts = literals.stream().map(Literal::fact)
-				.map(this::encoded)
-				.collect(Collectors.toList());
-		Map<Relation, List<Fact>> byRelation = facts.stream()
-				.collect(Collectors.groupingBy(Fact::getRelation, LinkedHashMap::new, Collectors.toList()));
 		try {
-			for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
+			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(literals).entrySet()) {
 				insert(table.getKey(), table.getValue());
 			}
 		} catch (SQLException e) {
@@ -71,21 +66,34 @@ public class SqlFlush {
 		}
 	}
 
-	private void insert(Relation relation, List<Fact> rows) throws SQLException {
+	/** The row beneath both doors: a relation and its encoded cells. */
+	@Value
+	private static class Row {
+		Relation relation;
+		Array<Object> cells;
+	}
+
+	private Map<Relation, List<Row>> encodedByRelation(List<Literal> literals) {
+		return literals.stream().map(Literal::fact)
+				.map(this::encoded)
+				.collect(Collectors.groupingBy(Row::getRelation, LinkedHashMap::new, Collectors.toList()));
+	}
+
+	private void insert(Relation relation, List<Row> rows) throws SQLException {
 		String sql = insertSql(relation);
 		if (log.isDebugEnabled()) {
-			for (Fact row : rows) {
-				log.debug("{} ← {}{}", sql, row.getValues(),
+			for (Row row : rows) {
+				log.debug("{} ← {}{}", sql, row.getCells(),
 						stampColumn == null ? "" : ", " + stampValue);
 			}
 		}
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-			for (Fact row : rows) {
-				for (int i = 0; i < row.getValues().size(); i++) {
-					statement.setObject(i + 1, row.getValues().get(i));
+			for (Row row : rows) {
+				for (int i = 0; i < row.getCells().size(); i++) {
+					statement.setObject(i + 1, row.getCells().get(i));
 				}
 				if (stampColumn != null) {
-					statement.setObject(row.getValues().size() + 1, stampValue);
+					statement.setObject(row.getCells().size() + 1, stampValue);
 				}
 				statement.addBatch();
 			}
@@ -102,17 +110,12 @@ public class SqlFlush {
 	 * owns the transaction.
 	 */
 	public void delete(List<Literal> literals) {
-		List<Fact> facts = literals.stream().map(Literal::fact)
-				.map(this::encoded)
-				.collect(Collectors.toList());
-		Map<Relation, List<Fact>> byRelation = facts.stream()
-				.collect(Collectors.groupingBy(Fact::getRelation, LinkedHashMap::new, Collectors.toList()));
 		try {
-			for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
-				Map<String, List<Fact>> byShape = table.getValue().stream()
+			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(literals).entrySet()) {
+				Map<String, List<Row>> byShape = table.getValue().stream()
 						.collect(Collectors.groupingBy(SqlFlush::nullShape,
 								LinkedHashMap::new, Collectors.toList()));
-				for (List<Fact> shape : byShape.values()) {
+				for (List<Row> shape : byShape.values()) {
 					delete(table.getKey(), shape);
 				}
 			}
@@ -121,19 +124,19 @@ public class SqlFlush {
 		}
 	}
 
-	private void delete(Relation relation, List<Fact> rows) throws SQLException {
-		Fact shape = rows.get(0);
+	private void delete(Relation relation, List<Row> rows) throws SQLException {
+		Row shape = rows.get(0);
 		String sql = deleteSql(relation, shape);
 		if (log.isDebugEnabled()) {
-			for (Fact row : rows) {
-				log.debug("{} ← {}", sql, row.getValues());
+			for (Row row : rows) {
+				log.debug("{} ← {}", sql, row.getCells());
 			}
 		}
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-			for (Fact row : rows) {
+			for (Row row : rows) {
 				int hole = 1;
-				for (int i = 0; i < row.getValues().size(); i++) {
-					Object value = row.getValues().get(i);
+				for (int i = 0; i < row.getCells().size(); i++) {
+					Object value = row.getCells().get(i);
 					if (value != null) {
 						statement.setObject(hole++, value);
 					}
@@ -144,23 +147,23 @@ public class SqlFlush {
 		}
 	}
 
-	private static String deleteSql(Relation relation, Fact shape) {
+	private static String deleteSql(Relation relation, Row shape) {
 		StringBuilder where = new StringBuilder();
 		for (int i = 0; i < relation.getArgs().length; i++) {
 			if (where.length() > 0) {
 				where.append(" AND ");
 			}
 			where.append(relation.getArgs()[i].getName())
-					.append(shape.getValues().get(i) == null ? " IS NULL" : " = ?");
+					.append(shape.getCells().get(i) == null ? " IS NULL" : " = ?");
 		}
 		return "DELETE FROM " + relation.getName() + " WHERE " + where;
 	}
 
 	/** Which cells are null decides the statement's shape, not its binds. */
-	private static String nullShape(Fact row) {
+	private static String nullShape(Row row) {
 		StringBuilder shape = new StringBuilder();
-		for (int i = 0; i < row.getValues().size(); i++) {
-			shape.append(row.getValues().get(i) == null ? '0' : '1');
+		for (int i = 0; i < row.getCells().size(); i++) {
+			shape.append(row.getCells().get(i) == null ? '0' : '1');
 		}
 		return shape.toString();
 	}
@@ -184,11 +187,12 @@ public class SqlFlush {
 	 * validates or none of it lands. A null cell rides the nullable
 	 * declaration; everything else must have a codec.
 	 */
-	private Fact encoded(Fact fact) {
+	private Row encoded(Answer fact) {
 		Property<?>[] columns = fact.getRelation().getArgs();
+		Array<Object> values = fact.values();
 		Object[] cells = new Object[columns.length];
 		for (int i = 0; i < columns.length; i++) {
-			Object value = fact.getValues().get(i);
+			Object value = values.get(i);
 			if (value == null) {
 				if (!columns[i].isNullable()) {
 					throw new IllegalStateException("flush of " + fact.getRelation().getName()
@@ -199,6 +203,6 @@ public class SqlFlush {
 			}
 			cells[i] = codecs.encode(fact.getRelation(), columns[i], value);
 		}
-		return Fact.of(fact.getRelation(), Array.of(cells));
+		return new Row(fact.getRelation(), Array.of(cells));
 	}
 }

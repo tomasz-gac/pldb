@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 
 // ABOUTME: The question front door: a goal plus result-row templates, answers as
-// ABOUTME: Facts — rows a caller reads, a persist lands, or a retract removes.
+// ABOUTME: Answers — rows a caller reads, a persist lands, or a retract removes.
 
 import static com.tgac.logic.unification.LVal.lval;
 
@@ -10,6 +10,7 @@ import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.Scheduler;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
@@ -40,11 +41,11 @@ public class Question {
 	 * template cell the answer leaves free refuses by relation and
 	 * column: facts are whole rows, always.
 	 */
-	public static Stream<Fact> select(Goal question, Literal... schemas) {
+	public static Stream<Answer> select(Goal question, Literal... schemas) {
 		return select(question, BreadthFirstScheduler::new, schemas);
 	}
 
-	public static Stream<Fact> select(Goal question, Function<Fiber<Nothing>, Scheduler<Nothing>> factory, Literal... schemas) {
+	public static Stream<Answer> select(Goal question, Function<Fiber<Nothing>, Scheduler<Nothing>> factory, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
 		return question.solve(lval(variables), factory)
 				.map(Reified::get)
@@ -74,27 +75,23 @@ public class Question {
 				.collect(Collectors.toMap(variables::get, i -> (Term<?>) answer.get(i)));
 	}
 
-	/** One answer, every schema: the whole cluster this derivation writes. */
-	private static Stream<Fact> facts(Map<Unifiable<?>, Term<?>> bound, Literal[] schemas) {
+	/** One answer, every schema: the whole cluster this derivation names. */
+	private static Stream<Answer> facts(Map<Unifiable<?>, Term<?>> bound, Literal[] schemas) {
 		return Arrays.stream(schemas)
-				.map(schema -> Fact.of(schema.getRel(),
-						IntStream.range(0, schema.getArgs().length())
+				.map(schema -> Answer.of(schema.getRel(),
+						(Reified<?>) lval(IntStream.range(0, schema.getArgs().length())
 								.mapToObj(i -> cell(schema, i, bound))
-								.collect(Array.collector())));
+								.collect(Array.collector())),
+						Condition.ONE));
 	}
 
 	/**
-	 * The template cell's value under this answer: its own constant, or the
-	 * bound variable's — ground, or the whole-rows refusal.
+	 * The template cell under this answer: its own constant, or whatever
+	 * the answer holds at the shared variable — a value, or the Any a
+	 * free cell rides as.
 	 */
-	private static Object cell(Literal schema, int position, Map<Unifiable<?>, Term<?>> bound) {
+	private static Term<?> cell(Literal schema, int position, Map<Unifiable<?>, Term<?>> bound) {
 		Unifiable<?> arg = schema.getArgs().get(position);
-		Term<?> value = arg.asVal().isDefined() ? arg : bound.get(arg);
-		if (!value.asVal().isDefined()) {
-			throw new IllegalStateException(schema.getRel().getName() + "."
-					+ schema.getRel().getArgs()[position].getName()
-					+ " is not ground in this answer — facts are whole rows");
-		}
-		return value.get();
+		return arg.asVal().isDefined() ? arg : bound.get(arg);
 	}
 }

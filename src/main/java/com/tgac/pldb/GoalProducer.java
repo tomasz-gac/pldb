@@ -55,7 +55,7 @@ public final class GoalProducer implements AnswerProducer {
 				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));
 		return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
 				Residues.all(answerPkg, anchor).flatMap(answer ->
-						emit.emit(Answer.of(answer._1, Condition.of(answer._2)))));
+						emit.emit(Answer.of(rel, answer._1, Condition.of(answer._2)))));
 	}
 
 	@Override

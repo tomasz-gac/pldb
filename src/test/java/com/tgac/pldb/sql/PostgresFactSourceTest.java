@@ -12,7 +12,7 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.AnswerStore;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -120,27 +120,27 @@ public class PostgresFactSourceTest {
 	 * list feeds both worlds — the proof compares backings, not fixtures.
 	 */
 	private static void push(Connection connection, List<Literal> facts) throws SQLException {
-		Map<Relation, List<Fact>> byRelation = facts.stream()
+		Map<Relation, List<Answer>> byRelation = facts.stream()
 				.map(Literal::fact)
-				.collect(Collectors.groupingBy(Fact::getRelation,
+				.collect(Collectors.groupingBy(Answer::getRelation,
 						LinkedHashMap::new, Collectors.toList()));
 		try (Statement ddl = connection.createStatement()) {
-			for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
+			for (Map.Entry<Relation, List<Answer>> table : byRelation.entrySet()) {
 				ddl.execute("DROP TABLE IF EXISTS " + table.getKey().getName());
 				ddl.execute(createTable(table.getKey(), table.getValue().get(0)));
 			}
 		}
-		for (Map.Entry<Relation, List<Fact>> table : byRelation.entrySet()) {
-			String placeholders = table.getValue().get(0).getValues().toJavaStream()
+		for (Map.Entry<Relation, List<Answer>> table : byRelation.entrySet()) {
+			String placeholders = table.getValue().get(0).values().toJavaStream()
 					.map(v -> "?")
 					.collect(Collectors.joining(", "));
 			try (
 					PreparedStatement insert = connection.prepareStatement(
 							"INSERT INTO " + table.getKey().getName() + " VALUES (" + placeholders + ")")
 			) {
-				for (Fact fact : table.getValue()) {
+				for (Answer fact : table.getValue()) {
 					int column = 1;
-					for (Object value : fact.getValues()) {
+					for (Object value : fact.values()) {
 						insert.setObject(column++, value);
 					}
 					insert.addBatch();
@@ -150,14 +150,14 @@ public class PostgresFactSourceTest {
 		}
 	}
 
-	private static String createTable(Relation relation, Fact sample) {
+	private static String createTable(Relation relation, Answer sample) {
 		Property<?>[] columns = relation.getArgs();
 		StringBuilder ddl = new StringBuilder("CREATE TABLE ")
 				.append(relation.getName()).append("(");
 		for (int i = 0; i < columns.length; i++) {
 			ddl.append(i == 0 ? "" : ", ")
 					.append(columns[i].getName())
-					.append(" ").append(sqlType(sample.getValues().get(i)))
+					.append(" ").append(sqlType(sample.values().get(i)))
 					.append(" NOT NULL");
 		}
 		return ddl.append(")").toString();

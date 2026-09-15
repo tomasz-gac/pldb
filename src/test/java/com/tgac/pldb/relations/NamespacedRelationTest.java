@@ -56,8 +56,8 @@ public class NamespacedRelationTest {
 	public void namespacedTwinsKeepSeparateExtensions() {
 		// the silent-merge hazard made unrepresentable: same bare name, same
 		// columns, two namespaces — the store keys them apart
-		Answer row = Answers.answer(Fact.of(loan(Lending.class),
-				Array.of((Object) "m1", "c1")));
+		Answer row = Answers.answer(loan(Lending.class),
+				Array.of((Object) "m1", "c1"));
 		AnswerStore store = AnswerStore.empty()
 				.with(loan(Lending.class), row);
 

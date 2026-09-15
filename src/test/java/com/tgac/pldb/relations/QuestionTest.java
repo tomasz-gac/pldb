@@ -1,7 +1,7 @@
 package com.tgac.pldb.relations;
 
-// ABOUTME: Answers-as-facts receipts: each answer grounds every template, constants
-// ABOUTME: ride, clusters land whole, and a free cell refuses by relation and column.
+// ABOUTME: Answers-as-rows receipts: each answer grounds every template, constants
+// ABOUTME: ride, clusters land whole, and a free cell rides wide for the doors to judge.
 
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Question;
 import java.util.List;
@@ -32,8 +31,8 @@ public class QuestionTest {
 				.from(null);
 	}
 
-	private static String render(Fact fact) {
-		return fact.getRelation().getName() + fact.getValues().toJavaList();
+	private static String render(Answer row) {
+		return row.getRelation().getName() + row.values().toJavaList();
 	}
 
 	@Test
@@ -78,16 +77,19 @@ public class QuestionTest {
 	}
 
 	@Test
-	public void aFreeTemplateCellRefusesByRelationAndColumn() {
+	public void aFreeTemplateCellRidesWideForTheDoorsToJudge() {
+		// select stops refusing: the unbound copy rides as a WIDE cell —
+		// typed access answers empty there and the write doors, not the
+		// select, own the strictness
 		Unifiable<Integer> id = lvar();
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1);
 
-		assertThatThrownBy(() -> Question.select(question, loan(id, copy))
-				.collect(Collectors.toList()))
-				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("loan")
-				.hasMessageContaining("copy");
+		List<Answer> wide = Question.select(question, loan(id, copy))
+				.collect(Collectors.toList());
+		assertThat(wide).hasSize(1);
+		assertThat(wide.get(0).<Integer> get(Property.of("loanId"))).contains(1);
+		assertThat(wide.get(0).<String> get(Property.of("copy"))).isEmpty();
 	}
 
 	@Test

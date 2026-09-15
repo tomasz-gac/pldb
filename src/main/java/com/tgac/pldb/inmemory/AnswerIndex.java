@@ -6,6 +6,7 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.LinkedHashMap;
@@ -67,13 +68,13 @@ class AnswerIndex {
 		return new AnswerIndex(byImage.remove(image), indexed);
 	}
 
-	Iterable<Answer> answers(Set<Integer> positions, Call<?> probe) {
+	Iterable<Answer> answers(Relation relation, Set<Integer> positions, Call<?> probe) {
 		Array<Term<Object>> args = Answers.positions(probe.getArguments());
 		Set<Reified<?>> candidates = candidates(positions, args);
 		return byImage.toJavaStream()
 				.filter(row -> candidates == null || candidates.contains(row._1))
 				.filter(row -> matches(args, Answers.positions(row._1)))
-				.map(row -> row.apply(Answer::of))
+				.map(row -> Answer.of(relation, row._1, row._2))
 				.collect(Collectors.toList());
 	}
 

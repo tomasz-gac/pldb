@@ -77,12 +77,12 @@ public class RelationN implements Relation {
 		return TableConstraints.posted(producer, rel, Array.of(args));
 	}
 
-	public Fact apply(Object... vs) {
+	public Answer apply(Object... vs) {
 		return fact(vs);
 	}
 
 	/** The relation's stored-row face: ground values in declared order. */
-	public Fact fact(Object... vs) {
-		return Fact.of(this, Array.of(vs));
+	public Answer fact(Object... vs) {
+		return Answers.answer(this, Array.of(vs));
 	}
 }

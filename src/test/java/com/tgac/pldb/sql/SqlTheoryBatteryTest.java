@@ -24,7 +24,7 @@ import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Fact;
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
 import com.tgac.pldb.relations.Relation;
@@ -99,7 +99,7 @@ public class SqlTheoryBatteryTest {
 	private Connection connection;
 
 	/** The whole reference relation, enumerated through the answers face. */
-	private static Stream<Fact> allFacts(Relation relation) {
+	private static Stream<Answer> allFacts(Relation relation) {
 		List<Object> members = new ArrayList<>();
 		for (int i = 0; i < relation.getArgs().length; i++) {
 			members.add(Any.of(i));
@@ -107,7 +107,7 @@ public class SqlTheoryBatteryTest {
 		return StreamSupport.stream(reference.answers(
 								Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
 						.spliterator(), false)
-				.map(answer -> Fact.of(relation, Answers.values(answer.getReified())));
+				.map(answer -> Answers.answer(relation, Answers.values(answer.getReified())));
 	}
 
 	@Before

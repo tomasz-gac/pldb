@@ -19,7 +19,6 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
@@ -119,7 +118,7 @@ public class GoalProducerTest {
 		// inert fold — no log entry, no emission
 		// minted directly: the db's unindexed probe over-delivers by license,
 		// so iterator().next() was order-dependent debris
-		Answer row = Answers.answer(Fact.of(personRel(), Array.of((Object) 2L, "Alan")));
+		Answer row = Answers.answer(personRel(), Array.of((Object) 2L, "Alan"));
 		AnswerSource stuttering = probe -> Arrays.asList(row, row, row);
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();

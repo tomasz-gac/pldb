@@ -1,6 +1,6 @@
 package com.tgac.pldb.relations;
 
-// ABOUTME: The answer codec: a Fact encodes as (ground reified row, ONE); the image
+// ABOUTME: The answer codec: a ground row encodes as (reified image, ONE); the image
 // ABOUTME: decodes per position — cells in Term vocabulary, values for rows.
 
 import static com.tgac.logic.nogoods.Exclusion.exclude;
@@ -31,19 +31,18 @@ public class AnswersTest {
 
 	@Test
 	public void aFactEncodesAsAGroundRowAtOne() {
-		Fact fact = Fact.of(person, Array.of(1L, "Alan"));
-		Answer answer = Answers.answer(fact);
+		Answer answer = Answers.answer(person, Array.of(1L, "Alan"));
 		assertThat(answer.getCondition()).isEqualTo(Condition.ONE);
 		assertThat(answer.getReified().isGround()).isTrue();
 		assertThat(Answers.values(answer.getReified()).toJavaList()).containsExactly(1L, "Alan");
 	}
 
 	private Answer ground(Object id, Object name) {
-		return Answers.answer(Fact.of(person, Array.of(id, name)));
+		return Answers.answer(person, Array.of(id, name));
 	}
 
-	private static Answer answer(Condition condition, Term<?>... cells) {
-		return Answer.of((Reified<?>) lval(Array.of(cells)), condition);
+	private Answer answer(Condition condition, Term<?>... cells) {
+		return Answer.of(person, (Reified<?>) lval(Array.of(cells)), condition);
 	}
 
 	/** A REAL guard, minted by a produce whose body forbids one id. */
@@ -91,7 +90,7 @@ public class AnswersTest {
 				.isFalse();
 		Answer openWide = answer(Condition.ONE, Any.of(0), Any.of(1));
 		assertThat(Answers.subsumes(openWide,
-				Answer.of(ground(1L, "Alan").getReified(), guarded)))
+				Answer.of(person, ground(1L, "Alan").getReified(), guarded)))
 				.describedAs("ONE absorbs any guard — the open wide covers the guarded row")
 				.isTrue();
 	}
@@ -100,8 +99,8 @@ public class AnswersTest {
 	public void valuesAreRawNotRendered() {
 		// the braces gotcha: a reified term's toString renders decoration;
 		// the codec hands back the VALUES, never their rendering
-		Fact fact = Fact.of(person, Array.of(1L, "Alan"));
-		Object first = Answers.values(Answers.answer(fact).getReified()).get(0);
+		Object first = Answers.values(
+				Answers.answer(person, Array.of(1L, "Alan")).getReified()).get(0);
 		assertThat(first).isInstanceOf(Long.class).isEqualTo(1L);
 	}
 

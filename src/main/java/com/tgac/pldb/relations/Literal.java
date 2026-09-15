@@ -281,7 +281,7 @@ public class Literal implements Goal, Bounded, Postable {
 	 * Refuses loudly by relation and column name — a fact with a hole is a
 	 * question, not knowledge.
 	 */
-	public Fact fact() {
+	public Answer fact() {
 		Array<Object> values = args.zipWithIndex().map(t -> {
 			if (!t._1.asVal().isDefined()) {
 				throw new IllegalStateException("fact() over " + rel.getName()
@@ -289,7 +289,7 @@ public class Literal implements Goal, Bounded, Postable {
 			}
 			return (Object) t._1.asVal().get();
 		});
-		return Fact.of(rel, values);
+		return Answers.answer(rel, values);
 	}
 
 	@Override

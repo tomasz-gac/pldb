@@ -71,7 +71,7 @@ public class WriteBuffer implements AnswerSource {
 	private static Try<AnswerStore> refuseCollision(AnswerStore opposite, Collection<Literal> facts) {
 		return Try.of(() -> {
 			for (Literal fact : facts) {
-				Reified<?> image = Answers.answer(fact.fact()).getReified();
+				Reified<?> image = fact.fact().getReified();
 				if (opposite.answers(Call.of(fact.getRel(), image)).iterator().hasNext()) {
 					throw new Transaction.Conflict("the fact " + fact.getRel().getName()
 							+ image + " is staged with the opposite polarity —"
@@ -121,7 +121,7 @@ public class WriteBuffer implements AnswerSource {
 						Exceptions.throwingBiOp(UnsupportedOperationException::new));
 		return IntStream.range(0, folded.size())
 				.mapToObj(folded::get)
-				.map(Answer::of)
+				.map(entry -> Answer.of(probe.getRelation(), entry))
 				.collect(Collectors.toList());
 	}
 

@@ -74,7 +74,7 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 		return Try.of(() -> {
 			AnswerStore grown = this;
 			for (Literal fact : facts) {
-				grown = grown.with(fact.getRel(), Answers.answer(fact.fact()));
+				grown = grown.with(fact.getRel(), fact.fact());
 			}
 			return grown;
 		});
@@ -97,8 +97,7 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 		return Try.of(() -> {
 			AnswerStore shrunk = this;
 			for (Literal fact : facts) {
-				shrunk = shrunk.without(fact.getRel(),
-						Answers.answer(fact.fact()).getReified());
+				shrunk = shrunk.without(fact.getRel(), fact.fact().getReified());
 			}
 			return shrunk;
 		});
@@ -114,7 +113,7 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
-				.map(answers -> answers.answers(positions(probe.getRelation()), probe))
+				.map(answers -> answers.answers(probe.getRelation(), positions(probe.getRelation()), probe))
 				.getOrElse(Collections.emptyList());
 	}
 
