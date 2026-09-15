@@ -16,17 +16,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
-public class UtilsTest {
+public class QuestionTest {
 
 	private static Literal loan(Unifiable<Integer> id, Unifiable<String> copy) {
-		return Literal.relation(UtilsTest.class, "loan")
+		return Literal.relation(QuestionTest.class, "loan")
 				.arg("loanId", id).indexed()
 				.arg("copy", copy)
 				.from(null);
 	}
 
 	private static Literal returned(Unifiable<Integer> id) {
-		return Literal.relation(UtilsTest.class, "returned")
+		return Literal.relation(QuestionTest.class, "returned")
 				.arg("loanId", id).indexed()
 				.from(null);
 	}
@@ -41,8 +41,8 @@ public class UtilsTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1).and(copy.unifies("c1"));
 
-		List<String> facts = Utils.persist(question, loan(id, copy), returned(id))
-				.map(UtilsTest::render)
+		List<String> facts = Question.select(question, loan(id, copy), returned(id))
+				.map(QuestionTest::render)
 				.collect(Collectors.toList());
 
 		assertThat(facts).containsExactly("loan[1, c1]", "returned[1]");
@@ -55,8 +55,8 @@ public class UtilsTest {
 		Goal question = copy.unifies("c1")
 				.and(id.unifies(1).or(id.unifies(2)));
 
-		List<String> facts = Utils.persist(question, loan(id, copy), returned(id))
-				.map(UtilsTest::render)
+		List<String> facts = Question.select(question, loan(id, copy), returned(id))
+				.map(QuestionTest::render)
 				.sorted()
 				.collect(Collectors.toList());
 
@@ -69,8 +69,8 @@ public class UtilsTest {
 		Unifiable<Integer> id = lvar();
 		Goal question = id.unifies(7);
 
-		List<String> facts = Utils.persist(question, loan(id, lval("archived")))
-				.map(UtilsTest::render)
+		List<String> facts = Question.select(question, loan(id, lval("archived")))
+				.map(QuestionTest::render)
 				.collect(Collectors.toList());
 
 		assertThat(facts).containsExactly("loan[7, archived]");
@@ -82,7 +82,7 @@ public class UtilsTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1);
 
-		assertThatThrownBy(() -> Utils.persist(question, loan(id, copy))
+		assertThatThrownBy(() -> Question.select(question, loan(id, copy))
 				.collect(Collectors.toList()))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("loan")
@@ -94,7 +94,7 @@ public class UtilsTest {
 		Unifiable<Integer> id = lvar();
 		Goal question = id.unifies(1).and(id.unifies(2));
 
-		assertThat(Utils.persist(question, loan(id, lval("c1")))
+		assertThat(Question.select(question, loan(id, lval("c1")))
 				.collect(Collectors.toList()))
 				.isEmpty();
 	}
