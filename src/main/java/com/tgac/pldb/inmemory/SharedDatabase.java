@@ -12,6 +12,7 @@ import com.tgac.pldb.transaction.Pin;
 import com.tgac.pldb.transaction.Pinned;
 import com.tgac.pldb.transaction.SimulatedSerialization;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.Value;
@@ -58,12 +59,12 @@ public final class SharedDatabase {
 	 * The commit protocol, whole: the monitor is the commit lock, the
 	 * generation compare is the proof, the persistent grow is the flush.
 	 */
-	private synchronized boolean commit(Footprint read,
-			java.util.List<Literal> asserted, java.util.List<Literal> retracted) {
+	private synchronized boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
 		if (!covers(read)) {
 			return false;
 		}
-		AnswerStore next = current.getValue().asserting(asserted).get()
+		AnswerStore next = current.getValue()
+				.asserting(asserted).get()
 				.retracting(retracted).get();
 		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
 		for (Literal fact : asserted) {
@@ -106,8 +107,7 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public boolean commit(Footprint read,
-				java.util.List<Literal> asserted, java.util.List<Literal> retracted) {
+		public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
 			return SharedDatabase.this.commit(read, asserted, retracted);
 		}
 

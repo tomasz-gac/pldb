@@ -43,7 +43,7 @@ import lombok.Value;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class WriteBuffer implements AnswerSource {
 	AnswerSource base;
-	AnswerStore delta;
+	AnswerStore insertions;
 	AnswerStore removals;
 	Array<Literal> stagedAssertions;
 	Array<Literal> stagedRetractions;
@@ -55,15 +55,15 @@ public class WriteBuffer implements AnswerSource {
 
 	public Try<WriteBuffer> asserting(List<Literal> facts) {
 		return refuseCollision(removals, facts)
-				.flatMap(clear -> delta.asserting(facts))
+				.flatMap(clear -> insertions.asserting(facts))
 				.map(grown -> new WriteBuffer(base, grown, removals,
 						stagedAssertions.appendAll(facts), stagedRetractions));
 	}
 
 	public Try<WriteBuffer> retracting(Collection<Literal> facts) {
-		return refuseCollision(delta, facts)
+		return refuseCollision(insertions, facts)
 				.flatMap(clear -> removals.asserting(facts))
-				.map(marked -> new WriteBuffer(base, delta, marked,
+				.map(marked -> new WriteBuffer(base, insertions, marked,
 						stagedAssertions, stagedRetractions.appendAll(facts)));
 	}
 
@@ -105,7 +105,7 @@ public class WriteBuffer implements AnswerSource {
 	 * delivery; same-key duplicates still ⊕-fold in the cell below.
 	 */
 	public Iterable<Answer> overlay(Call<Relation> probe, Iterable<Answer> baseAnswers) {
-		List<Answer> staged = StreamSupport.stream(delta.answers(probe).spliterator(), false)
+		List<Answer> staged = StreamSupport.stream(insertions.answers(probe).spliterator(), false)
 				.collect(Collectors.toList());
 		Set<Reified<?>> removed = StreamSupport.stream(removals.answers(probe).spliterator(), false)
 				.map(Answer::getReified)
@@ -128,7 +128,7 @@ public class WriteBuffer implements AnswerSource {
 	/** An upper bound: retractions never lower it — over-estimation is sound. */
 	@Override
 	public long estimate(Call<Relation> probe) {
-		return base.estimate(probe) + delta.estimate(probe);
+		return base.estimate(probe) + insertions.estimate(probe);
 	}
 
 	/** The base names the world; the delta is this value's private view of it. */

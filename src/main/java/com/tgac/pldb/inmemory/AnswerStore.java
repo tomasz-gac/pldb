@@ -4,26 +4,19 @@ package com.tgac.pldb.inmemory;
 // ABOUTME: conditions ⊕-fold; completeness is coverage's claim, worlds are pins'.
 
 import com.tgac.logic.tabling.Call;
-import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Reified;
-import com.tgac.logic.unification.Term;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.Writer;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Answers;
+import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import io.vavr.collection.HashMap;
 import io.vavr.collection.LinkedHashMap;
-import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;
-import io.vavr.collection.Set;
 import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
@@ -63,19 +56,16 @@ import lombok.Value;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 
-	/** Null is a legitimate bucket key; vavr maps want a witness for it. */
-	private static final Object NULL_KEY = new Object();
-
-	Map<Relation, Rows> relations;
+	Map<Relation, AnswerIndex> relations;
 
 	public static AnswerStore empty() {
 		return new AnswerStore(LinkedHashMap.empty());
 	}
 
 	public AnswerStore with(Relation relation, Answer answer) {
-		Rows rows = relations.getOrElse(relation, Rows.empty());
+		AnswerIndex answers = relations.getOrElse(relation, AnswerIndex.empty());
 		return new AnswerStore(
-				relations.put(relation, rows.with(positions(relation), answer)));
+				relations.put(relation, answers.with(positions(relation), answer)));
 	}
 
 	/** The write face: literals land as ground rows of their own relations. */
@@ -98,8 +88,10 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 		return grown;
 	}
 
-	/** The removal door: the fact's membership claim leaves whole — its
-	 * ⊕-folded condition with it; retracting the absent is a no-op. */
+	/**
+	 * The removal door: the fact's membership claim leaves whole — its
+	 * ⊕-folded condition with it; retracting the absent is a no-op.
+	 */
 	@Override
 	public Try<AnswerStore> retracting(Collection<Literal> facts) {
 		return Try.of(() -> {
@@ -114,15 +106,15 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 
 	public AnswerStore without(Relation relation, Reified<?> image) {
 		return relations.get(relation)
-				.map(rows -> new AnswerStore(
-						relations.put(relation, rows.without(positions(relation), image))))
+				.map(answers -> new AnswerStore(
+						relations.put(relation, answers.without(positions(relation), image))))
 				.getOrElse(this);
 	}
 
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
-				.map(rows -> rows.answers(positions(probe.getRelation()), probe))
+				.map(answers -> answers.answers(positions(probe.getRelation()), probe))
 				.getOrElse(Collections.emptyList());
 	}
 
@@ -130,157 +122,15 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 	@Override
 	public long estimate(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
-				.map(rows -> rows.estimate(positions(probe.getRelation()), probe))
+				.map(answers -> answers.estimate(positions(probe.getRelation()), probe))
 				.getOrElse(0L);
 	}
 
 	/** The relation's declared access pattern IS the index spec — plain scratch. */
-	private static HashSet<Integer> positions(Relation relation) {
-		HashSet<Integer> declared = new HashSet<>();
-		for (int i = 0; i < relation.getArgs().length; i++) {
-			if (relation.getArgs()[i].isIndexed()) {
-				declared.add(i);
-			}
-		}
-		return declared;
-	}
-
-	@Value
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-	private static class Rows {
-		LinkedHashMap<Reified<?>, Condition> byImage;
-		Map<Integer, ColumnIndex> byColumn;
-
-		static Rows empty() {
-			return new Rows(LinkedHashMap.empty(), HashMap.empty());
-		}
-
-		Rows with(HashSet<Integer> positions, Answer answer) {
-			Reified<?> image = answer.getReified();
-			Condition folded = byImage.get(image)
-					.map(resident -> Condition.RING.plus(resident, answer.getCondition()))
-					.getOrElse(answer.getCondition());
-			if (byImage.containsKey(image)) {
-				return new Rows(byImage.put(image, folded), byColumn);
-			}
-			Map<Integer, ColumnIndex> indexed = byColumn;
-			Array<Term<Object>> cells = Answers.positions(image);
-			for (int i = 0; i < cells.size(); i++) {
-				if (!positions.contains(i)) {
-					continue;
-				}
-				ColumnIndex column = indexed.getOrElse(i, ColumnIndex.empty());
-				indexed = indexed.put(i, column.with(cells.get(i), image));
-			}
-			return new Rows(byImage.put(image, folded), indexed);
-		}
-
-		Rows without(HashSet<Integer> positions, Reified<?> image) {
-			if (!byImage.containsKey(image)) {
-				return this;
-			}
-			Map<Integer, ColumnIndex> indexed = byColumn;
-			Array<Term<Object>> cells = Answers.positions(image);
-			for (int i = 0; i < cells.size(); i++) {
-				if (!positions.contains(i)) {
-					continue;
-				}
-				ColumnIndex column = indexed.getOrElse(i, null);
-				if (column != null) {
-					indexed = indexed.put(i, column.without(cells.get(i), image));
-				}
-			}
-			return new Rows(byImage.remove(image), indexed);
-		}
-
-		Iterable<Answer> answers(HashSet<Integer> positions, Call<?> probe) {
-			Array<Term<Object>> args = Answers.positions(probe.getArguments());
-			HashSet<Reified<?>> candidates = candidates(positions, args);
-			return byImage.toJavaStream()
-					.filter(row -> candidates == null || candidates.contains(row._1))
-					.filter(row -> matches(args, Answers.positions(row._1)))
-					.map(row -> row.apply(Answer::of))
-					.collect(Collectors.toList());
-		}
-
-		long estimate(HashSet<Integer> positions, Call<?> probe) {
-			HashSet<Reified<?>> candidates =
-					candidates(positions, Answers.positions(probe.getArguments()));
-			return candidates == null ? byImage.size() : candidates.size();
-		}
-
-		/**
-		 * Ground indexed positions intersect their buckets; null means "all
-		 * rows". The scratch is MUTABLE java — the stored index stays
-		 * persistent, the per-probe computation never does.
-		 */
-		private HashSet<Reified<?>> candidates(HashSet<Integer> positions, Array<Term<Object>> args) {
-			HashSet<Reified<?>> narrowed = null;
-			for (int i = 0; i < args.size(); i++) {
-				if (!positions.contains(i) || !isGround(args.get(i))) {
-					continue;
-				}
-				Object value = args.get(i).get();
-				ColumnIndex column = byColumn.getOrElse(i, null);
-				HashSet<Reified<?>> bucket = column == null ? new HashSet<>() : column.matching(value);
-				if (narrowed == null) {
-					narrowed = bucket;
-				} else {
-					narrowed.retainAll(bucket);
-				}
-			}
-			return narrowed;
-		}
-
-		/** Every bound probe position: the row's cell equals it, or the cell is free. */
-		private static boolean matches(Array<Term<Object>> probe, Array<Term<Object>> cells) {
-			return IntStream.range(0, probe.size())
-					.filter(i -> isGround(probe.get(i)))
-					.noneMatch(i -> isGround(cells.get(i))
-							&& !Objects.equals(probe.get(i).get(), cells.get(i).get()));
-		}
-	}
-
-	private static boolean isGround(Term<?> v) {
-		return v.asVal().isDefined();
-	}
-
-	@Value
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-	private static class ColumnIndex {
-		Map<Object, Set<Reified<?>>> buckets;
-		Set<Reified<?>> wide;
-
-		static ColumnIndex empty() {
-			return new ColumnIndex(LinkedHashMap.empty(), LinkedHashSet.empty());
-		}
-
-		ColumnIndex with(Term<Object> cell, Reified<?> image) {
-			if (!isGround(cell)) {
-				return new ColumnIndex(buckets, wide.add(image));
-			}
-			Object key = cell.get() == null ? NULL_KEY : cell.get();
-			Set<Reified<?>> bucket = buckets.getOrElse(key, LinkedHashSet.empty());
-			return new ColumnIndex(buckets.put(key, bucket.add(image)), wide);
-		}
-
-		ColumnIndex without(Term<Object> cell, Reified<?> image) {
-			if (!isGround(cell)) {
-				return new ColumnIndex(buckets, wide.remove(image));
-			}
-			Object key = cell.get() == null ? NULL_KEY : cell.get();
-			return new ColumnIndex(buckets.get(key)
-					.map(bucket -> buckets.put(key, bucket.remove(image)))
-					.getOrElse(buckets), wide);
-		}
-
-		/** The value's bucket plus every row free at this column, as mutable scratch. */
-		HashSet<Reified<?>> matching(Object value) {
-			Object key = value == null ? NULL_KEY : value;
-			HashSet<Reified<?>> matched = new HashSet<>();
-			buckets.get(key).forEach(bucket -> bucket.forEach(matched::add));
-			wide.forEach(matched::add);
-			return matched;
-		}
+	private static Set<Integer> positions(Relation relation) {
+		return IntStream.range(0, relation.getArgs().length)
+				.filter(i -> relation.getArgs()[i].isIndexed())
+				.boxed()
+				.collect(Collectors.toSet());
 	}
 }

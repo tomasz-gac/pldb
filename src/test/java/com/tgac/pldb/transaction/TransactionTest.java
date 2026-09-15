@@ -91,6 +91,34 @@ public class TransactionTest {
 	// receipt (aSourceWithoutACertifyCapabilityRefusesAtOpen) is now javac's job
 
 	@Test
+	public void aProtocolRetractionAdvancesTheMarkAndBouncesThePinnedReader() throws Exception {
+		// the counter-pin sees polarity by construction: advance runs over
+		// the union, so a retraction divides pins like any insert — no
+		// data-derived witness needed at relation grain
+		try (Transaction seed = transaction("seed")
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()) {
+			assertThat(seed.commit().isSuccess()).isTrue();
+		}
+
+		Transaction reader = transaction("reader");
+		assertThat(names(reader)).containsExactly("{Ada}");
+
+		try (Transaction mover = transaction("mover")
+				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()) {
+			assertThat(mover.commit().isSuccess()).isTrue();
+		}
+
+		try (Transaction after = transaction("after")) {
+			assertThat(names(after)).isEmpty();
+		}
+
+		Try<?> refused = reader.asserting(Collections.singletonList(
+				book(null, lval("i1"), lval("Tar Pit")))).get().commit();
+		assertThat(refused.getCause())
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
+	@Test
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("w")
 				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
