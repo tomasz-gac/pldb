@@ -1,20 +1,23 @@
-package com.tgac.pldb.transaction;
+package com.tgac.pldb.relations;
 
 // ABOUTME: The question front door: a goal plus result-row templates, answers as
 // ABOUTME: Facts — rows a caller reads, a persist lands, or a retract removes.
 
 import static com.tgac.logic.unification.LVal.lval;
 
+import com.tgac.functional.category.Nothing;
+import com.tgac.functional.fibers.Fiber;
+import com.tgac.functional.fibers.Scheduler;
+import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
-import com.tgac.pldb.relations.Fact;
-import com.tgac.pldb.relations.Literal;
 import io.vavr.collection.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,8 +41,12 @@ public class Question {
 	 * column: facts are whole rows, always.
 	 */
 	public static Stream<Fact> select(Goal question, Literal... schemas) {
+		return select(question, BreadthFirstScheduler::new, schemas);
+	}
+
+	public static Stream<Fact> select(Goal question, Function<Fiber<Nothing>, Scheduler<Nothing>> factory, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
-		return question.solve(lval(variables))
+		return question.solve(lval(variables), factory)
 				.map(Reified::get)
 				.flatMap(answer -> facts(bind(variables, answer), schemas));
 	}
@@ -56,8 +63,10 @@ public class Question {
 				.collect(Array.collector());
 	}
 
-	/** A free variable reifies to Any — a Term, never a value — so the map
-	 * speaks Term and the groundness check below owns the distinction. */
+	/**
+	 * A free variable reifies to Any — a Term, never a value — so the map
+	 * speaks Term and the groundness check below owns the distinction.
+	 */
 	private static Map<Unifiable<?>, Term<?>> bind(
 			Array<Unifiable<?>> variables, Array<?> answer) {
 		return IntStream.range(0, variables.size())
@@ -74,8 +83,10 @@ public class Question {
 								.collect(Array.collector())));
 	}
 
-	/** The template cell's value under this answer: its own constant, or the
-	 * bound variable's — ground, or the whole-rows refusal. */
+	/**
+	 * The template cell's value under this answer: its own constant, or the
+	 * bound variable's — ground, or the whole-rows refusal.
+	 */
 	private static Object cell(Literal schema, int position, Map<Unifiable<?>, Term<?>> bound) {
 		Unifiable<?> arg = schema.getArgs().get(position);
 		Term<?> value = arg.asVal().isDefined() ? arg : bound.get(arg);

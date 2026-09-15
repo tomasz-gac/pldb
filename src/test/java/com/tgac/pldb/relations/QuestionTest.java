@@ -1,4 +1,4 @@
-package com.tgac.pldb.transaction;
+package com.tgac.pldb.relations;
 
 // ABOUTME: Answers-as-facts receipts: each answer grounds every template, constants
 // ABOUTME: ride, clusters land whole, and a free cell refuses by relation and column.
@@ -12,6 +12,7 @@ import com.tgac.logic.goals.Goal;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Fact;
 import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Question;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
