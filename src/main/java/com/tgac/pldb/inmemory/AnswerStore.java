@@ -98,6 +98,27 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 		return grown;
 	}
 
+	/** The removal door: the fact's membership claim leaves whole — its
+	 * ⊕-folded condition with it; retracting the absent is a no-op. */
+	@Override
+	public Try<AnswerStore> retracting(Collection<Literal> facts) {
+		return Try.of(() -> {
+			AnswerStore shrunk = this;
+			for (Literal fact : facts) {
+				shrunk = shrunk.without(fact.getRel(),
+						Answers.answer(fact.fact()).getReified());
+			}
+			return shrunk;
+		});
+	}
+
+	public AnswerStore without(Relation relation, Reified<?> image) {
+		return relations.get(relation)
+				.map(rows -> new AnswerStore(
+						relations.put(relation, rows.without(positions(relation), image))))
+				.getOrElse(this);
+	}
+
 	@Override
 	public Iterable<Answer> answers(Call<Relation> probe) {
 		return relations.get(probe.getRelation())
@@ -152,6 +173,24 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 				indexed = indexed.put(i, column.with(cells.get(i), image));
 			}
 			return new Rows(byImage.put(image, folded), indexed);
+		}
+
+		Rows without(HashSet<Integer> positions, Reified<?> image) {
+			if (!byImage.containsKey(image)) {
+				return this;
+			}
+			Map<Integer, ColumnIndex> indexed = byColumn;
+			Array<Term<Object>> cells = Answers.positions(image);
+			for (int i = 0; i < cells.size(); i++) {
+				if (!positions.contains(i)) {
+					continue;
+				}
+				ColumnIndex column = indexed.getOrElse(i, null);
+				if (column != null) {
+					indexed = indexed.put(i, column.without(cells.get(i), image));
+				}
+			}
+			return new Rows(byImage.remove(image), indexed);
 		}
 
 		Iterable<Answer> answers(HashSet<Integer> positions, Call<?> probe) {
@@ -223,6 +262,16 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 			Object key = cell.get() == null ? NULL_KEY : cell.get();
 			Set<Reified<?>> bucket = buckets.getOrElse(key, LinkedHashSet.empty());
 			return new ColumnIndex(buckets.put(key, bucket.add(image)), wide);
+		}
+
+		ColumnIndex without(Term<Object> cell, Reified<?> image) {
+			if (!isGround(cell)) {
+				return new ColumnIndex(buckets, wide.remove(image));
+			}
+			Object key = cell.get() == null ? NULL_KEY : cell.get();
+			return new ColumnIndex(buckets.get(key)
+					.map(bucket -> buckets.put(key, bucket.remove(image)))
+					.getOrElse(buckets), wide);
 		}
 
 		/** The value's bucket plus every row free at this column, as mutable scratch. */

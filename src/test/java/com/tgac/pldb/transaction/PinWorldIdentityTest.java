@@ -54,7 +54,7 @@ public class PinWorldIdentityTest {
 		Pin first = shared.open("a").read(probe()).getPin();
 
 		assertThat(shared.open("mover").commit(Footprint.empty(),
-				Collections.singletonList(loan(lval(1), lval("B"))))).isTrue();
+				Collections.singletonList(loan(lval(1), lval("B"))), Collections.emptyList())).isTrue();
 
 		Pin second = shared.open("b").read(probe()).getPin();
 		assertThat(second)
@@ -65,7 +65,7 @@ public class PinWorldIdentityTest {
 		assertThat(composed.pins()).hasSize(1);
 
 		assertThat(shared.open("mover2").commit(Footprint.empty(),
-				Collections.singletonList(person(lval(2), lval("Grace"))))).isTrue();
+				Collections.singletonList(person(lval(2), lval("Grace"))), Collections.emptyList())).isTrue();
 		Pin third = shared.open("c").read(probe()).getPin();
 		Assertions.assertThatThrownBy(() ->
 						Footprint.of(probe(), first).union(Footprint.of(probe(), third)))
@@ -91,7 +91,7 @@ public class PinWorldIdentityTest {
 		Pin first = shared.open("a").read(probe()).getPin();
 
 		assertThat(shared.open("mover").commit(Footprint.empty(),
-				Collections.singletonList(Elsewhere.person(lval(1), lval("Imposter"))))).isTrue();
+				Collections.singletonList(Elsewhere.person(lval(1), lval("Imposter"))), Collections.emptyList())).isTrue();
 
 		assertThat(shared.open("b").read(probe()).getPin())
 				.describedAs("the other namespace's person is a different relation — one world here")
@@ -109,7 +109,7 @@ public class PinWorldIdentityTest {
 
 		SimulatedSerialization mover = shared.open("mover");
 		assertThat(mover.commit(Footprint.of(Collections.emptyMap()),
-				Collections.singletonList(person(lval(1), lval("Ada"))))).isTrue();
+				Collections.singletonList(person(lval(1), lval("Ada"))), Collections.emptyList())).isTrue();
 
 		Pin third = shared.open("c").read(probe()).getPin();
 		assertThat(third)

@@ -87,7 +87,7 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public boolean commit(Footprint read, List<Literal> flush) {
+	public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {
@@ -103,9 +103,9 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 						return false;
 					}
 				}
-				SqlFlush.over(commit, source.getCodecs())
-						.stamped(VERSION_COLUMN, stamp)
-						.flush(flush);
+				SqlFlush door = SqlFlush.over(commit, source.getCodecs());
+				door.stamped(VERSION_COLUMN, stamp).flush(asserted);
+				door.delete(retracted);
 				bumpLock(commit);
 				commit.commit();
 				return true;

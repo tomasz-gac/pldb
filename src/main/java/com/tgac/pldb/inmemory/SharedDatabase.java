@@ -58,16 +58,21 @@ public final class SharedDatabase {
 	 * The commit protocol, whole: the monitor is the commit lock, the
 	 * generation compare is the proof, the persistent grow is the flush.
 	 */
-	private synchronized boolean commit(Footprint read, java.util.List<Literal> flush) {
+	private synchronized boolean commit(Footprint read,
+			java.util.List<Literal> asserted, java.util.List<Literal> retracted) {
 		if (!covers(read)) {
 			return false;
 		}
-		AnswerStore grown = current.getValue().asserting(flush).get();
+		AnswerStore next = current.getValue().asserting(asserted).get()
+				.retracting(retracted).get();
 		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
-		for (Literal fact : flush) {
+		for (Literal fact : asserted) {
 			marks.merge(fact.getRel(), 1L, Long::sum);
 		}
-		current = new Versioned(grown, marks);
+		for (Literal fact : retracted) {
+			marks.merge(fact.getRel(), 1L, Long::sum);
+		}
+		current = new Versioned(next, marks);
 		return true;
 	}
 
@@ -101,8 +106,9 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public boolean commit(Footprint read, java.util.List<Literal> flush) {
-			return SharedDatabase.this.commit(read, flush);
+		public boolean commit(Footprint read,
+				java.util.List<Literal> asserted, java.util.List<Literal> retracted) {
+			return SharedDatabase.this.commit(read, asserted, retracted);
 		}
 
 		@Override

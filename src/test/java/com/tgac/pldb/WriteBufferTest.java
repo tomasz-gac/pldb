@@ -66,7 +66,7 @@ public class WriteBufferTest {
 		WriteBuffer lib = WriteBuffer.over(base())
 				.asserting(Arrays.asList(person(null, lval(3L), lval("Kurt")), person(null, lval(4L), lval("Emmy")))).get()
 				.asserting(Collections.singletonList(person(null, lval(5L), lval("Noether")))).get();
-		assertThat(lib.staged().map(com.tgac.pldb.relations.Literal::fact)).containsExactly(
+		assertThat(lib.stagedAssertions().map(com.tgac.pldb.relations.Literal::fact)).containsExactly(
 				person(null, lval(3L), lval("Kurt")).fact(),
 				person(null, lval(4L), lval("Emmy")).fact(),
 				person(null, lval(5L), lval("Noether")).fact());
@@ -81,7 +81,7 @@ public class WriteBufferTest {
 
 	@Test
 	public void aFreshOverlayStagesNothing() {
-		assertThat(WriteBuffer.over(base()).staged()).isEmpty();
+		assertThat(WriteBuffer.over(base()).stagedAssertions()).isEmpty();
 	}
 
 	@Test

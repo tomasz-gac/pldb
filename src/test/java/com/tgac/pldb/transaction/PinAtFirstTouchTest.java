@@ -39,7 +39,7 @@ public class PinAtFirstTouchTest {
 		}
 
 		@Override
-		public boolean commit(Footprint read, List<Literal> flush) {
+		public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
 			events.add("commit:" + read.pins().size());
 			committed.addAll(read.pins().values());
 			return true;

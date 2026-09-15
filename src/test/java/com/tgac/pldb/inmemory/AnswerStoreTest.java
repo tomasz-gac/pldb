@@ -67,6 +67,38 @@ public class AnswerStoreTest {
 		assertThat(store.estimate(probe(Any.of(0), Any.of(1)))).isEqualTo(3);
 	}
 
+	private static Literal loanFact(String member, String copy) {
+		return Literal.relation(AnswerStoreTest.class, "loan")
+				.arg("member", lval(member)).indexed()
+				.arg("copy", lval(copy))
+				.from(null);
+	}
+
+	@Test
+	public void retractingRemovesTheFactWholeFromRowsAndBuckets() {
+		AnswerStore store = AnswerStore.empty()
+				.with(LOAN, row("m1", "c1"))
+				.with(LOAN, row("m1", "c2"));
+
+		AnswerStore after = store.retracting(loanFact("m1", "c1")).get();
+		assertThat(images(after.answers(probe(lval("m1"), Any.of(1)))))
+				.describedAs("the bucket path serves post-removal — the index forgot the image")
+				.containsExactly("{Array({m1}, {c2})}");
+		assertThat(after.estimate(probe(lval("m1"), Any.of(1)))).isEqualTo(1);
+
+		assertThat(images(store.answers(probe(lval("m1"), Any.of(1)))))
+				.describedAs("the ancestor value keeps answering as before")
+				.hasSize(2);
+	}
+
+	@Test
+	public void retractingAnAbsentFactIsANoOp() {
+		AnswerStore store = AnswerStore.empty().with(LOAN, row("m1", "c1"));
+
+		AnswerStore after = store.retracting(loanFact("m9", "c9")).get();
+		assertThat(images(after.answers(probe(Any.of(0), Any.of(1))))).hasSize(1);
+	}
+
 	@Test
 	public void aNonIndexedBoundPositionFilters() {
 		AnswerStore store = AnswerStore.empty()

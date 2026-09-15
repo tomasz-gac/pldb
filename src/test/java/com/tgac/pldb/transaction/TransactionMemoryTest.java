@@ -62,6 +62,82 @@ public class TransactionMemoryTest {
 		}
 	}
 
+	private static SharedDatabase seededWithAda() {
+		SharedDatabase store = SharedDatabase.empty();
+		assertThat(AbstractTransaction.over(store.open("seed"))
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+				.get().commit().isSuccess()).isTrue();
+		return store;
+	}
+
+	@Test
+	public void aStagedRetractionShadowsOwnReadsAndAbandonmentLeavesNoTrace() throws Exception {
+		SharedDatabase store = seededWithAda();
+		Transaction tx = AbstractTransaction.over(store.open("tx"));
+		assertThat(names(tx)).containsExactly("{Ada}");
+
+		Transaction staged = tx.retracting(Collections.singletonList(
+				person(null, lval(1), lval("Ada")))).get();
+		assertThat(names(staged))
+				.describedAs("the buffer's own reads stop seeing the staged removal")
+				.isEmpty();
+
+		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {
+			assertThat(names(reader))
+					.describedAs("an abandoned retraction leaves no trace")
+					.containsExactly("{Ada}");
+		}
+	}
+
+	@Test
+	public void aCommittedRetractionRemovesForTheNextTransaction() throws Exception {
+		SharedDatabase store = seededWithAda();
+		assertThat(AbstractTransaction.over(store.open("tx"))
+				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+				.get().commit().isSuccess()).isTrue();
+
+		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {
+			assertThat(names(reader)).isEmpty();
+		}
+	}
+
+	@Test
+	public void aRetractionMovesTheRelationsWorld() throws Exception {
+		SharedDatabase store = seededWithAda();
+		Transaction reader = AbstractTransaction.over(store.open("reader"));
+		assertThat(names(reader)).containsExactly("{Ada}");
+
+		assertThat(AbstractTransaction.over(store.open("mover"))
+				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+				.get().commit().isSuccess()).isTrue();
+
+		Try<?> refused = reader.asserting(Collections.singletonList(
+				book(null, lval("i1"), lval("Tar Pit")))).get().commit();
+		assertThat(refused.getCause())
+				.describedAs("the pinned person region lost a row — the retraction divides pins")
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
+	@Test
+	public void assertingAndRetractingOneFactRefusesAsConflict() throws Exception {
+		SharedDatabase store = seededWithAda();
+
+		Try<Transaction> retractStaged = AbstractTransaction.over(store.open("a"))
+				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.get()
+				.retracting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))));
+		assertThat(retractStaged.getCause())
+				.describedAs("a transaction asserting and retracting one fact has not decided what it believes")
+				.isInstanceOf(Transaction.Conflict.class);
+
+		Try<Transaction> assertRemoved = AbstractTransaction.over(store.open("b"))
+				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+				.get()
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
+		assertThat(assertRemoved.getCause())
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
 	@Test
 	public void writeSkewOnOneRelationMeetsTheConflict() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();

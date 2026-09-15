@@ -21,5 +21,5 @@ import java.util.List;
  */
 public interface NativeSerialization extends AnswerSource, AutoCloseable {
 
-	boolean commit(List<Literal> flush);
+	boolean commit(List<Literal> asserted, List<Literal> retracted);
 }

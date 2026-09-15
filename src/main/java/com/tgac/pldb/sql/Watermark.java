@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,7 +121,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public boolean commit(Footprint read, List<Literal> flush) {
+	public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {
@@ -129,8 +130,12 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 					commit.rollback();
 					return false;
 				}
-				SqlFlush.over(commit, source.getCodecs()).flush(flush);
-				advance(commit, flush);
+				SqlFlush flush = SqlFlush.over(commit, source.getCodecs());
+				flush.flush(asserted);
+				flush.delete(retracted);
+				List<Literal> moved = new ArrayList<>(asserted);
+				moved.addAll(retracted);
+				advance(commit, moved);
 				commit.commit();
 				return true;
 			} catch (SQLException | RuntimeException e) {

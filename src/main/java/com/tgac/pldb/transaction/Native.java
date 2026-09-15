@@ -27,8 +27,16 @@ public class Native extends AbstractTransaction {
 	}
 
 	@Override
+	public Try<Transaction> retracting(Collection<Literal> facts) {
+		return writeBuffer.retracting(facts)
+				.map(marked -> new Native(marked, serialization));
+	}
+
+	@Override
 	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(writeBuffer.staged().asJava()));
+		return through(() -> serialization.commit(
+				writeBuffer.stagedAssertions().asJava(),
+				writeBuffer.stagedRetractions().asJava()));
 	}
 
 	/** Ends the snapshot (the source's close rolls its read transaction back). */

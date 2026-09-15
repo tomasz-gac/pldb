@@ -49,6 +49,12 @@ public class Simulated extends AbstractTransaction {
 				.map(grown -> new Simulated(grown, serialization, reads, premise));
 	}
 
+	@Override
+	public Try<Transaction> retracting(Collection<Literal> facts) {
+		return writeBuffer.retracting(facts)
+				.map(marked -> new Simulated(marked, serialization, reads, premise));
+	}
+
 	/** The ledger folded: every region this transaction read, at its pin. */
 	public Footprint footprint() {
 		return reads.entrySet().stream()
@@ -68,8 +74,9 @@ public class Simulated extends AbstractTransaction {
 
 	@Override
 	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(
-				footprint().union(premise), writeBuffer.staged().asJava()));
+		return through(() -> serialization.commit(footprint().union(premise),
+				writeBuffer.stagedAssertions().asJava(),
+				writeBuffer.stagedRetractions().asJava()));
 	}
 
 	/** Ends the snapshot (the source's close rolls its read transaction back). */

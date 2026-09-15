@@ -41,7 +41,7 @@ public interface SimulatedSerialization extends AnswerSource, AutoCloseable {
 
 	Pinned<Iterable<Answer>> read(Call<Relation> probe);
 
-	boolean commit(Footprint read, List<Literal> flush);
+	boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted);
 
 	@Override
 	default Iterable<Answer> answers(Call<Relation> probe) {

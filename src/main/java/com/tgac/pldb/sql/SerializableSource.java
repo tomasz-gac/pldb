@@ -54,9 +54,11 @@ public final class SerializableSource implements JdbcSource, NativeSerialization
 	 * and a refusal in this source's dialect means the world moved.
 	 */
 	@Override
-	public boolean commit(List<Literal> flush) {
+	public boolean commit(List<Literal> asserted, List<Literal> retracted) {
 		try {
-			SqlFlush.over(getConnection(), inner.codecs()).flush(flush);
+			SqlFlush door = SqlFlush.over(getConnection(), inner.codecs());
+			door.flush(asserted);
+			door.delete(retracted);
 			getConnection().commit();
 			return true;
 		} catch (RuntimeException e) {

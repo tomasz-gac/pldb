@@ -183,6 +183,39 @@ public class VersionedWatermarkTest {
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
+	@Test
+	public void aProtocolRetractionLandsAndBouncesThePinnedReader() throws Exception {
+		try (
+				Transaction w1 = transaction("w1")
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+		) {
+			assertThat(w1.commit().isSuccess()).isTrue();
+		}
+
+		Transaction reader = transaction("reader");
+		assertThat(loansOf(reader, "m1")).containsExactly("{c1}");
+
+		try (
+				Transaction mover = transaction("mover")
+						.retracting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+		) {
+			assertThat(mover.commit()
+					.isSuccess())
+					.describedAs("the delete lane lands through the door")
+					.isTrue();
+		}
+
+		try (Transaction after = transaction("after")) {
+			assertThat(loansOf(after, "m1")).isEmpty();
+		}
+
+		Transaction staged = reader.asserting(Collections.singletonList(
+				loan(null, lval("m2"), lval("c9")))).get();
+		assertThat(staged.commit().getCause())
+				.describedAs("the pinned region lost its row — the pair's count divides the pins")
+				.isInstanceOf(Transaction.Conflict.class);
+	}
+
 	private static Literal invoice(AnswerSource db, Unifiable<String> member, Unifiable<Long> day) {
 		return Literal.relation(VersionedWatermarkTest.class, "invoice")
 				.arg("member", member)
