@@ -34,7 +34,7 @@ public class ProjectedTest {
 	}
 
 	private static AnswerStore db() {
-		return AnswerStore.empty().withFacts(
+		return AnswerStore.empty().asserting(
 				person(null, lval(1), lval("Ada")),
 				person(null, lval(2), lval("Ada")),
 				person(null, lval(3), lval("Kurt")),

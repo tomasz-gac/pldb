@@ -84,7 +84,7 @@ public class SqlTheoryBatteryTest {
 	private static final Property<Long> hi = Property.of("hi");
 
 	private static final AnswerStore reference = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					person(null, lval(1L), lval("Ada")),
 					person(null, lval(2L), lval("Alan")),
 					person(null, lval(3L), lval("Kurt")),

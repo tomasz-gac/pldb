@@ -130,7 +130,7 @@ public class RuleNegationTest {
 	@Test(timeout = 5000)
 	public void aNegatedRecursiveClosureFilters() {
 		AnswerStore db = AnswerStore.empty()
-				.withFacts(Arrays.asList(
+				.asserting(Arrays.asList(
 						edge(null, lval(1), lval(2)),
 						edge(null, lval(2), lval(3))))
 				.get();

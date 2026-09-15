@@ -33,7 +33,7 @@ public class NullCellTest {
 	}
 
 	private static AnswerStore db() {
-		return AnswerStore.empty().withFacts(Arrays.asList(
+		return AnswerStore.empty().asserting(Arrays.asList(
 				person(null, lval(1), lval("Ada")),
 				person(null, lval(2), lval((String) null)),
 				tagged(null, lval(1), lval("core")),

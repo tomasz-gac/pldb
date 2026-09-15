@@ -110,10 +110,10 @@ public class VersionedWatermarkTest {
 		assertThat(loansOf(m1, "m1")).isEmpty();
 		assertThat(loansOf(m2, "m2")).isEmpty();
 
-		m2 = m2.withFacts(Collections.singletonList(loan(null, lval("m2"), lval("c2")))).get();
+		m2 = m2.asserting(Collections.singletonList(loan(null, lval("m2"), lval("c2")))).get();
 		assertThat(m2.commit().isSuccess()).isTrue();
 
-		m1 = m1.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get();
+		m1 = m1.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get();
 		assertThat(m1.commit()
 				.isSuccess())
 				.describedAs("m1's region never moved — m2's commit to the SAME relation must not bounce it")
@@ -134,12 +134,12 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c9")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c9")))).get()
 		) {
 			assertThat(mover.commit().isSuccess()).isTrue();
 		}
 
-		Transaction staged = reader.withFacts(Collections.singletonList(
+		Transaction staged = reader.asserting(Collections.singletonList(
 				loan(null, lval("m1"), lval("c1")))).get();
 		assertThat(staged.commit().getCause())
 				.describedAs("the pinned empty region gained a row — the decision stood on its absence")
@@ -153,13 +153,13 @@ public class VersionedWatermarkTest {
 		// row count betrays that the region moved
 		try (
 				Transaction w1 = transaction("w1")
-						.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
 		) {
 			assertThat(w1.commit().isSuccess()).isTrue();
 		}
 		try (
 				Transaction w2 = transaction("w2")
-						.withFacts(Collections.singletonList(loan(null, lval("m1"), lval("c2")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c2")))).get()
 		) {
 			assertThat(w2.commit().isSuccess()).isTrue();
 		}
@@ -176,7 +176,7 @@ public class VersionedWatermarkTest {
 			delete.execute("DELETE FROM loan WHERE member = 'm1' AND copy = 'c1'");
 		}
 
-		Transaction staged = reader.withFacts(Collections.singletonList(
+		Transaction staged = reader.asserting(Collections.singletonList(
 				loan(null, lval("m2"), lval("c9")))).get();
 		assertThat(staged.commit().getCause())
 				.describedAs("a row left the pinned region — MAX alone cannot see it, the pair must")
@@ -211,12 +211,12 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.withFacts(Collections.singletonList(invoice(null, lval("m9"), lval(50L)))).get()
+						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(50L)))).get()
 		) {
 			assertThat(mover.commit().isSuccess()).isTrue();
 		}
 
-		Transaction staged = reader.withFacts(Collections.singletonList(
+		Transaction staged = reader.asserting(Collections.singletonList(
 				invoice(null, lval("a1"), lval(5L)))).get();
 		assertThat(staged.commit()
 				.isSuccess())
@@ -231,12 +231,12 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.withFacts(Collections.singletonList(invoice(null, lval("m9"), lval(5L)))).get()
+						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(5L)))).get()
 		) {
 			assertThat(mover.commit().isSuccess()).isTrue();
 		}
 
-		Transaction staged = reader.withFacts(Collections.singletonList(
+		Transaction staged = reader.asserting(Collections.singletonList(
 				invoice(null, lval("a1"), lval(7L)))).get();
 		assertThat(staged.commit().getCause())
 				.describedAs("day 5 lies inside the pinned domain — the FD region moved")

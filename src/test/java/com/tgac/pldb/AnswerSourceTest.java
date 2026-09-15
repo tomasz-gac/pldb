@@ -33,7 +33,7 @@ public class AnswerSourceTest {
 	private static final Property<String> name = Property.of("name");
 
 	private static final AnswerStore db = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					person(null, lval(1), lval("Ada")),
 					person(null, lval(2), lval("Alan")),
 					person(null, lval(3), lval("Kurt"))))

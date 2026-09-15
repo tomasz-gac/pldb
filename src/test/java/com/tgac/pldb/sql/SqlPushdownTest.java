@@ -49,7 +49,7 @@ public class SqlPushdownTest {
 	private static final Property<String> name = Property.of("name");
 
 	private static final AnswerStore reference = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					person(null, lval(1L), lval("Ada")),
 					person(null, lval(2L), lval("Alan")),
 					person(null, lval(3L), lval("Kurt"))))

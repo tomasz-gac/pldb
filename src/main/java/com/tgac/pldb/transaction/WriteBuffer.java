@@ -45,8 +45,8 @@ public class WriteBuffer implements AnswerSource {
 		return new WriteBuffer(base, AnswerStore.empty(), Array.empty());
 	}
 
-	public Try<WriteBuffer> withFacts(List<Literal> facts) {
-		return delta.withFacts(facts)
+	public Try<WriteBuffer> asserting(List<Literal> facts) {
+		return delta.asserting(facts)
 				.map(grown -> new WriteBuffer(base, grown, staged.appendAll(facts)));
 	}
 

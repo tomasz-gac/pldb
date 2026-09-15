@@ -34,7 +34,7 @@ public class LiteralSolvingTest {
 
 	private static AnswerStore edges(int[][] pairs) {
 		return AnswerStore.empty()
-				.withFacts(Arrays.stream(pairs)
+				.asserting(Arrays.stream(pairs)
 						.map(p -> edge(null, lval(p[0]), lval(p[1])))
 						.collect(Collectors.toList()))
 				.get();

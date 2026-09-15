@@ -53,7 +53,7 @@ public class AnswerStoreQueriesTest {
 	}
 
 	private static AnswerStore loadGeneology(AnswerStore db) {
-		return db.withFacts(Arrays.asList(
+		return db.asserting(Arrays.asList(
 						person(null, lval(1), lval("Michał"), lval("Gac"), lval(Gender.MALE)),
 						person(null, lval(2), lval("Franciszek"), lval("Żyduch"), lval(Gender.MALE)),
 						person(null, lval(3), lval("Czesław"), lval("Kroc"), lval(Gender.MALE)),
@@ -76,7 +76,7 @@ public class AnswerStoreQueriesTest {
 						person(null, lval(21), lval("Weronika"), lval("Kroc"), lval(Gender.FEMALE)),
 						person(null, lval(22), lval("Monika"), lval("Kroc"), lval(Gender.FEMALE))))
 				.get()
-				.withFacts(Arrays.asList(
+				.asserting(Arrays.asList(
 						parent(null, lval(10), lval(11)),
 						parent(null, lval(1), lval(5)),
 						parent(null, lval(12), lval(5)),

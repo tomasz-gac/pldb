@@ -82,7 +82,7 @@ public class PostgresFactSourceTest {
 			edge(null, lval(3), lval(4)));
 
 	private static final AnswerStore reference = AnswerStore.empty()
-			.withFacts(facts)
+			.asserting(facts)
 			.get();
 
 	private static PostgreSQLContainer<?> postgres;

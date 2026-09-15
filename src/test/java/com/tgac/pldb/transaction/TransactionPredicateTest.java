@@ -39,7 +39,7 @@ public class TransactionPredicateTest {
 
 	/** No orphan table exists, so the flush inside commit fails for real. */
 	private Try<?> commitFailure(Transaction db) {
-		return db.withFacts(Collections.singletonList(orphan(null, lval(1))))
+		return db.asserting(Collections.singletonList(orphan(null, lval(1))))
 				.get().commit();
 	}
 

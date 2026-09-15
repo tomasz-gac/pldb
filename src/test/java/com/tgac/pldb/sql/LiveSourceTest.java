@@ -146,7 +146,7 @@ public class LiveSourceTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
 		) {
 			assertThat(mover.commit().isSuccess()).isTrue();
 		}
@@ -155,7 +155,7 @@ public class LiveSourceTest {
 		// move: the transaction's own view is torn across two worlds, and
 		// the commit proof must refuse it
 		assertThat(names(torn.answers(probe(book(null, lvar(), lvar()))))).isEmpty();
-		Transaction staged = torn.withFacts(Collections.singletonList(
+		Transaction staged = torn.asserting(Collections.singletonList(
 				book(null, lval("978-0"), lval("SICP")))).get();
 		assertThat(staged.commit().getCause())
 				.describedAs("person moved after its pin — a torn view must not land")
@@ -172,13 +172,13 @@ public class LiveSourceTest {
 
 		try (
 				Transaction books = transaction("books")
-						.withFacts(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
 		) {
 			assertThat(books.commit().isSuccess()).isTrue();
 		}
 
 		assertThat(names(people.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
-		Transaction staged = people.withFacts(Collections.singletonList(
+		Transaction staged = people.asserting(Collections.singletonList(
 				person(null, lval(1), lval("Ada")))).get();
 		assertThat(staged.commit()
 				.isSuccess())
@@ -198,7 +198,7 @@ public class LiveSourceTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
 		) {
 			assertThat(mover.commit().isSuccess()).isTrue();
 		}

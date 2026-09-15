@@ -55,7 +55,7 @@ public class TableParkingPropagatorTest {
 	private static final Property<String> tag = Property.of("tag");
 
 	private static final AnswerStore db = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					r(null, lval(1), lval("a")),
 					r(null, lval(2), lval("b")),
 					r(null, lval(3), lval("c"))))

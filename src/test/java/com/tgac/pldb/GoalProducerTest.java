@@ -46,7 +46,7 @@ public class GoalProducerTest {
 	}
 
 	private final AnswerStore db = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					person((AnswerSource) null, lval(1L), lval("Ada")),
 					person((AnswerSource) null, lval(2L), lval("Alan")),
 					person((AnswerSource) null, lval(3L), lval("Kurt"))))

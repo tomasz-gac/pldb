@@ -94,7 +94,7 @@ public class TransactionPostgresTest {
 	@Test
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("pg", connect())
-				.withFacts(Arrays.asList(
+				.asserting(Arrays.asList(
 						person(null, lval(1), lval("Ada")),
 						person(null, lval(2), lval("Alan")))).get();
 		assertThat(names(writer))
@@ -111,7 +111,7 @@ public class TransactionPostgresTest {
 	public void anAbandonedValueLeavesNoTrace() throws Exception {
 		try (
 				Transaction abandoned = transaction("pg", connect())
-						.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
 		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
@@ -130,9 +130,9 @@ public class TransactionPostgresTest {
 		assertThat(names(first)).isEmpty();
 		assertThat(names(second)).isEmpty();
 
-		first = first.withFacts(Collections.singletonList(
+		first = first.asserting(Collections.singletonList(
 				person(null, lval(1), lval("Ada")))).get();
-		second = second.withFacts(Collections.singletonList(
+		second = second.asserting(Collections.singletonList(
 				person(null, lval(2), lval("Alan")))).get();
 
 		assertThat(first.commit().isSuccess()).isTrue();

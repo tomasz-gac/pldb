@@ -80,7 +80,7 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 
 	/** The write face: literals land as ground rows of their own relations. */
 	@Override
-	public Try<AnswerStore> withFacts(Collection<Literal> facts) {
+	public Try<AnswerStore> asserting(Collection<Literal> facts) {
 		return Try.of(() -> {
 			AnswerStore grown = this;
 			for (Literal fact : facts) {

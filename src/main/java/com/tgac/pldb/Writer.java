@@ -17,9 +17,9 @@ import java.util.Collection;
  */
 public interface Writer<S extends Writer<S>> {
 
-	Try<S> withFacts(Collection<Literal> rows);
+	Try<S> asserting(Collection<Literal> rows);
 
-	default Try<S> withFacts(Literal... rows) {
-		return withFacts(Arrays.asList(rows));
+	default Try<S> asserting(Literal... rows) {
+		return asserting(Arrays.asList(rows));
 	}
 }

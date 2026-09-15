@@ -46,7 +46,7 @@ public class PremiseTest {
 	public void theFootprintExposesEveryReadIncludingTheEmptyOne() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
 		assertThat(AbstractTransaction.over(store.open("seed"))
-				.withFacts(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 				.get().commit().isSuccess()).isTrue();
 
 		try (Simulated get = AbstractTransaction.over(store.open("get"))) {
@@ -73,7 +73,7 @@ public class PremiseTest {
 		// person is certified only because the client's premise carried it
 		Try<?> landed = AbstractTransaction.over(store.open("post"))
 				.requiring(premise)
-				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.get().commit();
 		assertThat(landed.isSuccess()).isTrue();
 	}
@@ -93,7 +93,7 @@ public class PremiseTest {
 		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
 		solveNames(post);
 		Try<?> landed = post
-				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.get().commit();
 		assertThat(landed.isSuccess()).isTrue();
 	}
@@ -111,13 +111,13 @@ public class PremiseTest {
 		}
 
 		assertThat(AbstractTransaction.over(store.open("mover"))
-				.withFacts(Collections.singletonList(person(null, lval(2), lval("Alan"))))
+				.asserting(Collections.singletonList(person(null, lval(2), lval("Alan"))))
 				.get().commit().isSuccess()).isTrue();
 
 		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
 		solveNames(post);
 		Try<?> refused = post
-				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.get().commit();
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause())
@@ -135,12 +135,12 @@ public class PremiseTest {
 		}
 
 		assertThat(AbstractTransaction.over(store.open("mover"))
-				.withFacts(Collections.singletonList(person(null, lval(2), lval("Alan"))))
+				.asserting(Collections.singletonList(person(null, lval(2), lval("Alan"))))
 				.get().commit().isSuccess()).isTrue();
 
 		Try<?> refused = AbstractTransaction.over(store.open("post"))
 				.requiring(premise)
-				.withFacts(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
+				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.get().commit();
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause())

@@ -62,7 +62,7 @@ public final class SharedDatabase {
 		if (!covers(read)) {
 			return false;
 		}
-		AnswerStore grown = current.getValue().withFacts(flush).get();
+		AnswerStore grown = current.getValue().asserting(flush).get();
 		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
 		for (Literal fact : flush) {
 			marks.merge(fact.getRel(), 1L, Long::sum);

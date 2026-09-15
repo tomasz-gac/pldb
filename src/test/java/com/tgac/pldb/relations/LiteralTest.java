@@ -31,7 +31,7 @@ public class LiteralTest {
 	}
 
 	private static final AnswerStore db = AnswerStore.empty()
-			.withFacts(Arrays.asList(
+			.asserting(Arrays.asList(
 					person(null, lval(1), lval("Ada")),
 					person(null, lval(2), lval("Alan"))))
 			.get();
@@ -73,7 +73,7 @@ public class LiteralTest {
 		// the refusal travels as the door's Try value — the Conflict ruling's
 		// idiom — and .get() rethrows where a caller wants the throw
 		Try<AnswerStore> refused = AnswerStore.empty()
-				.withFacts(person(null, lval(1), lvar()));
+				.asserting(person(null, lval(1), lvar()));
 		assertThat(refused.isFailure()).isTrue();
 		assertThat(refused.getCause())
 				.isInstanceOf(IllegalStateException.class)
@@ -89,7 +89,7 @@ public class LiteralTest {
 				lvar(), lvar(), lvar(), lvar(), lvar(), lvar(),
 				lvar(), lvar(), lvar(), lvar(), lvar());
 		AnswerStore wideDb = AnswerStore.empty()
-				.withFacts(Arrays.asList(
+				.asserting(Arrays.asList(
 						wide(null, lval(7), lval("a"), lval("b"), lval("c"), lval("d"),
 								lval("e"), lval("f"), lval("g"), lval("h"), lval("i"),
 								lval("j"), lval("k"))))
@@ -175,7 +175,7 @@ public class LiteralTest {
 		// the API face: no  ceremony — the door converts, and the
 		// hole refusal arrives with the relation and column named
 		com.tgac.pldb.inmemory.AnswerStore db = com.tgac.pldb.inmemory.AnswerStore.empty()
-				.withFacts(Arrays.asList(
+				.asserting(Arrays.asList(
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
 				.get();

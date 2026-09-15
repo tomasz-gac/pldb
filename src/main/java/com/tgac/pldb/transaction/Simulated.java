@@ -44,8 +44,8 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> withFacts(Collection<Literal> facts) {
-		return writeBuffer.withFacts(new ArrayList<>(facts))
+	public Try<Transaction> asserting(Collection<Literal> facts) {
+		return writeBuffer.asserting(new ArrayList<>(facts))
 				.map(grown -> new Simulated(grown, serialization, reads, premise));
 	}
 
