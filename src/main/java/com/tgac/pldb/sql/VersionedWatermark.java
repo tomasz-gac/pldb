@@ -118,7 +118,18 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 		}
 	}
 
+	/** The pin statement joins the fetch's monitor: one connection, one
+	 * monitor — a ForkJoin solve's concurrent reads serialize here. The
+	 * commit lane's calls ride the same monitor harmlessly (its own
+	 * connection is private; reads never touch the DB lock row, so the
+	 * monitor→lock order cannot invert). */
 	private RegionPin regionPin(Connection connection, Call<Relation> probe) {
+		synchronized (source) {
+			return readRegionPin(connection, probe);
+		}
+	}
+
+	private RegionPin readRegionPin(Connection connection, Call<Relation> probe) {
 		RegionSql region = source.region(probe);
 		String sql = "SELECT MAX(" + VERSION_COLUMN + "), COUNT(*) FROM "
 				+ probe.getRelation().getName() + region.whereClause();

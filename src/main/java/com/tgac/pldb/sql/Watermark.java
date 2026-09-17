@@ -104,7 +104,15 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		return Pinned.of(source.answers(probe), mark);
 	}
 
+	/** The pin statement joins the fetch's monitor: one connection, one
+	 * monitor — a ForkJoin solve's concurrent reads serialize here. */
 	private Pin markOf(String relation) {
+		synchronized (source) {
+			return readMark(relation);
+		}
+	}
+
+	private Pin readMark(String relation) {
 		try (
 				PreparedStatement read = source.getConnection().prepareStatement(
 						"SELECT mark FROM watermark WHERE relation = ?")

@@ -216,6 +216,33 @@ public class VersionedWatermarkTest {
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
+	@Test
+	public void aForkJoinSolveReadsThroughTheTransactionSafely() throws Exception {
+		// the pin-lane monitor's smoke: a receipt cannot force the race, it
+		// pins that the parallel driver composes with a JDBC-backed
+		// transaction — both branches' reads serialize on the fetch monitor
+		try (
+				Transaction w = transaction("w")
+						.asserting(java.util.Arrays.asList(
+								loan(null, lval("m1"), lval("c1")),
+								loan(null, lval("m2"), lval("c2")))).get()
+		) {
+			assertThat(w.commit().isSuccess()).isTrue();
+		}
+
+		try (Transaction reader = transaction("fj-reader")) {
+			Unifiable<String> member = lvar();
+			Unifiable<String> copy = lvar();
+			List<String> read = loan(reader, member, copy)
+					.or(loan(reader, lval("m1"), copy))
+					.solve(copy, com.tgac.functional.fibers.schedulers.ForkJoinScheduler::new)
+					.map(Object::toString)
+					.sorted()
+					.collect(Collectors.toList());
+			assertThat(read).containsExactly("{c1}", "{c1}", "{c2}");
+		}
+	}
+
 	private static Literal invoice(AnswerSource db, Unifiable<String> member, Unifiable<Long> day) {
 		return Literal.relation(VersionedWatermarkTest.class, "invoice")
 				.arg("member", member)
