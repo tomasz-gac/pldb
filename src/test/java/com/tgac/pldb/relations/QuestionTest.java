@@ -9,6 +9,7 @@ import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Unifiable;
@@ -33,6 +34,11 @@ public class QuestionTest {
 				.from(null);
 	}
 
+	/** The test's engine choice, stated where the doctrine wants it. */
+	private static List<Answer> selected(Goal question, Literal... schemas) {
+		return new BreadthFirstScheduler<>(Question.select(question, schemas)).get();
+	}
+
 	private static String render(Answer row) {
 		return row.getRelation().getName() + row.values().toJavaList();
 	}
@@ -43,7 +49,7 @@ public class QuestionTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1).and(copy.unifies("c1"));
 
-		List<String> facts = Question.select(question, loan(id, copy), returned(id))
+		List<String> facts = selected(question, loan(id, copy), returned(id)).stream()
 				.map(QuestionTest::render)
 				.collect(Collectors.toList());
 
@@ -57,7 +63,7 @@ public class QuestionTest {
 		Goal question = copy.unifies("c1")
 				.and(id.unifies(1).or(id.unifies(2)));
 
-		List<String> facts = Question.select(question, loan(id, copy), returned(id))
+		List<String> facts = selected(question, loan(id, copy), returned(id)).stream()
 				.map(QuestionTest::render)
 				.sorted()
 				.collect(Collectors.toList());
@@ -71,7 +77,7 @@ public class QuestionTest {
 		Unifiable<Integer> id = lvar();
 		Goal question = id.unifies(7);
 
-		List<String> facts = Question.select(question, loan(id, lval("archived")))
+		List<String> facts = selected(question, loan(id, lval("archived"))).stream()
 				.map(QuestionTest::render)
 				.collect(Collectors.toList());
 
@@ -87,8 +93,7 @@ public class QuestionTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1);
 
-		List<Answer> wide = Question.select(question, loan(id, copy))
-				.collect(Collectors.toList());
+		List<Answer> wide = selected(question, loan(id, copy));
 		assertThat(wide).hasSize(1);
 		assertThat(wide.get(0).<Integer> get(Property.of("loanId"))).contains(1);
 		assertThat(wide.get(0).<String> get(Property.of("copy"))).isEmpty();
@@ -102,8 +107,7 @@ public class QuestionTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1).and(exclude(copy.unifies("c9")));
 
-		List<Answer> rows = Question.select(question, loan(id, copy))
-				.collect(Collectors.toList());
+		List<Answer> rows = selected(question, loan(id, copy));
 		assertThat(rows).hasSize(1);
 		assertThat(rows.get(0).getCondition())
 				.describedAs("the derivation's guard rides the row")
@@ -120,8 +124,7 @@ public class QuestionTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1).and(exclude(copy.unifies("c9")));
 
-		List<Answer> rows = Question.select(question, loan(id, copy), returned(id))
-				.collect(Collectors.toList());
+		List<Answer> rows = selected(question, loan(id, copy), returned(id));
 		assertThat(rows).hasSize(2);
 		assertThat(rows.get(0).getCondition())
 				.describedAs("one derivation, one guard — every row of the cluster carries it")
@@ -135,7 +138,7 @@ public class QuestionTest {
 		Unifiable<String> copy = lvar();
 		Goal question = id.unifies(1).and(copy.unifies("c1"));
 
-		assertThat(Question.select(question, loan(id, copy), returned(id))
+		assertThat(selected(question, loan(id, copy), returned(id)).stream()
 				.map(Answer::getCondition)
 				.collect(Collectors.toList()))
 				.containsExactly(Condition.ONE, Condition.ONE);
@@ -146,8 +149,6 @@ public class QuestionTest {
 		Unifiable<Integer> id = lvar();
 		Goal question = id.unifies(1).and(id.unifies(2));
 
-		assertThat(Question.select(question, loan(id, lval("c1")))
-				.collect(Collectors.toList()))
-				.isEmpty();
+		assertThat(selected(question, loan(id, lval("c1")))).isEmpty();
 	}
 }

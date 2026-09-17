@@ -8,8 +8,6 @@ import static com.tgac.logic.unification.LVal.lval;
 
 import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
-import com.tgac.functional.fibers.Scheduler;
-import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
 import com.tgac.functional.monad.Cont;
 import com.tgac.logic.goals.Exhaustion;
 import com.tgac.logic.goals.Goal;
@@ -21,12 +19,10 @@ import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import io.vavr.collection.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -48,24 +44,14 @@ public class Question {
 	 * caller reads them as typed rows ({@link Answer#get}), a persist
 	 * stages them, a retract stages their removal. Zero answers stream
 	 * nothing. A template cell the answer leaves free rides as a WIDE
-	 * cell — the write doors, not the select, refuse it. The question is
-	 * driven to EXHAUSTION before the stream returns: select's contract
-	 * is cold and finite, structurally.
+	 * cell — the write doors, not the select, refuse it. The result is a
+	 * {@link Fiber}: the collection of the question driven to EXHAUSTION
+	 * (cold and finite, structurally), awaiting whatever engine the
+	 * caller constructs — the scheduler is deliberately not chosen here.
 	 */
-	public static Stream<Answer> select(Goal question, Literal... schemas) {
-		return select(question, BreadthFirstScheduler::new, schemas);
-	}
-
-	public static Stream<Answer> select(Goal question, Function<Fiber<Nothing>, Scheduler<Nothing>> factory, Literal... schemas) {
+	public static Fiber<List<Answer>> select(Goal question, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
-		List<Answer> delivered = new ArrayList<>();
-		factory.apply(Exhaustion.collected(rows(question, lval(variables), variables, schemas))
-						.flatMap(rows -> {
-							delivered.addAll(rows);
-							return Fiber.done(Nothing.nothing());
-						}))
-				.get();
-		return delivered.stream();
+		return Exhaustion.collected(rows(question, lval(variables), variables, schemas));
 	}
 
 	/**
@@ -81,7 +67,7 @@ public class Question {
 						.flatMap(answer -> facts(
 								bind(variables, Answers.positions(answer._1)),
 								Condition.of(answer._2), schemas)
-								.map(k::apply)
+								.map(k)
 								.reduce(Fiber.done(Nothing.nothing()),
 										(delivered, next) -> delivered.flatMap(nothing -> next)))));
 	}
@@ -109,8 +95,10 @@ public class Question {
 				.collect(Collectors.toMap(variables::get, i -> (Term<?>) answer.get(i)));
 	}
 
-	/** One answer, every schema: the whole cluster this derivation names,
-	 * every row under the derivation's one guard. */
+	/**
+	 * One answer, every schema: the whole cluster this derivation names,
+	 * every row under the derivation's one guard.
+	 */
 	private static Stream<Answer> facts(Map<Unifiable<?>, Term<?>> bound,
 			Condition condition, Literal[] schemas) {
 		return Arrays.stream(schemas)
