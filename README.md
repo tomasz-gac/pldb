@@ -47,9 +47,9 @@ Declare once:
 
 ```java
 static Literal person(AnswerSource db, Unifiable<Integer> id, Unifiable<String> name) {
-    return Literal.relation("person")
-            .arg("id", id).indexed()
-            .arg("name", name)
+    return Literal.relation(Schema.class, "person")   // the class namespaces the
+            .arg("id", id).indexed()                  // relation; the table name
+            .arg("name", name)                        // stays the bare string
             .from(db);
 }
 ```
@@ -62,12 +62,13 @@ person(db, lval(2), name).solve(name);      // who is #2?
 person(db, lvar(), lval("Ada")).solve(...); // which ids are Ada?
 ```
 
-Facts are the same functions, ground:
+Facts are the same functions, ground — stated to the write face, which
+converts at the threshold:
 
 ```java
-Database db = ImmutableDatabase.empty().withFacts(Arrays.asList(
-        person(null, lval(1), lval("Ada")).fact(),
-        person(null, lval(2), lval("Alan")).fact())).get();
+AnswerStore db = AnswerStore.empty().asserting(
+        person(null, lval(1), lval("Ada")),
+        person(null, lval(2), lval("Alan"))).get();
 ```
 
 Rules are methods calling methods; recursion is the method calling
@@ -77,7 +78,7 @@ re-deriving it:
 
 ```java
 static Literal reachable(AnswerSource db, Unifiable<Integer> src, Unifiable<Integer> dst) {
-    return Literal.relation("reachable")
+    return Literal.relation(Rules.class, "reachable")
             .arg("src", src).arg("dst", dst)
             .solving(edge(db, src, dst)
                     .or(defer(() -> {
@@ -94,7 +95,7 @@ and it composes with rules:
 ```java
 // a copy with no active loan: negation through a derived relation
 static Literal availableCopy(AnswerSource db, Unifiable<Integer> copyId) {
-    return Literal.relation("availableCopy")
+    return Literal.relation(Rules.class, "availableCopy")
             .arg("copyId", copyId)
             .solving(copy(db, copyId, lvar())
                     .and(exclude(onLoan(db, copyId))));
@@ -162,7 +163,7 @@ try (Transaction tx = AbstractTransaction.over(
 
     if (free) {
         Try<Nothing> landed = tx
-                .withFacts(singletonList(loan(null, lval(500), lval(1), lval(100), lval(24)).fact()))
+                .asserting(loan(null, lval(500), lval(1), lval(100), lval(24)))
                 .get()
                 .commit();
         // Conflict inside the Try = a concurrent commit moved a region
@@ -171,6 +172,45 @@ try (Transaction tx = AbstractTransaction.over(
     }
 }
 ```
+
+Writes have both polarities: `asserting` lands facts, `retracting`
+removes them BY FACT — certified like any write, so a reader pinned on
+the region refuses instead of silently missing rows. Compaction is the
+composition, not a mechanism: the domain names its spent clusters as a
+rule (a loan WITH its return event), a question selects them, the door
+removes them — and every *live* query answers exactly as before, which
+is the receipt that makes it administration rather than a data change
+([`apps/library`](../apps/library)'s `Maintenance`).
+
+And a decision made in one request can be certified in a later one: a
+read face hands out its `footprint()` with the answers, and a writing
+transaction `requiring(premise)` proves those regions unmoved beside
+its own reads at commit — the stateless-endpoint contract (GET returns
+pinned answers, POST carries the premise, 409 means re-read) shipped
+function-level as the library's `LibraryServer`.
+
+## The question door
+
+A query is a goal plus result-row templates — the schema functions
+again, naming which answer values land in which columns:
+
+```java
+Unifiable<Integer> id = lvar();
+Unifiable<Integer> copy = lvar();
+Fiber<List<Answer>> closed = Question.select(
+        loan(tx, id, copy, lvar(), lvar()).and(returned(tx, id)),
+        loan(null, id, copy, lvar(), lvar()),   // the templates: one row
+        returned(null, id));                    // per schema, per answer
+List<Answer> rows = new BreadthFirstScheduler<>(closed).get();
+```
+
+The result is a `Fiber` — the caller constructs the engine, breadth-
+first or ForkJoin or a chaos seed. Rows arrive with their derivation's
+`Condition`: an answer proven under an undischarged guard is delivered
+CAVEATED, not dropped — the write doors refuse it until the caller
+decides (`unconditional()` is the explicit strengthening). Feeding a
+selection to `retracting` is the whole DELETE..SELECT story with the
+engine as the SELECT.
 
 The proof is a capability the source declares **by type** — a source
 with neither kind has no `Transaction.over` overload, so "committing
@@ -220,6 +260,14 @@ modes are receipted as tests, not documented around.
   tabling compresses, the solve owns the residence, pldb translates.
 - `docs/notes/transaction.md` — the write face as built: the two
   serializations, the protocol, the granularity ladder.
+- `docs/notes/pins-stay-off-engine.md` — the pin ruling: the read seam
+  and the transaction map are the whole mechanism; nothing rides the
+  engine.
+- `docs/notes/wire-face.md` — the write door over HTTP: premise
+  header, stateless verdict, the opaque-token ruling.
+- `docs/notes/persist.md` — a domain write as a partially-bound solve;
+  `docs/notes/namespaced-relations.md` — why the class is the
+  namespace and the table name stays bare.
 - `docs/design/` — the SQL tier's design line (table constraints,
   query planning, ergonomics).
 - Vocabulary is gated by [`logic/docs/glossary.md`](../logic/docs/glossary.md)
