@@ -3,12 +3,14 @@ package com.tgac.pldb.relations;
 // ABOUTME: Answers-as-rows receipts: each answer grounds every template, constants
 // ABOUTME: ride, clusters land whole, and a free cell rides wide for the doors to judge.
 
+import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.tabling.Condition;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Question;
@@ -90,6 +92,53 @@ public class QuestionTest {
 		assertThat(wide).hasSize(1);
 		assertThat(wide.get(0).<Integer> get(Property.of("loanId"))).contains(1);
 		assertThat(wide.get(0).<String> get(Property.of("copy"))).isEmpty();
+	}
+
+	@Test
+	public void aGuardedDerivationDeliversItsCondition() {
+		// the guard survives to the row: wide at copy AND conditional —
+		// the same shape the produce seam mints, now at the front door
+		Unifiable<Integer> id = lvar();
+		Unifiable<String> copy = lvar();
+		Goal question = id.unifies(1).and(exclude(copy.unifies("c9")));
+
+		List<Answer> rows = Question.select(question, loan(id, copy))
+				.collect(Collectors.toList());
+		assertThat(rows).hasSize(1);
+		assertThat(rows.get(0).getCondition())
+				.describedAs("the derivation's guard rides the row")
+				.isNotEqualTo(Condition.ONE);
+		assertThat(rows.get(0).<String> get(Property.of("copy"))).isEmpty();
+		assertThat(rows.get(0).unconditional().getCondition())
+				.describedAs("the explicit strengthening drops the guard")
+				.isEqualTo(Condition.ONE);
+	}
+
+	@Test
+	public void theClusterSharesTheDerivationsGuard() {
+		Unifiable<Integer> id = lvar();
+		Unifiable<String> copy = lvar();
+		Goal question = id.unifies(1).and(exclude(copy.unifies("c9")));
+
+		List<Answer> rows = Question.select(question, loan(id, copy), returned(id))
+				.collect(Collectors.toList());
+		assertThat(rows).hasSize(2);
+		assertThat(rows.get(0).getCondition())
+				.describedAs("one derivation, one guard — every row of the cluster carries it")
+				.isEqualTo(rows.get(1).getCondition())
+				.isNotEqualTo(Condition.ONE);
+	}
+
+	@Test
+	public void groundAnswersStayUnconditional() {
+		Unifiable<Integer> id = lvar();
+		Unifiable<String> copy = lvar();
+		Goal question = id.unifies(1).and(copy.unifies("c1"));
+
+		assertThat(Question.select(question, loan(id, copy), returned(id))
+				.map(Answer::getCondition)
+				.collect(Collectors.toList()))
+				.containsExactly(Condition.ONE, Condition.ONE);
 	}
 
 	@Test

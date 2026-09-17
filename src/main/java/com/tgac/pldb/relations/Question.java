@@ -1,7 +1,8 @@
 package com.tgac.pldb.relations;
 
 // ABOUTME: The question front door: a goal plus result-row templates, answers as
-// ABOUTME: Answers — rows a caller reads, a persist lands, or a retract removes.
+// ABOUTME: Answers WITH their guards — rows a caller reads, a persist lands, or a
+// ABOUTME: retract removes; the same extraction the produce seam mints with.
 
 import static com.tgac.logic.unification.LVal.lval;
 
@@ -9,14 +10,21 @@ import com.tgac.functional.category.Nothing;
 import com.tgac.functional.fibers.Fiber;
 import com.tgac.functional.fibers.Scheduler;
 import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
+import com.tgac.functional.monad.Cont;
+import com.tgac.logic.goals.Exhaustion;
 import com.tgac.logic.goals.Goal;
+import com.tgac.logic.goals.Package;
 import com.tgac.logic.tabling.Condition;
+import com.tgac.logic.tabling.Residues;
+import com.tgac.logic.tabling.Table;
 import com.tgac.logic.unification.Reified;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import io.vavr.collection.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,12 +42,15 @@ public class Question {
 	 * template literal minted by the relation's own function, naming the
 	 * row shape and, through the lvars it shares with the question, which
 	 * answer values land in which columns. Every answer grounds every
-	 * template into one {@link Fact} per schema — the whole cluster from
-	 * one derivation — and the facts serve every consumer alike: a caller
-	 * reads them as typed rows ({@link Fact#get}), a persist stages them,
-	 * a retract stages their removal. Zero answers stream nothing. A
-	 * template cell the answer leaves free refuses by relation and
-	 * column: facts are whole rows, always.
+	 * template into one {@link Answer} per schema — the whole cluster
+	 * from one derivation, every row carrying the derivation's
+	 * {@link Condition} — and the rows serve every consumer alike: a
+	 * caller reads them as typed rows ({@link Answer#get}), a persist
+	 * stages them, a retract stages their removal. Zero answers stream
+	 * nothing. A template cell the answer leaves free rides as a WIDE
+	 * cell — the write doors, not the select, refuse it. The question is
+	 * driven to EXHAUSTION before the stream returns: select's contract
+	 * is cold and finite, structurally.
 	 */
 	public static Stream<Answer> select(Goal question, Literal... schemas) {
 		return select(question, BreadthFirstScheduler::new, schemas);
@@ -47,9 +58,32 @@ public class Question {
 
 	public static Stream<Answer> select(Goal question, Function<Fiber<Nothing>, Scheduler<Nothing>> factory, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
-		return question.solve(lval(variables), factory)
-				.map(Reified::get)
-				.flatMap(answer -> facts(bind(variables, answer), schemas));
+		List<Answer> delivered = new ArrayList<>();
+		factory.apply(Exhaustion.collected(rows(question, lval(variables), variables, schemas))
+						.flatMap(rows -> {
+							delivered.addAll(rows);
+							return Fiber.done(Nothing.nothing());
+						}))
+				.get();
+		return delivered.stream();
+	}
+
+	/**
+	 * Every answer package's cluster, one row per continuation call — the
+	 * extraction the produce seam mints conditional answers with
+	 * ({@code Residues.all} at the anchor, walking + slot
+	 * canonicalization), collected instead of emitted.
+	 */
+	private static Cont<Answer, Nothing> rows(Goal question, Unifiable<?> anchor,
+			Array<Unifiable<?>> variables, Literal[] schemas) {
+		return Cont.suspend(k -> question.apply(Package.empty().withStore(Table.empty()))
+				.apply(answerPkg -> Residues.all(answerPkg, anchor)
+						.flatMap(answer -> facts(
+								bind(variables, Answers.positions(answer._1)),
+								Condition.of(answer._2), schemas)
+								.map(k::apply)
+								.reduce(Fiber.done(Nothing.nothing()),
+										(delivered, next) -> delivered.flatMap(nothing -> next)))));
 	}
 
 	/** The templates' distinct variables, in birth order — the solve tuple. */
@@ -75,14 +109,16 @@ public class Question {
 				.collect(Collectors.toMap(variables::get, i -> (Term<?>) answer.get(i)));
 	}
 
-	/** One answer, every schema: the whole cluster this derivation names. */
-	private static Stream<Answer> facts(Map<Unifiable<?>, Term<?>> bound, Literal[] schemas) {
+	/** One answer, every schema: the whole cluster this derivation names,
+	 * every row under the derivation's one guard. */
+	private static Stream<Answer> facts(Map<Unifiable<?>, Term<?>> bound,
+			Condition condition, Literal[] schemas) {
 		return Arrays.stream(schemas)
 				.map(schema -> Answer.of(schema.getRel(),
 						(Reified<?>) lval(IntStream.range(0, schema.getArgs().length())
 								.mapToObj(i -> cell(schema, i, bound))
 								.collect(Array.collector())),
-						Condition.ONE));
+						condition));
 	}
 
 	/**
