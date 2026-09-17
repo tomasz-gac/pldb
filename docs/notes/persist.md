@@ -19,8 +19,8 @@
     residues refuses at persist, by relation and column
   - exhaustion: persist inherits the cold-and-finite contract and its
     refusal family (aggregate closedness)
-  - idempotence ruling: rows the table already holds re-insert (schema's
-    business, keys) vs persist subtracts existing rows first
+  - idempotence ruling: answers the table already holds re-insert (schema's
+    business, keys) vs persist subtracts existing answers first
 - **links**: transaction.md (the commit proof this rides),
   table-as-the-source.md (the read seam), the projected() builder seam;
   graduates into transaction.md's write face or its own reference doc
@@ -34,7 +34,7 @@ where the head's bound args are the request's givens, the free args are
 derived by the rule body, and every answer lands as a fact of the head
 relation through the transaction's write face. In SQL terms this is
 INSERT..SELECT with the engine as the SELECT; in rule terms it is
-converting a relation's rule reading into rows for its source reading.
+converting a relation's rule reading into answers for its source reading.
 The head names both the answer shape and the write target; body locals
 are projected away by the machinery that already exists.
 
@@ -54,10 +54,10 @@ AnswerSource, the API surface the schema itself.
 What it does NOT buy. No fixpoint: a body reading the relation it
 persists into sees the snapshot, so persist is one-step consequence,
 deterministic under the pin, never recursive materialization. No
-caveated rows: conditional or wide answers refuse — writes stay strict;
+caveated answers: conditional or wide answers refuse — writes stay strict;
 persisting caveats is the data-boundary north star's territory. No
 cross-batch idempotence: within one persist the buffer dedups; against
-rows already stored, the ruling is an obligation above.
+answers already stored, the ruling is an obligation above.
 
 Cheapest kill: write the checkOut slice. If the denial-guarded body
 cannot deliver the derived dueDay as a ground answer (the addo/domain

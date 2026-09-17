@@ -18,9 +18,15 @@
     as shipped. Missing header → just post (the empty footprint
     certifying vacuously, aWriteOnlyTransaction... over the wire);
     mismatch → 409 (the Conflict story: re-read, re-solve). THE CLIENT
-    CONTRACT: send the pins of the relations the decision READ, not
-    just the written one — target-pin-only is mere optimistic locking
+    CONTRACT: the header carries the PREMISE — the pins of the relations
+    the client's decision READ, not just the written one — because the
+    server's POST runs its own validation solve and certifies its own
+    footprint regardless; target-pin-only is mere optimistic locking
     and readmits write skew through disjoint writes over shared reads.
+    SHIPPED function-level (Sep 2026): Simulated.footprint()/requiring
+    are the two doors, LibraryServer the projection — pinned GETs,
+    premised POSTs, the watcher receipt — leaving only HTTP marshalling
+    (the opaque pin wire form) to the real server.
     The transaction lives client-side; the server holds no per-client
     state (per-region pins verified at commit are what make that
     sound). 1NF writes keep the certify question well-formed — a flat
@@ -29,7 +35,7 @@
     relation, body is one row shape, discoverable; event-shaped writes
     are single-relation so this covers the domain). Multi-relation
     atomic writes are the SOURCE-SCOPE write face — POST at the root,
-    grouped-by-relation flat rows (the keyed COMPOSITION of the
+    grouped-by-relation flat answers (the keyed COMPOSITION of the
     per-relation bodies, not a second schema), same pin header: this
     is Writer.withFacts over the wire, machine-written by the
     marshalling layer, never hand-authored — DEFERRED to the
@@ -43,17 +49,36 @@
     dropped from v1. No commit document, no token in v1 — those return
     only if the proof ever goes region-grain over the wire and
     footprints outgrow headers.
+  - pin wire form is an ENCAPSULATION surface, not an integrity one: a
+    forged premise equals an omitted premise (already legal — the
+    empty footprint certifies vacuously), and the server's invariants
+    ride the POST's own solve and own footprint under the lock, out of
+    the client's reach. What must not cross the wire readable is the
+    VOCABULARY: pins hold Relations (namespace = class name) and a
+    Footprint's keys are Calls — probe images, residues — an
+    abstraction leak clients would parse and bind to. The premise
+    therefore travels as a server-minted opaque token: the serialized
+    footprint ciphered under a server key, so ciphertext carries no
+    names and there is nothing to depend on. Clients cannot union
+    tokens — a decision standing on several GETs sends several, and
+    the union happens server-side at the door, where Footprint.union
+    lives anyway
   - the read face over the wire (a REST source as AnswerSource): the
     adapter registers the response's validator at the read seam before
-    serving rows (pins-stay-off-engine.md's producer receipt); a
+    serving answers (pins-stay-off-engine.md's producer receipt); a
     non-blocking implementation waits on Fiber.external (#64) as
     infrastructure, not as semantics
+  - only the simulated family can back premise endpoints: Native's
+    proof is connection-scoped and dies with the connection — there is
+    no certify-by-value door to hand a premise to; simulated
+    serialization above ANY backend is what makes the write face
+    possible, even where SERIALIZABLE could be rented natively
 - **links**: pins-stay-off-engine.md (the read-side ruling),
   transaction.md (the proof this transports), persist.md (the
   endpoint story this carries), table-as-the-source.md, task #64
 
 The claim: the shipped commit proof projects onto HTTP without a new
-protocol. A write is a POST of flat rows to its relation's face; the
+protocol. A write is a POST of flat answers to its relation's face; the
 pins the deciding solve read travel as one relation-keyed header; the
 server's verdict is the transaction's verdict — landed or 409 — and
 the server holds no per-client state, because per-region pins verified

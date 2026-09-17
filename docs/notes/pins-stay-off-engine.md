@@ -9,12 +9,12 @@
 - **obligations**:
   - the producer receipt (the cheapest kill): a `Transaction` over a
     wire-shaped source — canned responses carrying validators — whose
-    adapter registers the pin at the read seam BEFORE serving rows;
+    adapter registers the pin at the read seam BEFORE serving answers;
     if capture-at-seam cannot express that source, the claim dies
   - #75's pin stamps consume the persisted-memo case: the stamp lives
     WITH the memo and is compared at reuse — no engine involvement
   - the capture contract stays trust, restated at the seam: the
-    validator is minted with-or-before the rows it certifies (the
+    validator is minted with-or-before the answers it certifies (the
     Oracle-costume boundary; no signature enforces it)
 - **links**: wire-face.md (the write door this proof transports),
   transaction.md, tasks #64 (now decoupled), #75
@@ -49,7 +49,7 @@ just should not, per the paragraph above.
 The cases that seemed to need on-engine pins, checked:
 
 - **A produce-backed source.** The response arrives validator-with-
-  body; the adapter registers the pin at the seam, then serves rows —
+  body; the adapter registers the pin at the seam, then serves answers —
   pin-before-read holds, zero-answer probes still pin (capture is at
   the probe, not per row). The produce signature never touches a pin.
 - **Tabled replay.** Tables are per-solve and a solve reads through

@@ -4,7 +4,7 @@
 conversation). Nothing built. This is the SUBSTRATE that `deferred-lookups.md`
 and `table-constraints.md` turn out to be two questions about (§8): both are
 "when, and with how much bound, do you call the backend." Companions:
-`table-constraints.md` (rows as a narrowing domain), `deferred-lookups.md`
+`table-constraints.md` (answers as a narrowing domain), `deferred-lookups.md`
 (defer the probe), `query-planning.md` (the pricing this feeds),
 `logic/docs/design/constraint-kernel.md` (the store protocol).**
 
@@ -15,7 +15,7 @@ and `table-constraints.md` turn out to be two questions about (§8): both are
 The engine's READ side needs exactly two operations from a relation's backing,
 both over the same input `(relation, bound properties)`:
 
-- **enumerate** — the matching rows, for EXECUTION (today's `Relation.exists`);
+- **enumerate** — the matching answers, for EXECUTION (today's `Relation.exists`);
 - **count** — how many match, for PLANNING (today's `Database.estimate`).
 
 pldb already HAS both — they are just methods on the in-memory `Database`.
@@ -188,20 +188,20 @@ get simplicity, you get composition-as-conjunction. Two honest edges: the mode
 signature is richer than bound/free (an FD-backward endpoint needs a DOMAIN
 bound too, e.g. `priceBand?band=premium&min=..&max=..`, and generation exposes
 the modes the author MARKS, not every possible one); and generated REST is
-natural for FLAT relational rows — deeply nested responses drift toward
+natural for FLAT relational answers — deeply nested responses drift toward
 GraphQL-shaped output, which is a richer serializer, not this layer's job.
 
 ## 8. What this subsumes
 
 - **`deferred-lookups.md`** = WHEN, and with how much bound, do you call
   `enumerate` (defer until a supported mode's bindings arrive).
-- **`table-constraints.md`** = what to do with the rows `enumerate` returned —
+- **`table-constraints.md`** = what to do with the answers `enumerate` returned —
   they are a candidate DOMAIN, narrowed locally by the remaining constraints,
   no further calls.
 
 Both stop being separate designs and become two phases of one remote lookup —
 fetch, then refine — riding the one `FactSource` contract. A REST-backed
-relation uses BOTH: deferral picks the moment and the mode, the returned rows
+relation uses BOTH: deferral picks the moment and the mode, the returned answers
 become an in-memory candidate set the constraint narrowing refines.
 
 ## 9. Boundaries
@@ -241,7 +241,7 @@ convenience or reach.
    complete against the one backend that already works. No behaviour change.
 3. **SQL `FactSource` with a hand-written row-mapper** — `enumerate` →
    parameterized `SELECT ... WHERE bound`, `count` → `SELECT COUNT`, all modes
-   supported. Map rows to `Fact`s by hand (one small mapper per relation). Estate
+   supported. Map answers to `Fact`s by hand (one small mapper per relation). Estate
    on Postgres with its DERIVED relations UNCHANGED is the proof the layering
    holds — the real, first external backend.
 4. **Solve-local pull cache** — a Package store caching `enumerate` results for

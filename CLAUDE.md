@@ -43,7 +43,7 @@ Auto-loaded every session — read before changing code.
 - `deferred-lookups.md` — suspend unbound lookups as constraints, wake on binding,
   then ENUMERATE (defer-then-branch). The WEAKER cousin of `table-constraints.md`;
   its blocker (logic's constraint-propagation redesign) is now cleared.
-- `table-constraints.md` — pldb rows as a NARROWING constraint store (GAC / table
+- `table-constraints.md` — pldb answers as a NARROWING constraint store (GAC / table
   constraint): candidates are a domain, singleton→collapse, joins prune, branch
   only at `labelo`. The stronger "minimize branching" answer; supersedes
   deferred-lookups as the target. Start here for the constraint-store direction.

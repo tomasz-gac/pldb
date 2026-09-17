@@ -41,7 +41,7 @@ second is the one that must never be weakened:
 
 (The sound way to get bindings *into* a recursion is magic sets — reify the
 relevant-values set as a derived relation joined inside the body; values land
-in answer rows, table keys stay per-mode and bounded by program text. It needs
+in answer answers, table keys stay per-mode and bounded by program text. It needs
 rules-as-data, which runtime goal trees don't have: a `defer` points at code,
 not at a rewritable definition. Out of scope unless pldb ever makes rules
 first-class. The degenerate case — the bound arg is invariant through the

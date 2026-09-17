@@ -23,14 +23,14 @@ extensions, constraint propagation — and the boundary **translates**:
 
 - A probe is a **region**: the bound columns *plus the engine's
   constraint knowledge about the free ones*. Regions compile to WHERE
-  clauses, so the database ships only rows the solve can use.
+  clauses, so the database ships only answers the solve can use.
 - Shipped regions are **remembered**: a coverage ledger proves when a
   new probe is contained in an already-fetched one, and answers it from
   the local pool — no second round trip, and its cost estimate becomes
   exact, which the engine's query planner feeds on.
 - The write face **closes the loop**: a commit must prove that the
   reads which justified it still hold. The double-lend anomaly that
-  slips through append-only writes everywhere (write skew — no rows
+  slips through append-only writes everywhere (write skew — no answers
   collide, so nothing detects the crossing) is refused here, by
   construction, on every backend.
 
@@ -207,7 +207,7 @@ and an append-only system quietly lends one book twice. Certifying
 ## What it is not
 
 No ORM, no migrations, no connection pooling, no entity lifecycle —
-facts are values, rows are facts, and the transaction is the only
+facts are values, answers are facts, and the transaction is the only
 session there is. A research project like its siblings: no release,
 APIs move freely, and honesty over polish — the interesting failure
 modes are receipted as tests, not documented around.

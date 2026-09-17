@@ -22,7 +22,7 @@ It is intentionally not a claim that a database, transaction system, authorizati
 Companions:
 
 - `pldb/docs/design/external-relations.md` — the external read seam;
-- `pldb/docs/design/table-constraints.md` — returned rows as a narrowing domain;
+- `pldb/docs/design/table-constraints.md` — returned answers as a narrowing domain;
 - `logic/docs/reference/condition.md` — `Condition`, `Residues`, and semiring answer cells;
 - `logic/docs/reference/table-completion.md` — current table consumption and completion;
 - `functional/docs/design/await.md` and `completion.md` — channels, scopes, and computed quiescence.
@@ -172,8 +172,8 @@ A value below `1` may still improve while the table grows. Fiber sealing supplie
 - an immutable in-memory fact database;
 - indexed lookup;
 - cardinality estimates;
-- table constraints that treat returned rows as a narrowing domain;
-- explicit labeling when concrete rows are required.
+- table constraints that treat returned answers as a narrowing domain;
+- explicit labeling when concrete answers are required.
 
 The next step is not to invent another query language. It is to put the existing relation operations behind an external-source contract and prove the same relation can run unchanged over PostgreSQL.
 
@@ -289,7 +289,7 @@ An external relation is a normal `pldb` relation whose extension is supplied by 
 The logical layer should need only:
 
 ```text
-enumerate(pattern)  → matching rows
+enumerate(pattern)  → matching answers
 estimate(pattern)   → cheap cardinality estimate or unknown
 modes()             → binding patterns the source can answer
 ```
@@ -335,7 +335,7 @@ relation loaders — collapse into adapters over this form.)
 This is illustrative, not a frozen signature (and written in sketch Java —
 the house is Java 8).
 
-**The landing design tightens the type**: there is no free row parameter — `enumerate` returns pldb `Fact`s, because rows
+**The landing design tightens the type**: there is no free row parameter — `enumerate` returns pldb `Fact`s, because answers
 LAND (§4.1) in the solve-local `Database`, whose surface already speaks
 the whole contract: `Iterable<Fact> get(Relation, IndexedSeq<Optional<Object>>)`
 IS enumerate-under-a-bound-pattern (the `BoundPattern` sketch ≈ the
@@ -348,14 +348,14 @@ no-ORM non-goal: the mapping target is facts, never objects.
 
 ### 4.1 `enumerate`
 
-`enumerate` returns rows matching the bound pattern in the pinned view.
+`enumerate` returns answers matching the bound pattern in the pinned view.
 
-The baseline implementation may return rows one by one and unify each row. For a larger result set, the rows may be installed as one table constraint and narrowed locally.
+The baseline implementation may return answers one by one and unify each row. For a larger result set, the answers may be installed as one table constraint and narrowed locally.
 
 Both are physical execution strategies behind the same relation.
 
 **The landing design** (from the original design discussions; the piece
-this rewrite could not have known): fetched rows are not consumed as a
+this rewrite could not have known): fetched answers are not consumed as a
 transient stream — they LAND as pldb facts in a SOLVE-LOCAL, IN-MEMORY
 database (the same immutable `Database` that is Phase 1's reference
 implementation), and lookups over fetched relations post as TABLE
@@ -363,8 +363,8 @@ CONSTRAINTS (`TableConstraints`/`Support` — shipped, pldb
 `table-constraints.md`). What that buys, concretely:
 
 - **constraint propagation over external data, for free** — a fetched
-  relation narrows like a domain: candidate rows shrink as other
-  constraints bind columns, wrong rows die before any branch exists;
+  relation narrows like a domain: candidate answers shrink as other
+  constraints bind columns, wrong answers die before any branch exists;
 - **GAC-style in-memory joins** — two sources' fetched relations joining
   through shared columns propagate SUPPORTS against each other instead
   of running nested remote loops: the join executes as propagation,
@@ -389,7 +389,7 @@ CONSTRAINTS (`TableConstraints`/`Support` — shipped, pldb
   counts grow.
 
 What it does not buy: remote join pushdown (that is Phase 6's compiled
-predicates); freedom from memory costs (landed rows are resident — the
+predicates); freedom from memory costs (landed answers are resident — the
 pull/materialize trade of §4.5 still governs what gets fetched at all);
 or a license to scan un-moded sources (modes still gate the fetch).
 Phase consequence: Phase 1's reference `Database` doubles as Phase 2's
@@ -434,7 +434,7 @@ argument position i becomes `_.i`, which is both the column resolution
 probes comparable for coverage. The parameter is ADVISORY by the
 over-delivery law: a source must return every fact matching pattern ∧
 region and may ignore the region wholly or per family — narrowing it did
-not apply stays local, enforced by propagation over the returned rows.
+not apply stays local, enforced by propagation over the returned answers.
 
 The SQL adapter compiles regions through a REGISTRY of per-family
 compilers keyed by factor class: one atom in, optionally one predicate
@@ -670,12 +670,12 @@ A `check` request supplies the current amount and device trust. Propagation dete
 
 ### 6.2 Listing
 
-A list query may return conditional rows rather than labeling every condition into points.
+A list query may return conditional answers rather than labeling every condition into points.
 
 Pagination and serialization need an explicit policy:
 
-- ground rows first;
-- conditional rows with a supported condition representation;
+- ground answers first;
+- conditional answers with a supported condition representation;
 - or label only over a declared finite presentation domain.
 
 Do not imply that arbitrary constraints can always be rendered as a friendly API response.
@@ -803,7 +803,7 @@ This is enough to validate:
 
 - the source seam;
 - pinning;
-- TCLP over real rows;
+- TCLP over real answers;
 - query planning;
 - conditional serialization;
 - caching.
@@ -1013,7 +1013,7 @@ The promising differentiated use case is not “replace SQL views.”
 
 It is:
 
-> Materialize a derived relation that SQL does not naturally express because it is recursive and its rows carry conditions.
+> Materialize a derived relation that SQL does not naturally express because it is recursive and its answers carry conditions.
 
 Examples:
 
@@ -1132,7 +1132,7 @@ Proof:
 - compile supported projected conditions to SQL;
 - use source estimates without repeated expensive planning calls;
 - choose branch-per-row versus table-constraint delivery by measured cost;
-- record query counts and transferred rows.
+- record query counts and transferred answers.
 
 Proof:
 

@@ -78,7 +78,7 @@ Negation is COMPOSITION: `exclude(p(x, y))` — a `Literal` is a
 imposes the posted extension on scratch and judges it three ways. The
 sealed extension is the completeness certificate (the closed world is
 the relation's own definition over its pinned sources); de Morgan
-happens inside the machinery: ground rows forbid tuples, a wide row
+happens inside the machinery: ground answers forbid tuples, a wide row
 excludes its item outright, the diagonal negates to a disequality, a
 CONDITIONAL row filters through its guard.
 
@@ -109,7 +109,7 @@ propagator kinds.
 An applied literal ENUMERATES — the choice lives in the search tree,
 bindings are ground per branch, distinct derivations of one tuple fold
 by alpha-equality. A posted literal DEFERS — the choice lives in the
-condition. A fixpoint converges in rows or diverges in conditions, so
+condition. A fixpoint converges in answers or diverges in conditions, so
 the GENERATOR SEAT (a recursive body's base case) must enumerate; a
 deferred generator compounds per unfold into an infinite condition
 antichain — each unfold a genuinely new conditional answer, absorption

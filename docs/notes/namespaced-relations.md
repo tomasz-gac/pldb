@@ -4,7 +4,7 @@
   namespace is an IDENTITY FIELD on RelationN, never part of the
   physical name — `relation(Rules.class, "loan")` divides tabling,
   knowledge, and store keys while getName() stays "loan", so tables,
-  DDL, mark rows, and pin headers are untouched and the SQL convention
+  DDL, mark answers, and pin headers are untouched and the SQL convention
   needs no quoting. The bare-string door is REMOVED; all defining
   methods adopted. The mapping half stays parked — trigger: the first
   physical rename. SUPERSEDED in this note's original text: the
@@ -63,7 +63,7 @@ business.
 What it does NOT buy: identity from method references (no equality
 contract — a bound reference is a fresh object per evaluation; refused
 permanently), and random names (dead on arrival: names are public keys
-across processes — pin headers, watermark rows, endpoints — and
+across processes — pin headers, watermark answers, endpoints — and
 random-per-JVM breaks every cross-process agreement and every log).
 
 Cheapest kill: compose two toy relation modules sharing a bare name in

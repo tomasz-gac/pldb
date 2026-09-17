@@ -1,4 +1,4 @@
-# Table constraints — pldb rows as a constraint store
+# Table constraints — pldb answers as a constraint store
 
 **STATUS: IMPLEMENTED — FIRST SLICE (built July 2026; header graduated
 August 2026 after an external review caught the doc outliving the build —
@@ -59,9 +59,9 @@ a design note for each:
   constraint of classical CP (STR / compact-table lineage).
 
 The deferred-lookups claim "a lookup can only branch, not narrow" is a MODELING
-CHOICE, not a truth: a free column's possible values across the candidate rows
+CHOICE, not a truth: a free column's possible values across the candidate answers
 ARE a finite domain, and another constraint restricting that variable should
-PRUNE the rows, not fork on them. This doc is the "actually, it narrows"
+PRUNE the answers, not fork on them. This doc is the "actually, it narrows"
 upgrade. It subsumes deferred-lookups' win (a fully-narrowed singleton is the
 deferred probe's best case, reached without ever parking-to-branch) and adds
 join propagation on top. Cost: more plumbing (a full narrowing store vs. a
@@ -117,7 +117,7 @@ An Integer column's candidate support set can project into an FD domain on the
 variable at that position (and FD narrowing can flow back into the row set) —
 the kernel's cross-store revision payloads exist for exactly this. TRIGGER: a
 real query needing joint FD+table pruning; the estate course's rung-8 what-ifs
-("what price moves Elm into the premium band?" — PROPERTY rows × FD on price)
+("what price moves Elm into the premium band?" — PROPERTY answers × FD on price)
 is the natural first customer. Until then, equality/groundness narrowing only.
 
 ## 5. Boundaries
