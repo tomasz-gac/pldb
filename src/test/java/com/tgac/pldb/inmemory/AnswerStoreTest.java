@@ -24,7 +24,9 @@ import com.tgac.pldb.relations.Answers;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
+import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,6 +98,37 @@ public class AnswerStoreTest {
 
 		AnswerStore after = store.retracting(loanFact("m9", "c9")).get();
 		assertThat(images(after.answers(probe(Any.of(0), Any.of(1))))).hasSize(1);
+	}
+
+	@Test
+	public void aWideRowRefusesTheStrictWriteDoor() {
+		// with() is the seam's permissive dock; the Writer face is the
+		// strict domain door — wide cells refuse by relation and column
+		Answer wide = Answer.of(LOAN,
+				(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))), Condition.ONE);
+
+		Try<AnswerStore> refused = AnswerStore.empty()
+				.asserting(Collections.singletonList(wide));
+		assertThat(refused.getCause())
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("loan")
+				.hasMessageContaining("member");
+	}
+
+	@Test
+	public void aGuardedRowRefusesUntilTheGuardDropsExplicitly() {
+		Condition guarded = forbidding("m9");
+		Answer row = Answer.of(LOAN, row("m1", "c1").getReified(), guarded);
+
+		Try<AnswerStore> refused = AnswerStore.empty()
+				.asserting(Collections.singletonList(row));
+		assertThat(refused.getCause())
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("unconditional");
+
+		AnswerStore landed = AnswerStore.empty()
+				.asserting(Collections.singletonList(row.unconditional())).get();
+		assertThat(images(landed.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);
 	}
 
 	@Test

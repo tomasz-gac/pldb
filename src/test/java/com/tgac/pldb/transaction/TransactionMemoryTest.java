@@ -10,6 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.SharedDatabase;
+import com.tgac.functional.fibers.schedulers.BreadthFirstScheduler;
+import com.tgac.pldb.relations.Answer;
+import com.tgac.pldb.relations.Question;
 import com.tgac.pldb.relations.Literal;
 import io.vavr.control.Try;
 import java.util.Collections;
@@ -136,6 +139,47 @@ public class TransactionMemoryTest {
 				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
 		assertThat(assertRemoved.getCause())
 				.isInstanceOf(Transaction.Conflict.class);
+	}
+
+	private static Literal loanOf(AnswerSource db, Unifiable<Integer> id, Unifiable<String> copy) {
+		return Literal.relation(TransactionMemoryTest.class, "loan")
+				.arg("loanId", id).indexed()
+				.arg("copy", copy)
+				.from(db);
+	}
+
+	private static Literal returnedOf(AnswerSource db, Unifiable<Integer> id) {
+		return Literal.relation(TransactionMemoryTest.class, "returned")
+				.arg("loanId", id).indexed()
+				.from(db);
+	}
+
+	@Test
+	public void aSelectedClusterRetractsThroughTheDoor() throws Exception {
+		// the retract arc's face, composed instead of built: the question
+		// selects the closed cluster, the door removes it, the commit
+		// certifies the reads the closure stood on
+		SharedDatabase store = SharedDatabase.empty();
+		assertThat(AbstractTransaction.over(store.open("seed"))
+				.asserting(loanOf(null, lval(1), lval("c1")), returnedOf(null, lval(1)))
+				.get().commit().isSuccess()).isTrue();
+
+		Simulated tx = AbstractTransaction.over(store.open("compact"));
+		Unifiable<Integer> id = lvar();
+		Unifiable<String> copy = lvar();
+		List<Answer> cluster = new BreadthFirstScheduler<>(Question.select(
+				loanOf(tx, id, copy).and(returnedOf(tx, id)),
+				loanOf(null, id, copy), returnedOf(null, id))).get();
+		assertThat(cluster).hasSize(2);
+
+		assertThat(tx.retracting(cluster).get().commit().isSuccess()).isTrue();
+
+		try (Transaction reader = AbstractTransaction.over(store.open("after"))) {
+			Unifiable<String> c = lvar();
+			assertThat(loanOf(reader, lvar(), c).solve(c).count()).isZero();
+			Unifiable<Integer> r = lvar();
+			assertThat(returnedOf(reader, r).solve(r).count()).isZero();
+		}
 	}
 
 	@Test

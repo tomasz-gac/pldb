@@ -1,36 +1,53 @@
 package com.tgac.pldb;
 
-// ABOUTME: The write face: facts stated as literals, the door converts — asserting
-// ABOUTME: lands rows, retracting removes them by fact, both refusing holes loudly.
+// ABOUTME: The write face: Answer rows are the currency, Literal statements the
+// ABOUTME: threshold sugar — both polarities, holes and guards refusing loudly.
 
+import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * A value that accepts writes stated in the same language reads use:
- * LITERALS, ground. The doors convert to rows and a hole refuses by
- * relation and column; {@code Fact} stays beneath the doors as the
- * internal row carrier ({@code Collection<Literal>} and
- * {@code List<Fact>} erase differently, so the doors share names).
- * {@link #retracting} removes BY FACT — the membership claim leaves
- * whole, every physical duplicate with it; retracting what is absent
- * is a set-semantics no-op at a store, and a transaction that both
- * asserts and retracts one fact refuses as {@code Conflict}: it has
- * not decided what it believes.
+ * A value that accepts writes. The PRIMITIVE doors speak {@link Answer}
+ * rows — the one data currency — and own the strictness: a wide cell
+ * refuses by relation and column, a guarded row refuses toward the
+ * explicit choice ({@link Answer#unconditional()}). The {@link Literal}
+ * doors are the statement face: minted by the schema functions,
+ * converted at the threshold ({@link Literal#fact()} refuses holes),
+ * always ground and unconditional by construction. {@link #retracting}
+ * removes BY FACT — the membership claim leaves whole, every physical
+ * duplicate with it; retracting the absent is a set-semantics no-op at
+ * a store, and a transaction that both asserts and retracts one fact
+ * refuses as {@code Conflict}: it has not decided what it believes.
  */
 public interface Writer<S extends Writer<S>> {
 
-	Try<S> asserting(Collection<Literal> rows);
+	Try<S> asserting(List<Answer> rows);
+
+	Try<S> retracting(List<Answer> rows);
+
+	default Try<S> asserting(Collection<Literal> rows) {
+		return Try.of(() -> facts(rows)).flatMap(this::asserting);
+	}
+
+	default Try<S> retracting(Collection<Literal> rows) {
+		return Try.of(() -> facts(rows)).flatMap(this::retracting);
+	}
 
 	default Try<S> asserting(Literal... rows) {
 		return asserting(Arrays.asList(rows));
 	}
 
-	Try<S> retracting(Collection<Literal> rows);
-
 	default Try<S> retracting(Literal... rows) {
 		return retracting(Arrays.asList(rows));
+	}
+
+	/** The threshold conversion: statements become rows, holes refuse. */
+	static List<Answer> facts(Collection<Literal> rows) {
+		return rows.stream().map(Literal::fact).collect(Collectors.toList());
 	}
 }

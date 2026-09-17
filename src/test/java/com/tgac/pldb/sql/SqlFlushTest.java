@@ -98,7 +98,7 @@ public class SqlFlushTest {
 
 	@Test
 	public void anEmptyFlushIsANoOp() throws Exception {
-		SqlFlush.over(connection).flush(Collections.emptyList());
+		SqlFlush.over(connection).flush(Collections.<com.tgac.pldb.relations.Answer> emptyList());
 		assertThat(namesReadBack()).isEmpty();
 	}
 }

@@ -3,11 +3,9 @@ package com.tgac.pldb.transaction;
 import com.tgac.functional.category.Nothing;
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
+import java.util.List;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -44,14 +42,14 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> asserting(Collection<Literal> facts) {
-		return writeBuffer.asserting(new ArrayList<>(facts))
+	public Try<Transaction> asserting(List<Answer> rows) {
+		return writeBuffer.asserting(rows)
 				.map(grown -> new Simulated(grown, serialization, reads, premise));
 	}
 
 	@Override
-	public Try<Transaction> retracting(Collection<Literal> facts) {
-		return writeBuffer.retracting(facts)
+	public Try<Transaction> retracting(List<Answer> rows) {
+		return writeBuffer.retracting(rows)
 				.map(marked -> new Simulated(marked, serialization, reads, premise));
 	}
 

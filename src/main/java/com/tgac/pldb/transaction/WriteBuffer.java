@@ -12,11 +12,9 @@ import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.AnswerStore;
 import com.tgac.pldb.relations.Answers;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import io.vavr.control.Try;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,36 +43,36 @@ public class WriteBuffer implements AnswerSource {
 	AnswerSource base;
 	AnswerStore insertions;
 	AnswerStore removals;
-	Array<Literal> stagedAssertions;
-	Array<Literal> stagedRetractions;
+	Array<Answer> stagedAssertions;
+	Array<Answer> stagedRetractions;
 
 	public static WriteBuffer over(AnswerSource base) {
 		return new WriteBuffer(base, AnswerStore.empty(), AnswerStore.empty(),
 				Array.empty(), Array.empty());
 	}
 
-	public Try<WriteBuffer> asserting(List<Literal> facts) {
-		return refuseCollision(removals, facts)
-				.flatMap(clear -> insertions.asserting(facts))
+	public Try<WriteBuffer> asserting(List<Answer> rows) {
+		return refuseCollision(removals, rows)
+				.flatMap(clear -> insertions.asserting(rows))
 				.map(grown -> new WriteBuffer(base, grown, removals,
-						stagedAssertions.appendAll(facts), stagedRetractions));
+						stagedAssertions.appendAll(rows), stagedRetractions));
 	}
 
-	public Try<WriteBuffer> retracting(Collection<Literal> facts) {
-		return refuseCollision(insertions, facts)
-				.flatMap(clear -> removals.asserting(facts))
+	public Try<WriteBuffer> retracting(List<Answer> rows) {
+		return refuseCollision(insertions, rows)
+				.flatMap(clear -> removals.asserting(rows))
 				.map(marked -> new WriteBuffer(base, insertions, marked,
-						stagedAssertions, stagedRetractions.appendAll(facts)));
+						stagedAssertions, stagedRetractions.appendAll(rows)));
 	}
 
 	/** A fact staged with the opposite polarity refuses the write whole. */
-	private static Try<AnswerStore> refuseCollision(AnswerStore opposite, Collection<Literal> facts) {
+	private static Try<AnswerStore> refuseCollision(AnswerStore opposite, List<Answer> rows) {
 		return Try.of(() -> {
-			for (Literal fact : facts) {
-				Reified<?> image = fact.fact().getReified();
-				if (opposite.answers(Call.of(fact.getRel(), image)).iterator().hasNext()) {
-					throw new Transaction.Conflict("the fact " + fact.getRel().getName()
-							+ image + " is staged with the opposite polarity —"
+			for (Answer row : rows) {
+				if (opposite.answers(Call.of(row.getRelation(), row.getReified()))
+						.iterator().hasNext()) {
+					throw new Transaction.Conflict("the fact " + row.getRelation().getName()
+							+ row.getReified() + " is staged with the opposite polarity —"
 							+ " this transaction has not decided what it believes");
 				}
 			}
@@ -82,13 +80,13 @@ public class WriteBuffer implements AnswerSource {
 		});
 	}
 
-	/** The facts this value's lineage staged to land, in staging order. */
-	public Array<Literal> stagedAssertions() {
+	/** The rows this value's lineage staged to land, in staging order. */
+	public Array<Answer> stagedAssertions() {
 		return stagedAssertions;
 	}
 
-	/** The facts this value's lineage staged to remove, in staging order. */
-	public Array<Literal> stagedRetractions() {
+	/** The rows this value's lineage staged to remove, in staging order. */
+	public Array<Answer> stagedRetractions() {
 		return stagedRetractions;
 	}
 

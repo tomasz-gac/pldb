@@ -5,7 +5,6 @@ package com.tgac.pldb.inmemory;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
@@ -59,7 +58,7 @@ public final class SharedDatabase {
 	 * The commit protocol, whole: the monitor is the commit lock, the
 	 * generation compare is the proof, the persistent grow is the flush.
 	 */
-	private synchronized boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
+	private synchronized boolean commit(Footprint read, List<Answer> asserted, List<Answer> retracted) {
 		if (!covers(read)) {
 			return false;
 		}
@@ -67,11 +66,11 @@ public final class SharedDatabase {
 				.asserting(asserted).get()
 				.retracting(retracted).get();
 		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
-		for (Literal fact : asserted) {
-			marks.merge(fact.getRel(), 1L, Long::sum);
+		for (Answer row : asserted) {
+			marks.merge(row.getRelation(), 1L, Long::sum);
 		}
-		for (Literal fact : retracted) {
-			marks.merge(fact.getRel(), 1L, Long::sum);
+		for (Answer row : retracted) {
+			marks.merge(row.getRelation(), 1L, Long::sum);
 		}
 		current = new Versioned(next, marks);
 		return true;
@@ -107,7 +106,7 @@ public final class SharedDatabase {
 		}
 
 		@Override
-		public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
+		public boolean commit(Footprint read, List<Answer> asserted, List<Answer> retracted) {
 			return SharedDatabase.this.commit(read, asserted, retracted);
 		}
 

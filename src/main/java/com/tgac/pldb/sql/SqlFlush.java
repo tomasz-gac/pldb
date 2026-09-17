@@ -3,6 +3,7 @@ package com.tgac.pldb.sql;
 // ABOUTME: The JDBC write face: asserted facts land as INSERTs, retracted facts
 // ABOUTME: leave as by-fact DELETEs — one schema convention, one codec registry.
 
+import com.tgac.pldb.Writer;
 import com.tgac.pldb.relations.Answer;
 import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Property;
@@ -13,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,9 +58,19 @@ public class SqlFlush {
 		return new SqlFlush(connection, codecs, column, value);
 	}
 
-	public void flush(List<Literal> literals) {
+	/** The statement face: literals convert at the threshold, holes refuse. */
+	public void flush(Collection<Literal> statements) {
+		flush(Writer.facts(statements));
+	}
+
+	/** The statement face of the removal lane. */
+	public void delete(Collection<Literal> statements) {
+		delete(Writer.facts(statements));
+	}
+
+	public void flush(List<Answer> rows) {
 		try {
-			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(literals).entrySet()) {
+			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(rows).entrySet()) {
 				insert(table.getKey(), table.getValue());
 			}
 		} catch (SQLException e) {
@@ -73,8 +85,8 @@ public class SqlFlush {
 		Array<Object> cells;
 	}
 
-	private Map<Relation, List<Row>> encodedByRelation(List<Literal> literals) {
-		return literals.stream().map(Literal::fact)
+	private Map<Relation, List<Row>> encodedByRelation(List<Answer> rows) {
+		return rows.stream()
 				.map(this::encoded)
 				.collect(Collectors.groupingBy(Row::getRelation, LinkedHashMap::new, Collectors.toList()));
 	}
@@ -109,9 +121,9 @@ public class SqlFlush {
 	 * in the predicate. Batched per (relation, null-shape); the caller
 	 * owns the transaction.
 	 */
-	public void delete(List<Literal> literals) {
+	public void delete(List<Answer> rows) {
 		try {
-			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(literals).entrySet()) {
+			for (Map.Entry<Relation, List<Row>> table : encodedByRelation(rows).entrySet()) {
 				Map<String, List<Row>> byShape = table.getValue().stream()
 						.collect(Collectors.groupingBy(SqlFlush::nullShape,
 								LinkedHashMap::new, Collectors.toList()));

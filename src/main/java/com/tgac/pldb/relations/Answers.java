@@ -73,6 +73,29 @@ public final class Answers {
 		return true;
 	}
 
+	/**
+	 * The write doors' claim check: a row lands whole and decided — every
+	 * cell ground, the condition {@link Condition#ONE}. A wide cell
+	 * refuses by relation and column; a guarded row refuses toward the
+	 * explicit choice ({@link Answer#unconditional()}).
+	 */
+	public static Answer landable(Answer row) {
+		Array<Term<Object>> cells = positions(row.getReified());
+		for (int i = 0; i < cells.size(); i++) {
+			if (!cells.get(i).asVal().isDefined()) {
+				throw new IllegalStateException(row.getRelation().getName() + "."
+						+ row.getRelation().getArgs()[i].getName()
+						+ " is not ground — a write lands whole rows only");
+			}
+		}
+		if (!Condition.ONE.equals(row.getCondition())) {
+			throw new IllegalStateException(row.getRelation().getName()
+					+ ": a guarded row cannot land — decide it, or drop the guard"
+					+ " explicitly (unconditional())");
+		}
+		return row;
+	}
+
 	/** The row's raw values, positional. The row must be fully ground. */
 	public static Array<Object> values(Reified<?> row) {
 		return positions(row).map(Term::get);

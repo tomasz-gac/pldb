@@ -4,7 +4,7 @@ package com.tgac.pldb.transaction;
 // ABOUTME: itself; the source owns the whole commit door and its dialect.
 
 import com.tgac.pldb.AnswerSource;
-import com.tgac.pldb.relations.Literal;
+import com.tgac.pldb.relations.Answer;
 import java.util.List;
 
 /**
@@ -21,5 +21,5 @@ import java.util.List;
  */
 public interface NativeSerialization extends AnswerSource, AutoCloseable {
 
-	boolean commit(List<Literal> asserted, List<Literal> retracted);
+	boolean commit(List<Answer> asserted, List<Answer> retracted);
 }

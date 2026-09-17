@@ -16,6 +16,7 @@ import io.vavr.collection.Map;
 import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -68,13 +69,13 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 				relations.put(relation, answers.with(positions(relation), answer)));
 	}
 
-	/** The write face: literals land as ground rows of their own relations. */
+	/** The strict write face; {@link #with} stays the seam's permissive dock. */
 	@Override
-	public Try<AnswerStore> asserting(Collection<Literal> facts) {
+	public Try<AnswerStore> asserting(List<Answer> rows) {
 		return Try.of(() -> {
 			AnswerStore grown = this;
-			for (Literal fact : facts) {
-				grown = grown.with(fact.getRel(), fact.fact());
+			for (Answer row : rows) {
+				grown = grown.with(row.getRelation(), Answers.landable(row));
 			}
 			return grown;
 		});
@@ -93,11 +94,12 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 	 * ⊕-folded condition with it; retracting the absent is a no-op.
 	 */
 	@Override
-	public Try<AnswerStore> retracting(Collection<Literal> facts) {
+	public Try<AnswerStore> retracting(List<Answer> rows) {
 		return Try.of(() -> {
 			AnswerStore shrunk = this;
-			for (Literal fact : facts) {
-				shrunk = shrunk.without(fact.getRel(), fact.fact().getReified());
+			for (Answer row : rows) {
+				shrunk = shrunk.without(row.getRelation(),
+						Answers.landable(row).getReified());
 			}
 			return shrunk;
 		});

@@ -6,7 +6,6 @@ package com.tgac.pldb.sql;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
@@ -87,7 +86,7 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
+	public boolean commit(Footprint read, List<Answer> asserted, List<Answer> retracted) {
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {

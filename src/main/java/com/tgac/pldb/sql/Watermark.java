@@ -5,7 +5,6 @@ package com.tgac.pldb.sql;
 
 import com.tgac.logic.tabling.Call;
 import com.tgac.pldb.relations.Answer;
-import com.tgac.pldb.relations.Literal;
 import com.tgac.pldb.relations.Relation;
 import com.tgac.pldb.transaction.Footprint;
 import com.tgac.pldb.transaction.Pin;
@@ -129,7 +128,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 	}
 
 	@Override
-	public boolean commit(Footprint read, List<Literal> asserted, List<Literal> retracted) {
+	public boolean commit(Footprint read, List<Answer> asserted, List<Answer> retracted) {
 		try (Connection commit = commits.get()) {
 			commit.setAutoCommit(false);
 			try {
@@ -141,7 +140,7 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 				SqlFlush flush = SqlFlush.over(commit, source.getCodecs());
 				flush.flush(asserted);
 				flush.delete(retracted);
-				List<Literal> moved = new ArrayList<>(asserted);
+				List<Answer> moved = new ArrayList<>(asserted);
 				moved.addAll(retracted);
 				advance(commit, moved);
 				commit.commit();
@@ -195,11 +194,11 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		return true;
 	}
 
-	private void advance(Connection commit, List<Literal> flushed) throws SQLException {
+	private void advance(Connection commit, List<Answer> flushed) throws SQLException {
 		Set<String> moved = new LinkedHashSet<>();
 		moved.add(LOCK_ROW);
-		for (Literal row : flushed) {
-			moved.add(row.getRel().getName());
+		for (Answer row : flushed) {
+			moved.add(row.getRelation().getName());
 		}
 		log.debug("{}: advance {}", id(), moved);
 		for (String relation : moved) {
