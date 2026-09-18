@@ -4,11 +4,6 @@ package com.tgac.pldb.sql.compiler;
 // ABOUTME: judged by H2 — superset always, equality when exact, complement when negated.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
-import static com.tgac.logic.finitedomain.FiniteDomain.geq;
-import static com.tgac.logic.finitedomain.FiniteDomain.gtr;
-import static com.tgac.logic.finitedomain.FiniteDomain.leq;
-import static com.tgac.logic.finitedomain.FiniteDomain.lss;
-import static com.tgac.logic.finitedomain.FiniteDomain.separate;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -19,10 +14,7 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Renaming;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
-import com.tgac.logic.finitedomain.domains.Arithmetic;
-import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
-import com.tgac.logic.finitedomain.domains.Interval;
-import com.tgac.logic.finitedomain.domains.Singleton;
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.lattice.Imposition;
 import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.unification.Any;
@@ -123,7 +115,7 @@ public class SqlCompilerLawsTest {
 								.map(column -> SqlPredicate.eq(column, LO)) :
 						Optional.empty());
 		assertThatThrownBy(() -> checkLaws(
-				x -> dom(x, EnumeratedDomain.range(1L, 6L)), narrowing, true))
+				x -> dom(x, Longs.range(1, 6)), narrowing, true))
 				.isInstanceOf(AssertionError.class);
 	}
 
@@ -146,16 +138,16 @@ public class SqlCompilerLawsTest {
 
 	private List<Function<Unifiable<Long>, Posting>> catalogue() {
 		List<Function<Unifiable<Long>, Posting>> shapes = new ArrayList<>();
-		shapes.add(x -> dom(x, EnumeratedDomain.range(2L, 6L)));
-		shapes.add(x -> dom(x, Interval.of(3L, 8L)));
-		shapes.add(x -> dom(x, Interval.of(1L, 9L).difference(Singleton.of(Arithmetic.of(4L)))));
-		shapes.add(x -> leq(x, lval(6L)));
-		shapes.add(x -> lss(x, lval(6L)));
-		shapes.add(x -> geq(x, lval(6L)));
-		shapes.add(x -> gtr(x, lval(6L)));
-		shapes.add(x -> separate(x, lval(6L)));
+		shapes.add(x -> dom(x, Longs.range(2, 6)));
+		shapes.add(x -> dom(x, Longs.interval(3, 8)));
+		shapes.add(x -> dom(x, Longs.interval(1, 9).difference(Longs.singleton(4))));
+		shapes.add(x -> Longs.leq(x, lval(6L)));
+		shapes.add(x -> Longs.lss(x, lval(6L)));
+		shapes.add(x -> Longs.geq(x, lval(6L)));
+		shapes.add(x -> Longs.gtr(x, lval(6L)));
+		shapes.add(x -> Longs.separate(x, lval(6L)));
 		shapes.add(x -> exclude(x.unifies(6L)));
-		shapes.add(x -> exclude(dom(x, EnumeratedDomain.range(2L, 5L))));
+		shapes.add(x -> exclude(dom(x, Longs.range(2, 5))));
 		shapes.add(x -> exclude(exclude(x.unifies(6L))));
 		return shapes;
 	}
@@ -169,9 +161,9 @@ public class SqlCompilerLawsTest {
 		// than the one compiled
 		boolean strict = random.nextBoolean();
 		List<Function<Unifiable<Long>, Posting>> shapes = new ArrayList<>();
-		shapes.add(x -> dom(x, Interval.of(a, b)));
-		shapes.add(x -> dom(x, EnumeratedDomain.range(a, b + 1)));
-		shapes.add(x -> strict ? lss(x, lval(point)) : leq(x, lval(point)));
+		shapes.add(x -> dom(x, Longs.interval(a, b)));
+		shapes.add(x -> dom(x, Longs.range(a, b + 1)));
+		shapes.add(x -> strict ? Longs.lss(x, lval(point)) : Longs.leq(x, lval(point)));
 		shapes.add(x -> exclude(x.unifies(point)));
 		shapes.add(x -> exclude(Posting.all(x.unifies(a), x.unifies(b))));
 		return shapes;

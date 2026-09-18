@@ -14,7 +14,7 @@ import com.tgac.logic.constraints.Propagation;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.constraints.store.Renaming;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
-import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.nogoods.Nogood;
 import com.tgac.logic.nogoods.NogoodConstraints;
 import com.tgac.logic.unification.Any;
@@ -73,7 +73,7 @@ public class NogoodSqlCompilerTest {
 
 	@Test
 	public void aStoreLiteralNegatesThroughItsFamily() {
-		Optional<SqlPredicate> p = compiled(exclude(dom(x, EnumeratedDomain.range(1L, 3L))));
+		Optional<SqlPredicate> p = compiled(exclude(dom(x, Longs.range(1, 3))));
 		assertThat(p).isPresent();
 		assertThat(p.get().getFragment()).isEqualTo("NOT (id IN (?, ?))");
 		assertThat(p.get().getParameters().toJavaList()).containsExactly(1L, 2L);

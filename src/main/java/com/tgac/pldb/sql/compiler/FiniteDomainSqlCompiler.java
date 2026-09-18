@@ -76,13 +76,13 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 
 			@Override
 			public Optional<SqlPredicate> visit(Singleton<Object> domain) {
-				return Optional.of(SqlPredicate.eq(column, domain.getValue().getValue()));
+				return Optional.of(SqlPredicate.eq(column, domain.getValue()));
 			}
 
 			@Override
 			public Optional<SqlPredicate> visit(Interval<Object> domain) {
 				return Optional.of(SqlPredicate.between(column,
-						domain.getMin().getValue(), domain.getMax().getValue()));
+						domain.getMin(), domain.getMax()));
 			}
 
 			@Override

@@ -4,9 +4,6 @@ package com.tgac.pldb.sql;
 // ABOUTME: — pushed SQL, unpushed SQL, in-memory reference — and all must agree.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
-import static com.tgac.logic.finitedomain.FiniteDomain.gtr;
-import static com.tgac.logic.finitedomain.FiniteDomain.lss;
-import static com.tgac.logic.finitedomain.FiniteDomain.separate;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -14,8 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.finitedomain.FiniteDomain;
-import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
-import com.tgac.logic.finitedomain.domains.Interval;
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.goals.Goal;
 import com.tgac.logic.tabling.Call;
 import com.tgac.logic.unification.Any;
@@ -136,7 +132,7 @@ public class SqlTheoryBatteryTest {
 	public void intervalDomain() {
 		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return dom(x, Interval.of(2L, 3L)).and(person(source, x, out));
+			return dom(x, Longs.interval(2, 3)).and(person(source, x, out));
 		});
 	}
 
@@ -144,7 +140,7 @@ public class SqlTheoryBatteryTest {
 	public void singletonDomainCollapsesToABoundProbe() {
 		agree(1, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return dom(x, EnumeratedDomain.range(2L, 3L)).and(person(source, x, out));
+			return dom(x, Longs.range(2, 3)).and(person(source, x, out));
 		});
 	}
 
@@ -155,8 +151,8 @@ public class SqlTheoryBatteryTest {
 		// {3} keeps four
 		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return dom(x, Interval.of(1L, 5L))
-					.and(separate(x, lval(3L)))
+			return dom(x, Longs.interval(1, 5))
+					.and(Longs.separate(x, lval(3L)))
 					.and(person(source, x, out));
 		});
 	}
@@ -165,7 +161,7 @@ public class SqlTheoryBatteryTest {
 	public void strictOrderAgainstAValue() {
 		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return lss(x, lval(3L)).and(person(source, x, out));
+			return Longs.lss(x, lval(3L)).and(person(source, x, out));
 		});
 	}
 
@@ -173,7 +169,7 @@ public class SqlTheoryBatteryTest {
 	public void flippedStrictOrderAgainstAValue() {
 		agree(2, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return gtr(x, lval(3L)).and(person(source, x, out));
+			return Longs.gtr(x, lval(3L)).and(person(source, x, out));
 		});
 	}
 
@@ -181,7 +177,7 @@ public class SqlTheoryBatteryTest {
 	public void looseOrderAgainstAValue() {
 		agree(3, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return FiniteDomain.leq(x, lval(3L)).and(person(source, x, out));
+			return Longs.leq(x, lval(3L)).and(person(source, x, out));
 		});
 	}
 
@@ -189,7 +185,7 @@ public class SqlTheoryBatteryTest {
 	public void disequalityAgainstAValue() {
 		agree(4, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return separate(x, lval(3L)).and(person(source, x, out));
+			return Longs.separate(x, lval(3L)).and(person(source, x, out));
 		});
 	}
 
@@ -197,7 +193,7 @@ public class SqlTheoryBatteryTest {
 	public void strictOrderAcrossTwoColumns() {
 		agree(2, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
-			return lss(out, b).and(edge(source, out, b));
+			return Longs.lss(out, b).and(edge(source, out, b));
 		});
 	}
 
@@ -205,7 +201,7 @@ public class SqlTheoryBatteryTest {
 	public void looseOrderAcrossTwoColumns() {
 		agree(3, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
-			return FiniteDomain.leq(out, b).and(edge(source, out, b));
+			return Longs.leq(out, b).and(edge(source, out, b));
 		});
 	}
 
@@ -213,7 +209,7 @@ public class SqlTheoryBatteryTest {
 	public void disequalityAcrossTwoColumns() {
 		agree(3, (AnswerSource source, Unifiable<Long> out) -> {
 			Unifiable<Long> b = lvar();
-			return separate(out, b).and(edge(source, out, b));
+			return Longs.separate(out, b).and(edge(source, out, b));
 		});
 	}
 
@@ -239,9 +235,9 @@ public class SqlTheoryBatteryTest {
 	public void aConjoinedTheoryPushesAllItsAtoms() {
 		agree(1, (AnswerSource source, Unifiable<String> out) -> {
 			Unifiable<Long> x = lvar();
-			return dom(x, Interval.of(2L, 5L))
-					.and(lss(x, lval(4L)))
-					.and(separate(x, lval(2L)))
+			return dom(x, Longs.interval(2, 5))
+					.and(Longs.lss(x, lval(4L)))
+					.and(Longs.separate(x, lval(2L)))
 					.and(person(source, x, out));
 		});
 	}

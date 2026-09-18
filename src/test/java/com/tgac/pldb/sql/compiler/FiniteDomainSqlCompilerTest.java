@@ -12,9 +12,7 @@ import com.tgac.logic.constraints.Posting;
 import com.tgac.logic.constraints.store.Atom;
 import com.tgac.logic.finitedomain.Domain;
 import com.tgac.logic.finitedomain.FiniteDomain;
-import com.tgac.logic.finitedomain.domains.Arithmetic;
-import com.tgac.logic.finitedomain.domains.Interval;
-import com.tgac.logic.finitedomain.domains.Singleton;
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.unification.Unifiable;
 import java.util.Optional;
 import org.junit.Test;
@@ -32,19 +30,19 @@ public class FiniteDomainSqlCompilerTest {
 		Unifiable<Long> x = lvar();
 		Unifiable<Long> y = lvar();
 
-		Atom<?> colVal = ((Posting.Activation) FiniteDomain.lss(x, lval(2L))).getItem();
+		Atom<?> colVal = ((Posting.Activation) Longs.lss(x, lval(2L))).getItem();
 		Optional<SqlPredicate> lss = new FiniteDomainSqlCompiler()
 				.compile(colVal, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
 		assertThat(lss).isPresent();
 		assertThat(lss.get().getFragment()).isEqualTo("id < ?");
 
-		Atom<?> valCol = ((Posting.Activation) FiniteDomain.gtr(x, lval(2L))).getItem();
+		Atom<?> valCol = ((Posting.Activation) Longs.gtr(x, lval(2L))).getItem();
 		Optional<SqlPredicate> gtr = new FiniteDomainSqlCompiler()
 				.compile(valCol, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
 		assertThat(gtr).isPresent();
 		assertThat(gtr.get().getFragment()).isEqualTo("id > ?");
 
-		Atom<?> colCol = ((Posting.Activation) FiniteDomain.lss(x, y)).getItem();
+		Atom<?> colCol = ((Posting.Activation) Longs.lss(x, y)).getItem();
 		Optional<SqlPredicate> columns = new FiniteDomainSqlCompiler()
 				.compile(colCol, term -> term.equals(x) ? Optional.of("lo")
 						: term.equals(y) ? Optional.of("hi") : Optional.<String> empty());
@@ -56,9 +54,9 @@ public class FiniteDomainSqlCompilerTest {
 	public void aTwiceHoledDomainCompilesFlat() {
 		// two differences: {1,2} u {4,5} u {7..10} — however the domain
 		// algebra nests its unions, the disjunction comes out FLAT
-		Domain<Long> twiceHoley = Interval.of(1L, 10L)
-				.difference(Singleton.of(Arithmetic.of(3L)))
-				.difference(Singleton.of(Arithmetic.of(6L)));
+		Domain<Long> twiceHoley = Longs.interval(1, 10)
+				.difference(Longs.singleton(3))
+				.difference(Longs.singleton(6));
 		Optional<SqlPredicate> predicate = compiled(twiceHoley);
 		assertThat(predicate).isPresent();
 		assertThat(predicate.get().getFragment())
@@ -71,8 +69,8 @@ public class FiniteDomainSqlCompilerTest {
 	public void aUnionCompilesExactlyAsItsMembersDisjoined() {
 		// {1,2} ∪ {4,5}: the members disjoin — the holes stay out, the
 		// predicate is EXACT, and (unlike the hull it replaces) negatable
-		Domain<Long> holey = Interval.of(1L, 5L)
-				.difference(Singleton.of(Arithmetic.of(3L)));
+		Domain<Long> holey = Longs.interval(1, 5)
+				.difference(Longs.singleton(3));
 		assertThat(holey.getClass().getSimpleName()).isEqualTo("Union");
 		Optional<SqlPredicate> predicate = compiled(holey);
 		assertThat(predicate).isPresent();

@@ -4,7 +4,6 @@ package com.tgac.pldb.sql;
 // ABOUTME: a wider probe), answer identity vs the unpushed source, locality receipts.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
-import static com.tgac.logic.finitedomain.domains.EnumeratedDomain.range;
 import static com.tgac.logic.nogoods.Exclusion.exclude;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
@@ -12,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tgac.logic.finitedomain.FiniteDomain;
 import com.tgac.logic.finitedomain.FiniteDomainConstraints;
-import com.tgac.logic.finitedomain.domains.EnumeratedDomain;
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
 import com.tgac.pldb.inmemory.AnswerStore;
@@ -90,7 +89,7 @@ public class SqlPushdownTest {
 		// whole relation and silently lose Kurt
 		CachingSqlFetch source = pushing();
 		Unifiable<Long> narrow = lvar();
-		assertThat(dom(narrow, EnumeratedDomain.range(1L, 3L))
+		assertThat(dom(narrow, Longs.range(1, 3))
 				.and(person(source, narrow, lvar()))
 				.solve(narrow)
 				.count()).isEqualTo(2);
@@ -121,14 +120,14 @@ public class SqlPushdownTest {
 	public void aNarrowerProbeAfterAPushedFetchStaysLocal() {
 		CachingSqlFetch source = pushing();
 		Unifiable<Long> wide = lvar();
-		assertThat(dom(wide, EnumeratedDomain.range(1L, 4L))
+		assertThat(dom(wide, Longs.range(1, 4))
 				.and(person(source, wide, lvar()))
 				.solve(wide)
 				.count()).isEqualTo(3);
 		int afterPushed = statements.get();
 
 		Unifiable<Long> narrower = lvar();
-		assertThat(dom(narrower, EnumeratedDomain.range(1L, 3L))
+		assertThat(dom(narrower, Longs.range(1, 3))
 				.and(person(source, narrower, lvar()))
 				.solve(narrower)
 				.count()).isEqualTo(2);
@@ -184,7 +183,7 @@ public class SqlPushdownTest {
 
 	private static List<String> fusedProgram(AnswerSource source, Unifiable<Long> x) {
 		return exclude(x.unifies(2L))
-				.and(exclude(dom(x, range(1L, 3L))))
+				.and(exclude(dom(x, Longs.range(1, 3))))
 				.and(person(source, x, lvar()))
 				.solve(x)
 				.map(Object::toString)
@@ -238,7 +237,7 @@ public class SqlPushdownTest {
 	private static List<String> domProgram(AnswerSource source) {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
-		return dom(x, EnumeratedDomain.range(1L, 3L))
+		return dom(x, Longs.range(1, 3))
 				.and(person(source, x, out))
 				.solve(out)
 				.map(Object::toString)
@@ -249,7 +248,7 @@ public class SqlPushdownTest {
 	private static List<String> leqProgram(AnswerSource source) {
 		Unifiable<Long> x = lvar();
 		Unifiable<String> out = lvar();
-		return FiniteDomain.leq(x, lval(2L))
+		return Longs.leq(x, lval(2L))
 				.and(person(source, x, out))
 				.solve(out)
 				.map(Object::toString)

@@ -5,11 +5,11 @@ package com.tgac.pldb.sql;
 // ABOUTME: still agree with the unpushed oracle, or the WHERE hit the wrong column.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
-import static com.tgac.logic.finitedomain.domains.EnumeratedDomain.range;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
@@ -54,7 +54,7 @@ public class OccurrenceResolutionTest {
 	 * column a and silently under-deliver. */
 	private static List<Long> boundThenConstrained(AnswerSource db) {
 		Unifiable<Long> b = lvar();
-		return dom(b, range(10L, 16L))
+		return dom(b, Longs.range(10, 16))
 				.and(pair(db, lval(1L), b))
 				.solve(b)
 				.map(Term::get)
@@ -74,7 +74,7 @@ public class OccurrenceResolutionTest {
 		}
 		try (CachingSqlFetch pushed = CachingSqlFetch.pinned("h2-coupled", connection)) {
 			Unifiable<Long> x = lvar();
-			List<Long> agreed = dom(x, range(2L, 5L))
+			List<Long> agreed = dom(x, Longs.range(2, 5))
 					.and(pair(pushed, x, x))
 					.solve(x)
 					.map(Term::get)

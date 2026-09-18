@@ -4,12 +4,12 @@ package com.tgac.pldb.sql;
 // ABOUTME: each other, an insert into a pinned region bounces, no column refuses.
 
 import static com.tgac.logic.finitedomain.FiniteDomain.dom;
-import static com.tgac.logic.finitedomain.domains.EnumeratedDomain.range;
 import static com.tgac.logic.unification.LVal.lval;
 import static com.tgac.logic.unification.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tgac.logic.finitedomain.Longs;
 import com.tgac.logic.unification.Term;
 import com.tgac.logic.unification.Unifiable;
 import com.tgac.pldb.AnswerSource;
@@ -253,7 +253,7 @@ public class VersionedWatermarkTest {
 	/** Reads the FD-constrained region day ∈ [1,10]; the domain rides the probe. */
 	private static List<Long> earlyInvoices(AnswerSource db) {
 		Unifiable<Long> day = lvar();
-		return dom(day, range(1L, 10L))
+		return dom(day, Longs.range(1, 10))
 				.and(invoice(db, lvar(), day))
 				.solve(day)
 				.map(Term::get)
