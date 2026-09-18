@@ -81,8 +81,20 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 
 			@Override
 			public Optional<SqlPredicate> visit(Interval<Object> domain) {
-				return Optional.of(SqlPredicate.between(column,
-						domain.getMin(), domain.getMax()));
+				// both endpoints closed is SQL's between; an open endpoint
+				// compiles to its strict comparison
+				if (domain.getLower().isIncluded() && domain.getUpper().isIncluded()) {
+					return Optional.of(SqlPredicate.between(column,
+							domain.getLower().getValue(), domain.getUpper().getValue()));
+				}
+				List<SqlPredicate> sides = new ArrayList<>();
+				sides.add(domain.getLower().isIncluded()
+						? SqlPredicate.geq(column, domain.getLower().getValue())
+						: SqlPredicate.gtr(column, domain.getLower().getValue()));
+				sides.add(domain.getUpper().isIncluded()
+						? SqlPredicate.leq(column, domain.getUpper().getValue())
+						: SqlPredicate.lss(column, domain.getUpper().getValue()));
+				return Optional.of(SqlPredicate.and(sides));
 			}
 
 			@Override
