@@ -42,7 +42,7 @@ public class AnswersTest {
 	}
 
 	private Answer answer(Condition condition, Term<?>... cells) {
-		return Answer.of(person, (Reified<?>) lval(Array.of(cells)), condition);
+		return Answer.of(person, Answers.image(cells), condition);
 	}
 
 	/** A REAL guard, minted by a produce whose body forbids one id. */
@@ -53,7 +53,7 @@ public class AnswersTest {
 				exclude(a.unifies(id)), Array.of(a, b), Table.empty());
 		List<Answer> delivered = new ArrayList<>();
 		new BreadthFirstScheduler<>(guarded.produce(
-				Call.of(person, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1)))), one -> {
+				Call.of(person, Answers.image(Any.of(0), Any.of(1))), one -> {
 					delivered.add(one);
 					return Fiber.done(Nothing.nothing());
 				})).get();

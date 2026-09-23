@@ -7,6 +7,7 @@ package org.clauseway.pldb.relations;
 import static org.clauseway.logic.unification.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.monad.Cont;
 import org.clauseway.logic.goals.Exhaustion;
@@ -15,7 +16,6 @@ import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.tabling.Condition;
 import org.clauseway.logic.tabling.Residues;
 import org.clauseway.logic.tabling.Table;
-import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Term;
 import org.clauseway.logic.unification.Unifiable;
 import io.vavr.collection.Array;
@@ -51,7 +51,9 @@ public class Question {
 	 */
 	public static Fiber<List<Answer>> select(Goal question, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
-		return Exhaustion.collected(rows(question, lval(variables), variables, schemas));
+		return Exhaustion.collected(rows(question,
+				lval(Tuples.of(variables.map(Unifiable::getObjectTerm).toJavaArray())),
+				variables, schemas));
 	}
 
 	/**
@@ -103,7 +105,7 @@ public class Question {
 			Condition condition, Literal[] schemas) {
 		return Arrays.stream(schemas)
 				.map(schema -> Answer.of(schema.getRel(),
-						(Reified<?>) lval(IntStream.range(0, schema.getArgs().length())
+						Answers.image(IntStream.range(0, schema.getArgs().length())
 								.mapToObj(i -> cell(schema, i, bound))
 								.collect(Array.collector())),
 						condition));

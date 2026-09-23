@@ -46,7 +46,7 @@ public class AnswerStoreTest {
 	}
 
 	private static Call<Relation> probe(Term<?> member, Term<?> copy) {
-		return Call.of(LOAN, (Reified<?>) lval(Array.of(member, copy)));
+		return Call.of(LOAN, Answers.image(member, copy));
 	}
 
 	private static List<String> images(Iterable<Answer> answers) {
@@ -63,7 +63,7 @@ public class AnswerStoreTest {
 				.with(LOAN, row("m2", "c3"));
 
 		assertThat(images(store.answers(probe(lval("m1"), Any.of(1)))))
-				.containsExactly("{Array({m1}, {c1})}", "{Array({m1}, {c2})}");
+				.containsExactly("{({m1}, {c1})}", "{({m1}, {c2})}");
 		assertThat(store.estimate(probe(lval("m1"), Any.of(1)))).isEqualTo(2);
 		assertThat(store.estimate(probe(Any.of(0), Any.of(1)))).isEqualTo(3);
 	}
@@ -84,7 +84,7 @@ public class AnswerStoreTest {
 		AnswerStore after = store.retracting(loanFact("m1", "c1")).get();
 		assertThat(images(after.answers(probe(lval("m1"), Any.of(1)))))
 				.describedAs("the bucket path serves post-removal — the index forgot the image")
-				.containsExactly("{Array({m1}, {c2})}");
+				.containsExactly("{({m1}, {c2})}");
 		assertThat(after.estimate(probe(lval("m1"), Any.of(1)))).isEqualTo(1);
 
 		assertThat(images(store.answers(probe(lval("m1"), Any.of(1)))))
@@ -105,7 +105,7 @@ public class AnswerStoreTest {
 		// with() is the seam's permissive dock; the Writer face is the
 		// strict domain door — wide cells refuse by relation and column
 		Answer wide = Answer.of(LOAN,
-				(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))), Condition.ONE);
+				Answers.image(Any.of(0), lval("c9")), Condition.ONE);
 
 		Try<AnswerStore> refused = AnswerStore.empty()
 				.asserting(Collections.singletonList(wide));
@@ -138,7 +138,7 @@ public class AnswerStoreTest {
 				.with(LOAN, row("m1", "c2"));
 
 		assertThat(images(store.answers(probe(lval("m1"), lval("c2")))))
-				.containsExactly("{Array({m1}, {c2})}");
+				.containsExactly("{({m1}, {c2})}");
 	}
 
 	@Test
@@ -148,7 +148,7 @@ public class AnswerStoreTest {
 				.with(LOAN, row("m1", "c2"));
 
 		assertThat(images(store.answers(probe(lval(null), Any.of(1)))))
-				.containsExactly("{Array({null}, {c1})}");
+				.containsExactly("{({null}, {c1})}");
 	}
 
 	@Test
@@ -156,12 +156,12 @@ public class AnswerStoreTest {
 		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, Answer.of(LOAN,
-						(Reified<?>) lval(Array.of(Any.of(0), lval("c9"))),
+						Answers.image(Any.of(0), lval("c9")),
 						Condition.ONE));
 
 		assertThat(images(store.answers(probe(lval("m2"), Any.of(1)))))
 				.describedAs("the wide row lives in the wildcard set — every member probe sees it")
-				.containsExactly("{Array(_.0, {c9})}");
+				.containsExactly("{(_.0, {c9})}");
 	}
 
 	@Test
@@ -234,7 +234,7 @@ public class AnswerStoreTest {
 				.with(LOAN, row("m2", "c2"));
 
 		assertThat(images(store.answers(probe(Any.of(0), Any.of(1)))))
-				.containsExactly("{Array({m1}, {c1})}", "{Array({m2}, {c2})}");
+				.containsExactly("{({m1}, {c1})}", "{({m2}, {c2})}");
 	}
 
 	@Test
@@ -252,21 +252,21 @@ public class AnswerStoreTest {
 		// carries coupling: loan(x,x) is (_.0, _.0). The store never reads
 		// the number (only free-vs-ground), so both images below are
 		// realistic probe shapes.
-		Reified<?> memberWide = (Reified<?>) lval(Array.of(lval("m1"), Any.of(0)));
-		Reified<?> copyWide = (Reified<?>) lval(Array.of(Any.of(0), lval("c3")));
+		Reified<?> memberWide = Answers.image(lval("m1"), Any.of(0));
+		Reified<?> copyWide = Answers.image(Any.of(0), lval("c3"));
 		AnswerStore store = AnswerStore.empty()
 				.with(LOAN, Answer.of(LOAN, memberWide, a))
 				.with(LOAN, Answer.of(LOAN, copyWide, b));
 
 		Iterable<Answer> overlap = store.answers(probe(lval("m1"), lval("c3")));
-		assertThat(images(overlap)).containsExactly("{Array({m1}, _.0)}", "{Array(_.0, {c3})}");
+		assertThat(images(overlap)).containsExactly("{({m1}, _.0)}", "{(_.0, {c3})}");
 		Iterator<Answer> both = overlap.iterator();
 		assertThat(both.next().getCondition()).isEqualTo(a);
 		assertThat(both.next().getCondition()).isEqualTo(b);
 
 		assertThat(images(store.answers(probe(lval("m9"), lval("c3")))))
 				.describedAs("outside the member-wide claim, only the copy-wide row answers")
-				.containsExactly("{Array(_.0, {c3})}");
+				.containsExactly("{(_.0, {c3})}");
 	}
 
 	private static final Relation PAIR = Literal.relation(AnswerStoreTest.class, "pair")
@@ -280,7 +280,7 @@ public class AnswerStoreTest {
 	}
 
 	private static Call<Relation> pairProbe(Term<?> a, Term<?> b) {
-		return Call.of(PAIR, (Reified<?>) lval(Array.of(a, b)));
+		return Call.of(PAIR, Answers.image(a, b));
 	}
 
 	@Test
@@ -294,7 +294,7 @@ public class AnswerStoreTest {
 				.with(PAIR, pair("a2", "b1"));
 
 		assertThat(images(store.answers(pairProbe(lval("a1"), lval("b1")))))
-				.containsExactly("{Array({a1}, {b1})}");
+				.containsExactly("{({a1}, {b1})}");
 		assertThat(store.estimate(pairProbe(lval("a1"), lval("b1")))).isEqualTo(1);
 	}
 
@@ -317,11 +317,11 @@ public class AnswerStoreTest {
 		AnswerStore store = AnswerStore.empty()
 				.with(PAIR, pair("a1", "b1"))
 				.with(PAIR, Answer.of(PAIR,
-						(Reified<?>) lval(Array.of(lval("a9"), Any.of(0))),
+						Answers.image(lval("a9"), Any.of(0)),
 						Condition.ONE));
 
 		assertThat(images(store.answers(pairProbe(lval("a9"), lval("b5")))))
-				.containsExactly("{Array({a9}, _.0)}");
+				.containsExactly("{({a9}, _.0)}");
 		assertThat(store.answers(pairProbe(lval("a1"), lval("b5")))).isEmpty();
 	}
 
@@ -340,7 +340,7 @@ public class AnswerStoreTest {
 				.with(FLAGLESS, Answers.answer(FLAGLESS, Array.of("m2", "c2")));
 
 		Call<Relation> bound = Call.of(FLAGLESS,
-				(Reified<?>) lval(Array.of((Term<?>) lval("m1"), Any.of(0))));
+				Answers.image((Term<?>) lval("m1"), Any.of(0)));
 		assertThat(images(store.answers(bound))).hasSize(1);
 		assertThat(store.estimate(bound))
 				.describedAs("no declared pattern — the estimate is the full scan's")

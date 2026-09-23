@@ -5,9 +5,9 @@ package org.clauseway.pldb.relations;
 
 import static org.clauseway.logic.unification.LVal.lval;
 
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.unification.LVal;
-import org.clauseway.logic.unification.MiniKanren;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Term;
 import io.vavr.collection.Array;
@@ -21,18 +21,28 @@ import lombok.NoArgsConstructor;
  * The seam's value codec, written once. An answer is the cell's entry
  * shape — (reified row, {@link Condition}) — and a {@link Fact} is the
  * ground corner: its row reified whole, conditioned {@link Condition#ONE}.
- * Decoding reads POSITIONALLY through the image's structural members
- * ({@link MiniKanren#members}), never through rendering: a reified term's
- * toString decorates, the codec hands back the values.
+ * Decoding reads POSITIONALLY through the tuple's structural contract,
+ * never through rendering: a reified term's toString decorates, the
+ * codec hands back the values.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Answers {
 
+	/** A row image: cells flat on the tuple family — natively structural. */
+	public static Reified<?> image(Term<?>... cells) {
+		return (Reified<?>) lval(Tuples.of((Object[]) cells));
+	}
+
+	/** {@link #image(Term[])} over a collected cell sequence. */
+	public static Reified<?> image(Array<? extends Term<?>> cells) {
+		return (Reified<?>) lval(Tuples.of(cells.toJavaArray()));
+	}
+
 	/** A ground row as the answer shape: values reified, conditioned ONE. */
 	public static Answer answer(Relation relation, Array<?> values) {
-		return Answer.of(relation, (Reified<?>) lval(values
+		return Answer.of(relation, image(values
 				.map(Object.class::cast)
-				.map(LVal::lval)), Condition.ONE);
+				.map(v -> (Term<?>) lval(v))), Condition.ONE);
 	}
 
 	/**
@@ -105,13 +115,17 @@ public final class Answers {
 	 * The image's cells in Term vocabulary — a ground position is a value
 	 * ({@code asVal}), a free position an any ({@code asReified}) — the same
 	 * vocabulary as the walked terms a row is compared against and the
-	 * database index keys by, coupling identity preserved.
+	 * database index keys by, coupling identity preserved. The codec owns
+	 * the representation: cells are read through the structural contract.
 	 */
 	@SuppressWarnings("unchecked")
 	public static Array<Term<Object>> positions(Reified<?> image) {
-		return Array.ofAll(MiniKanren.members(image)
-						.getOrElseThrow(() -> new IllegalArgumentException(
-								"not a row image: " + image)))
-				.map(term -> (Term<Object>) term);
+		Object w = image.get();
+		if (!(w instanceof Tuple)) {
+			throw new IllegalArgumentException("not a row image: " + image);
+		}
+		Tuple row = (Tuple) w;
+		return Array.range(1, row.arity() + 1)
+				.map(i -> (Term<Object>) row.get(i));
 	}
 }

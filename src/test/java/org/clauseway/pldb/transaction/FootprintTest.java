@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.tabling.Call;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.logic.unification.Any;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Term;
@@ -35,7 +36,7 @@ public class FootprintTest {
 		for (int i = 0; i < anys.length; i++) {
 			anys[i] = Any.of(i);
 		}
-		return Call.of(rel, (Reified<?>) lval(Array.of(anys)));
+		return Call.of(rel, Answers.image(anys));
 	}
 
 	@Test

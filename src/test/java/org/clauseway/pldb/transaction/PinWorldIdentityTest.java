@@ -7,6 +7,7 @@ import static org.clauseway.logic.unification.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.clauseway.logic.tabling.Call;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.logic.unification.Any;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Term;
@@ -35,7 +36,7 @@ public class PinWorldIdentityTest {
 		for (int i = 0; i < anys.length; i++) {
 			anys[i] = Any.of(i);
 		}
-		return Call.of(relation, (Reified<?>) lval(Array.of(anys)));
+		return Call.of(relation, Answers.image(anys));
 	}
 
 	private static Literal loan(Unifiable<Integer> id, Unifiable<String> copy) {

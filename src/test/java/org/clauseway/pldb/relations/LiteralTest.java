@@ -182,8 +182,8 @@ public class LiteralTest {
 		org.assertj.core.api.Assertions.assertThat(db.estimate(
 						org.clauseway.logic.tabling.Call.of(
 								Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),
-								(org.clauseway.logic.unification.Reified<?>) lval(io.vavr.collection.Array.of(
-										org.clauseway.logic.unification.Any.of(0), org.clauseway.logic.unification.Any.of(1))))))
+								Answers.image(
+										org.clauseway.logic.unification.Any.of(0), org.clauseway.logic.unification.Any.of(1)))))
 				.isEqualTo(2);
 	}
 }

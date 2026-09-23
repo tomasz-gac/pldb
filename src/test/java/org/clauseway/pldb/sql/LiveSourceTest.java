@@ -14,6 +14,7 @@ import org.clauseway.logic.unification.Term;
 import org.clauseway.logic.unification.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.AbstractTransaction;
@@ -93,7 +94,7 @@ public class LiveSourceTest {
 		for (int i = 0; i < anys.length; i++) {
 			anys[i] = Any.of(i);
 		}
-		return Call.of(shape.getRel(), (Reified<?>) lval(Array.of(anys)));
+		return Call.of(shape.getRel(), Answers.image(anys));
 	}
 
 	private static List<String> names(Iterable<Answer> answers) {
@@ -116,7 +117,7 @@ public class LiveSourceTest {
 		// the same source, the same probe, a DIFFERENT world: no snapshot
 		// stands between the reads — this is the medium the pinned lane
 		// deliberately refuses to be
-		assertThat(names(live.answers(people))).containsExactly("{Array({1}, {Ada})}");
+		assertThat(names(live.answers(people))).containsExactly("{({1}, {Ada})}");
 	}
 
 	@Test
@@ -207,7 +208,7 @@ public class LiveSourceTest {
 		assertThat(names(second.answers(probe(person(null, lvar(), lvar())))))
 				.describedAs("the second transaction's first touch must read the CURRENT world,"
 						+ " not the first transaction's cached one")
-				.containsExactly("{Array({1}, {Ada})}");
+				.containsExactly("{({1}, {Ada})}");
 	}
 
 	private Transaction transaction(String id) {

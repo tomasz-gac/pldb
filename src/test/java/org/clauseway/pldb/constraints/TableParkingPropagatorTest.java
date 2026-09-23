@@ -23,6 +23,7 @@ import org.clauseway.logic.unification.Any;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Unifiable;
 import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.GoalProducer;
 import org.clauseway.pldb.inmemory.AnswerStore;
@@ -270,7 +271,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<String> gt = lvar();
 		GoalProducer producing = GoalProducer.of(rRel(),
 				exclude(gi.unifies(2)), Array.of(gi, gt), Table.empty());
-		Call<Relation> wide = Call.of(rRel(), (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+		Call<Relation> wide = Call.of(rRel(), Answers.image(Any.of(0), Any.of(1)));
 		List<Answer> canned = new ArrayList<>();
 		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {
 			canned.add(answer);

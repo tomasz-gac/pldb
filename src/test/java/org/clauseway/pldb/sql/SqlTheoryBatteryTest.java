@@ -14,6 +14,7 @@ import org.clauseway.logic.finitedomain.FiniteDomain;
 import org.clauseway.logic.finitedomain.Longs;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.unification.Term;
 import org.clauseway.logic.unification.Any;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Unifiable;
@@ -96,12 +97,12 @@ public class SqlTheoryBatteryTest {
 
 	/** The whole reference relation, enumerated through the answers face. */
 	private static Stream<Answer> allFacts(Relation relation) {
-		List<Object> members = new ArrayList<>();
+		List<Term<?>> members = new ArrayList<>();
 		for (int i = 0; i < relation.getArgs().length; i++) {
 			members.add(Any.of(i));
 		}
 		return StreamSupport.stream(reference.answers(
-								Call.of(relation, (Reified<?>) lval(Array.ofAll(members))))
+								Call.of(relation, Answers.image(Array.ofAll(members))))
 						.spliterator(), false)
 				.map(answer -> Answers.answer(relation, Answers.values(answer.getReified())));
 	}

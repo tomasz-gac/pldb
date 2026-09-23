@@ -14,6 +14,7 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.Propagator;
 import org.clauseway.logic.lattice.Verdict;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.tabling.Call;
 import org.clauseway.logic.unification.MiniKanren;
 import org.clauseway.logic.unification.Reified;
@@ -118,7 +119,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	 */
 	long estimate(Array<Term<?>> walked) {
 		Reified<?> image = MiniKanren.reify(Substitutions.empty(),
-						lval(walked.map(Term::getObjectTerm)).getObjectTerm())
+						lval(Tuples.of(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm())
 				.ground();
 		return source.estimate(Call.of(rel, image));
 	}

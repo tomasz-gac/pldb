@@ -33,7 +33,7 @@ public class NamespacedRelationTest {
 	}
 
 	private static Call<Relation> everything(Relation relation) {
-		return Call.of(relation, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+		return Call.of(relation, Answers.image(Any.of(0), Any.of(1)));
 	}
 
 	@Test

@@ -13,6 +13,7 @@ import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.unification.Term;
 import org.clauseway.logic.tabling.Table;
 import org.clauseway.logic.unification.Any;
 import org.clauseway.logic.unification.Reified;
@@ -72,12 +73,12 @@ public class GoalProducerTest {
 
 	/** A probe image: bound slots carry their value, nulls are free. */
 	private Call<Relation> probe(Object... slots) {
-		List<Object> members = new ArrayList<>();
+		List<Term<?>> members = new ArrayList<>();
 		int frees = 0;
 		for (Object slot : slots) {
 			members.add(slot == null ? Any.of(frees++) : lval(slot));
 		}
-		return Call.of(personRel(), (Reified<?>) lval(Array.ofAll(members)));
+		return Call.of(personRel(), Answers.image(Array.ofAll(members)));
 	}
 
 	/** Drive produce to completion, collecting the emissions. */

@@ -16,6 +16,7 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.ParkingPropagator;
 import org.clauseway.logic.lattice.Verdict;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.tabling.Call;
 import org.clauseway.logic.tabling.Condition;
 import org.clauseway.logic.tabling.JoinMap;
@@ -159,7 +160,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 */
 	long estimate(Array<Term<?>> walked, Package pkg) {
 		return producer.apply(pkg).estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
-				lval(walked.map(Term::getObjectTerm)).getObjectTerm()).ground()));
+				lval(Tuples.of(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm()).ground()));
 	}
 
 	/**

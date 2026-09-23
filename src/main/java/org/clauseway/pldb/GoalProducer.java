@@ -12,6 +12,7 @@ import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.logic.goals.Conjunction;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.tabling.Call;
 import org.clauseway.logic.tabling.Condition;
 import org.clauseway.logic.tabling.Residues;
@@ -49,7 +50,7 @@ public final class GoalProducer implements AnswerProducer {
 
 	@Override
 	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Answer> emit) {
-		Unifiable<Object> anchor = lval(heads.map(Unifiable::getObjectUnifiable));
+		Unifiable<Object> anchor = lval((Object) Tuples.of(heads.map(Unifiable::getObjectTerm).toJavaArray()));
 		Goal seeded = Conjunction.of(
 				Residues.restate(probe.getArguments(), probe.getResidues(), anchor),
 				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));

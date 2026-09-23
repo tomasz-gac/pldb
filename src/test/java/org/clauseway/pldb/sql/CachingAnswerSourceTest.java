@@ -20,6 +20,7 @@ import org.clauseway.logic.unification.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.GoalProducer;
 import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
 import io.vavr.collection.Array;
@@ -38,7 +39,7 @@ public class CachingAnswerSourceTest {
 			.getRel();
 
 	private static Call<Relation> everything() {
-		return Call.of(GUARDED, (Reified<?>) lval(Array.of(Any.of(0), Any.of(1))));
+		return Call.of(GUARDED, Answers.image(Any.of(0), Any.of(1)));
 	}
 
 	/** A REAL conditional answer, minted by a produce whose body forbids one id. */

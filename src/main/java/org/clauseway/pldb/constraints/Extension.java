@@ -6,6 +6,7 @@ package org.clauseway.pldb.constraints;
 import static org.clauseway.logic.unification.LVal.lval;
 
 import org.clauseway.functional.Exceptions;
+import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.logic.constraints.store.Theory;
 import org.clauseway.logic.goals.Goal;
@@ -55,7 +56,7 @@ final class Extension {
 	 * context and stay.
 	 */
 	static Fiber<Call<Relation>> probe(Package pkg, Relation rel, Array<Term<?>> walked) {
-		return Residues.about(pkg, lval(walked.map(Term::getObjectTerm)))
+		return Residues.about(pkg, lval(Tuples.of(walked.map(Term::getObjectTerm).toJavaArray())))
 				.map(key -> Call.of(rel, key._1,
 						Residues.of(key._2.getTheories().remove(TableConstraints.class))));
 	}
@@ -140,7 +141,7 @@ final class Extension {
 
 	/** One goal per (entry, conjunct): the row restated whole at the walked anchor. */
 	static Stream<Goal> branchRestates(List<Row> live, Array<Term<?>> walked) {
-		Unifiable<?> anchor = lval(walked.map(Term::getObjectTerm));
+		Unifiable<?> anchor = lval(Tuples.of(walked.map(Term::getObjectTerm).toJavaArray()));
 		return live.stream()
 				.flatMap(row -> row.getCondition().conjuncts().toJavaStream()
 						.map(conjunct -> Residues.restate(row.getImage(), conjunct, anchor)));
