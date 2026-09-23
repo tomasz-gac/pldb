@@ -266,12 +266,16 @@ public class TableConstraintsTest {
 	}
 
 	@Test
-	public void aPostedGoalPricesZeroWhenDeadAndOneOtherwise() {
+	public void aPostedGoalIsDoomedWhenDeadAndAlwaysPricesOne() {
 		Unifiable<String> y = lvar();
-		// bound arg with an empty bucket: no candidate can ever appear
+		// bound arg with an empty bucket: no candidate can ever appear —
+		// doom says so, and the price does not flinch (the kill is the
+		// pruning pass's, never the sort key's)
+		assertThat(r(db, lval(99), y).posted().doomed(Package.empty())).isTrue();
 		assertThat(((Bounded) r(db, lval(99), y).posted()).answers(Package.empty()))
-				.isZero();
+				.isEqualTo(1);
 		// a live post is a constraint statement: one success, ever
+		assertThat(r(db, lval(1), y).posted().doomed(Package.empty())).isFalse();
 		assertThat(((Bounded) r(db, lval(1), y).posted()).answers(Package.empty()))
 				.isEqualTo(1);
 		Unifiable<Integer> x = lvar();
