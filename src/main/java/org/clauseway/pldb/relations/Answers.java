@@ -30,12 +30,12 @@ public final class Answers {
 
 	/** A row image: cells flat on the tuple family — natively structural. */
 	public static Reified<?> image(Term<?>... cells) {
-		return (Reified<?>) lval(Tuple.of((Object[]) cells));
+		return (Reified<?>) lval(Tuple.ofAll((Object[]) cells));
 	}
 
 	/** {@link #image(Term[])} over a collected cell sequence. */
 	public static Reified<?> image(Array<? extends Term<?>> cells) {
-		return (Reified<?>) lval(Tuple.of(cells.toJavaArray()));
+		return (Reified<?>) lval(Tuple.ofAll(cells.toJavaArray()));
 	}
 
 	/** A ground row as the answer shape: values reified, conditioned ONE. */

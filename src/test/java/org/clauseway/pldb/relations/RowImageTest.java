@@ -23,7 +23,7 @@ import org.junit.Test;
 public class RowImageTest {
 
 	private static Unifiable<Object> anchor(Unifiable<?>... cells) {
-		return lval(Tuple.of(Arrays.stream(cells)
+		return lval(Tuple.ofAll(Arrays.stream(cells)
 				.map(Unifiable::getObjectTerm)
 				.toArray())).getObjectUnifiable();
 	}

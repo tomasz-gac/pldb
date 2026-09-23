@@ -56,7 +56,7 @@ final class Extension {
 	 * context and stay.
 	 */
 	static Fiber<Call<Relation>> probe(Package pkg, Relation rel, Array<Term<?>> walked) {
-		return Residues.about(pkg, lval(Tuple.of(walked.map(Term::getObjectTerm).toJavaArray())))
+		return Residues.about(pkg, lval(Tuple.ofAll(walked.map(Term::getObjectTerm).toJavaArray())))
 				.map(key -> Call.of(rel, key._1,
 						Residues.of(key._2.getTheories().remove(TableConstraints.class))));
 	}
@@ -141,7 +141,7 @@ final class Extension {
 
 	/** One goal per (entry, conjunct): the row restated whole at the walked anchor. */
 	static Stream<Goal> branchRestates(List<Row> live, Array<Term<?>> walked) {
-		Unifiable<?> anchor = lval(Tuple.of(walked.map(Term::getObjectTerm).toJavaArray()));
+		Unifiable<?> anchor = lval(Tuple.ofAll(walked.map(Term::getObjectTerm).toJavaArray()));
 		return live.stream()
 				.flatMap(row -> row.getCondition().conjuncts().toJavaStream()
 						.map(conjunct -> Residues.restate(row.getImage(), conjunct, anchor)));

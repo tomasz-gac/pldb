@@ -52,7 +52,7 @@ public class Question {
 	public static Fiber<List<Answer>> select(Goal question, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
 		return Exhaustion.collected(rows(question,
-				lval(Tuple.of(variables.map(Unifiable::getObjectTerm).toJavaArray())),
+				lval(Tuple.ofAll(variables.map(Unifiable::getObjectTerm).toJavaArray())),
 				variables, schemas));
 	}
 

@@ -314,7 +314,7 @@ public class Literal implements Goal, Bounded, Postable {
 	private Goal lookup(BiFunction<Call<Relation>, Unifiable<?>, Goal> dispatcher) {
 		return s -> Cont.defer(() -> substituteQueryItems(s.substitution(), args)
 				.flatMap(q -> {
-					Unifiable<?> anchor = lval(Tuple.of(q.map(Unifiable::getObjectTerm).toJavaArray()));
+					Unifiable<?> anchor = lval(Tuple.ofAll(q.map(Unifiable::getObjectTerm).toJavaArray()));
 					return Residues.about(s, anchor)
 							.map(key -> dispatcher.apply(Call.of(rel, key._1, key._2), anchor).apply(s));
 				}));
@@ -331,7 +331,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public long answers(Substitutions s) {
 		Reified<?> image = MiniKanren.reify(s,
-						lval(Tuple.of(args.map(u -> ((Unifiable<?>) s.walk(u)).getObjectTerm()).toJavaArray()))
+						lval(Tuple.ofAll(args.map(u -> ((Unifiable<?>) s.walk(u)).getObjectTerm()).toJavaArray()))
 								.getObjectTerm())
 				.ground();
 		return reading.estimate(this, Call.of(rel, image));

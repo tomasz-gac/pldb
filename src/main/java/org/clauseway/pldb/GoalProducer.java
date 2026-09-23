@@ -50,7 +50,7 @@ public final class GoalProducer implements AnswerProducer {
 
 	@Override
 	public Fiber<Nothing> produce(Call<Relation> probe, Emitter<Answer> emit) {
-		Unifiable<Object> anchor = lval((Object) Tuple.of(heads.map(Unifiable::getObjectTerm).toJavaArray()));
+		Unifiable<Object> anchor = lval((Object) Tuple.ofAll(heads.map(Unifiable::getObjectTerm).toJavaArray()));
 		Goal seeded = Conjunction.of(
 				Residues.restate(probe.getArguments(), probe.getResidues(), anchor),
 				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));

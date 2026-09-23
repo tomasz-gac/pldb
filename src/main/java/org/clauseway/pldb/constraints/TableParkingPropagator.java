@@ -160,7 +160,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 */
 	long estimate(Array<Term<?>> walked, Package pkg) {
 		return producer.apply(pkg).estimate(Call.of(rel, MiniKanren.reify(Substitutions.empty(),
-				lval(Tuple.of(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm()).ground()));
+				lval(Tuple.ofAll(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm()).ground()));
 	}
 
 	/**

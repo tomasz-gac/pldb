@@ -119,7 +119,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	 */
 	long estimate(Array<Term<?>> walked) {
 		Reified<?> image = MiniKanren.reify(Substitutions.empty(),
-						lval(Tuple.of(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm())
+						lval(Tuple.ofAll(walked.map(Term::getObjectTerm).toJavaArray())).getObjectTerm())
 				.ground();
 		return source.estimate(Call.of(rel, image));
 	}
