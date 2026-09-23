@@ -4,7 +4,7 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: each literal negates through its own family, whole disjunctions or nothing.
 
 import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.constraints.UnifyGoal;
+import org.clauseway.logic.constraints.Unification;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.nogoods.Nogood;
 import org.clauseway.logic.unification.Term;
@@ -96,7 +96,7 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 		return literal.accept(new Posting.Visitor<Optional<SqlPredicate>>() {
 
 			@Override
-			public Optional<SqlPredicate> visit(UnifyGoal<?> unification) {
+			public Optional<SqlPredicate> visit(Unification<?> unification) {
 				Optional<String> leftColumn = columns.columnOf(unification.getU());
 				Optional<String> rightColumn = columns.columnOf(unification.getV());
 				Optional<Object> leftValue = value(unification.getU());
