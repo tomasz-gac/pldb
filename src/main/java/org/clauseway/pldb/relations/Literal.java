@@ -137,7 +137,8 @@ public class Literal implements Goal, Bounded, Postable {
 
 		@Override
 		public Goal read(Literal lit) {
-			return Tabling.call(lit.rel, lit.args.map(Unifiable::getObjectUnifiable), () -> body);
+			return Tabling.call(lit.rel,
+					Tuple.ofAll(lit.args.map(Unifiable::getObjectUnifiable).toJavaArray()), () -> body);
 		}
 
 		@Override

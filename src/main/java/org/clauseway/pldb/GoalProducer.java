@@ -53,7 +53,7 @@ public final class GoalProducer implements AnswerProducer {
 		Unifiable<Object> anchor = lval((Object) Tuple.ofAll(heads.map(Unifiable::getObjectTerm).toJavaArray()));
 		Goal seeded = Conjunction.of(
 				Residues.restate(probe.getArguments(), probe.getResidues(), anchor),
-				Tabling.call(rel, heads.map(Unifiable::getObjectUnifiable), () -> rule));
+				Tabling.call(rel, Tuple.ofAll(heads.map(Unifiable::getObjectUnifiable).toJavaArray()), () -> rule));
 		return seeded.apply(Package.empty().withStore(table)).apply(answerPkg ->
 				Residues.all(answerPkg, anchor).flatMap(answer ->
 						emit.emit(Answer.of(rel, answer._1, Condition.of(answer._2)))));
