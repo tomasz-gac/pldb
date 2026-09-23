@@ -23,7 +23,7 @@ import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.Tuple;
+import org.clauseway.functional.tuples.Tuple;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;

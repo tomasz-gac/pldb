@@ -14,7 +14,7 @@ import org.clauseway.logic.unification.Term;
 import org.clauseway.logic.unification.Unifiable;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Literal;
-import io.vavr.Tuple;
+import org.clauseway.functional.tuples.Tuple;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
