@@ -6,7 +6,6 @@ package org.clauseway.pldb.relations;
 import static org.clauseway.logic.unification.LVal.lval;
 
 import org.clauseway.functional.tuples.Tuple;
-import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.tabling.Condition;
 import org.clauseway.logic.unification.Reified;
 import org.clauseway.logic.unification.Term;
@@ -14,6 +13,7 @@ import io.vavr.collection.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -30,12 +30,12 @@ public final class Answers {
 
 	/** A row image: cells flat on the tuple family — natively structural. */
 	public static Reified<?> image(Term<?>... cells) {
-		return (Reified<?>) lval(Tuples.of((Object[]) cells));
+		return (Reified<?>) lval(Tuple.of((Object[]) cells));
 	}
 
 	/** {@link #image(Term[])} over a collected cell sequence. */
 	public static Reified<?> image(Array<? extends Term<?>> cells) {
-		return (Reified<?>) lval(Tuples.of(cells.toJavaArray()));
+		return (Reified<?>) lval(Tuple.of(cells.toJavaArray()));
 	}
 
 	/** A ground row as the answer shape: values reified, conditioned ONE. */
@@ -125,7 +125,8 @@ public final class Answers {
 			throw new IllegalArgumentException("not a row image: " + image);
 		}
 		Tuple row = (Tuple) w;
-		return Array.range(1, row.arity() + 1)
-				.map(i -> (Term<Object>) row.get(i));
+		return IntStream.rangeClosed(1, row.arity())
+				.mapToObj(i -> (Term<Object>) row.get(i))
+				.collect(Array.collector());
 	}
 }

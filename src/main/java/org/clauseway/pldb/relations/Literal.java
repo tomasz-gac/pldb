@@ -3,12 +3,12 @@ package org.clauseway.pldb.relations;
 // ABOUTME: A relation applied to arguments — ONE public type, with how it reads
 // ABOUTME: (source, producer, or rule) as a polymorphic Reading behind it.
 
+import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.monad.Cont;
-import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.logic.constraints.Postable;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.goals.Goal;
@@ -314,7 +314,7 @@ public class Literal implements Goal, Bounded, Postable {
 	private Goal lookup(BiFunction<Call<Relation>, Unifiable<?>, Goal> dispatcher) {
 		return s -> Cont.defer(() -> substituteQueryItems(s.substitution(), args)
 				.flatMap(q -> {
-					Unifiable<?> anchor = lval(Tuples.of(q.map(Unifiable::getObjectTerm).toJavaArray()));
+					Unifiable<?> anchor = lval(Tuple.of(q.map(Unifiable::getObjectTerm).toJavaArray()));
 					return Residues.about(s, anchor)
 							.map(key -> dispatcher.apply(Call.of(rel, key._1, key._2), anchor).apply(s));
 				}));
@@ -331,7 +331,7 @@ public class Literal implements Goal, Bounded, Postable {
 	@Override
 	public long answers(Substitutions s) {
 		Reified<?> image = MiniKanren.reify(s,
-						lval(Tuples.of(args.map(u -> ((Unifiable<?>) s.walk(u)).getObjectTerm()).toJavaArray()))
+						lval(Tuple.of(args.map(u -> ((Unifiable<?>) s.walk(u)).getObjectTerm()).toJavaArray()))
 								.getObjectTerm())
 				.ground();
 		return reading.estimate(this, Call.of(rel, image));

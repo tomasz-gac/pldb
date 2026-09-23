@@ -4,10 +4,10 @@ package org.clauseway.pldb.relations;
 // ABOUTME: Answers WITH their guards — rows a caller reads, a persist lands, or a
 // ABOUTME: retract removes; the same extraction the produce seam mints with.
 
+import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
-import org.clauseway.functional.tuples.Tuples;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.monad.Cont;
 import org.clauseway.logic.goals.Exhaustion;
@@ -52,7 +52,7 @@ public class Question {
 	public static Fiber<List<Answer>> select(Goal question, Literal... schemas) {
 		Array<Unifiable<?>> variables = variablesOf(schemas);
 		return Exhaustion.collected(rows(question,
-				lval(Tuples.of(variables.map(Unifiable::getObjectTerm).toJavaArray())),
+				lval(Tuple.of(variables.map(Unifiable::getObjectTerm).toJavaArray())),
 				variables, schemas));
 	}
 
