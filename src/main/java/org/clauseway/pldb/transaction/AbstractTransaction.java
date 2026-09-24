@@ -3,7 +3,7 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction: a read face, a write face staging facts, and a commit
 // ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
-import org.clauseway.functional.category.Nothing;
+import org.clauseway.functional.Nothing;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerSource;

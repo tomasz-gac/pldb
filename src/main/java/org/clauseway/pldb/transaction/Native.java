@@ -1,6 +1,6 @@
 package org.clauseway.pldb.transaction;
 
-import org.clauseway.functional.category.Nothing;
+import org.clauseway.functional.Nothing;
 import org.clauseway.pldb.relations.Answer;
 import java.util.List;
 import io.vavr.control.Try;
