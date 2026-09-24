@@ -4,19 +4,17 @@ package org.clauseway.pldb.sql;
 // ABOUTME: their guards, serve from coverage, and never re-hit the delegate.
 
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.tabling.Table;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.GoalProducer;
 import org.clauseway.pldb.relations.Answer;

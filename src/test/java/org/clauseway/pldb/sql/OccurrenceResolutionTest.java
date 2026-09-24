@@ -5,13 +5,13 @@ package org.clauseway.pldb.sql;
 // ABOUTME: still agree with the unpushed oracle, or the WHERE hit the wrong column.
 
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;

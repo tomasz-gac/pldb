@@ -3,17 +3,14 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The namespaced door: the class qualifies the name, so same-shaped
 // ABOUTME: relations from two vocabularies stay distinct everywhere identity keys.
 
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import io.vavr.collection.Array;
 import org.junit.Test;
-
-import static org.clauseway.logic.unification.LVal.lval;
 
 public class NamespacedRelationTest {
 

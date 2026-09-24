@@ -4,16 +4,15 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: predicate, including the Union hull — weaker than the union, lawful.
 
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.finitedomain.Domain;
-import org.clauseway.logic.finitedomain.FiniteDomain;
 import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import java.util.Optional;
 import org.junit.Test;
 

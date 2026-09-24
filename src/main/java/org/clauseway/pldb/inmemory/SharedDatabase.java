@@ -3,7 +3,7 @@ package org.clauseway.pldb.inmemory;
 // ABOUTME: The shared in-memory store: one mutable cell of persistent AnswerStore
 // ABOUTME: values, opened as snapshots with simulated serialization per relation.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.Footprint;

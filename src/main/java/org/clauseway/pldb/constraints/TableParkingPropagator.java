@@ -4,7 +4,7 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: conditional rows impose at commit, Any rows admit everything, verdicts never test.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Fiber;
@@ -17,15 +17,15 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.ParkingPropagator;
 import org.clauseway.logic.lattice.Verdict;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.tabling.JoinMap;
-import org.clauseway.logic.tabling.Table;
+import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.unification.MiniKanren;
-import org.clauseway.logic.unification.Reified;
+import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.Substitutions;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerProducer;
 import org.clauseway.pldb.GoalProducer;

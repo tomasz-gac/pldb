@@ -3,7 +3,7 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The projection marker: an ∃-projected column stated inline — a real
 // ABOUTME: fresh variable everywhere except the builder, which sees the wrapper.
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

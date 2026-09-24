@@ -3,11 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The Transaction over the owned certify tier: watermark receipts on H2 —
 // ABOUTME: refusal without a capability, write skew refused, disjoint relations pass.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.sql.SqlFetch;

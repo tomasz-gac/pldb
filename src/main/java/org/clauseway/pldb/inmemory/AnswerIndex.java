@@ -1,9 +1,9 @@
 package org.clauseway.pldb.inmemory;
 
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Relation;

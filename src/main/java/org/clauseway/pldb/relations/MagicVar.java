@@ -3,9 +3,9 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The marker-variable base: a fresh lvar in every respect except to the
 // ABOUTME: ONE consumer that recognizes the wrapper and reads its payload.
 
-import org.clauseway.logic.unification.LVar;
-import org.clauseway.logic.unification.Name;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.LVar;
+import org.clauseway.logic.unification.terms.Name;
+import org.clauseway.logic.unification.terms.Unifiable;
 import io.vavr.control.Option;
 
 /**

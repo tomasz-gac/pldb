@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The per-source codec map: builtins pass through, column codecs bind
 // ABOUTME: through a template literal, the unknown refuses loudly on the write side.
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;

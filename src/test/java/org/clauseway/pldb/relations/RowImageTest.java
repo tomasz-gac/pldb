@@ -4,18 +4,18 @@ package org.clauseway.pldb.relations;
 // ABOUTME: delivery through the engine's one restate — coupled anys mint once.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.constraints.Constraints;
 import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.tabling.Residues;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.Test;

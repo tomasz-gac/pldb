@@ -3,7 +3,7 @@ package org.clauseway.pldb.relations;
 // ABOUTME: Property flags: ground() and indexed() are chainable metadata copies;
 // ABOUTME: lookup identity stays the NAME, so flagged copies never break reads.
 
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

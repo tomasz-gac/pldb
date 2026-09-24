@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: One column's two-way translation: a value flattens to a
 // ABOUTME: JDBC-representable on write and re-forms from it on read.
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.MagicVar;
 import java.util.function.Function;
 import lombok.AccessLevel;

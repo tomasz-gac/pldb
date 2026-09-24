@@ -4,7 +4,7 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
 import org.clauseway.functional.category.Nothing;
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Relation;

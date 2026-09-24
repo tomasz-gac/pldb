@@ -3,15 +3,14 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The live lane's receipts: the world moves between reads, the cache
 // ABOUTME: keeps a solve's view still, and a torn transaction meets the Conflict.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
@@ -19,7 +18,6 @@ import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.AbstractTransaction;
 import org.clauseway.pldb.transaction.Transaction;
-import io.vavr.collection.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;

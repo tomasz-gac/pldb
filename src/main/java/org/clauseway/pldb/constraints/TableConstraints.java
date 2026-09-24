@@ -3,9 +3,9 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: pldb rows as a narrowing constraint store: a posted lookup is a named
 // ABOUTME: propagator re-narrowing column supports through the index; branch at labelo.
 
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.functional.monad.Cont;
+import org.clauseway.functional.fibers.Cont;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.Propagation;
 import org.clauseway.logic.constraints.store.Constraint;
@@ -17,10 +17,10 @@ import org.clauseway.logic.lattice.LatticeFactor;
 import org.clauseway.logic.lattice.ParkingPropagator;
 import org.clauseway.logic.lattice.Propagator;
 import org.clauseway.logic.lattice.Update;
-import org.clauseway.logic.unification.LVar;
+import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.Prefix;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerProducer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Relation;

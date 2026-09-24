@@ -1,7 +1,7 @@
 package org.clauseway.pldb.inmemory;
 
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
 import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.Map;

@@ -3,11 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The Transaction over the in-memory simulated serialization: the shared
 // ABOUTME: cell is the one history, snapshots are values, the CAS is the commit lock.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.SharedDatabase;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;

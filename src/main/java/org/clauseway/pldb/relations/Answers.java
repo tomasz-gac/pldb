@@ -3,12 +3,12 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The answer codec at the seam: a Fact encodes as its ground reified row
 // ABOUTME: at ONE; images decode per position into cells or values.
 
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
 import org.clauseway.functional.tuples.Tuple;
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
 import io.vavr.collection.Array;
 import java.util.HashMap;
 import java.util.Map;

@@ -4,7 +4,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: table, the region pin is (MAX(version), COUNT(*)) — inserts move the
 // ABOUTME: MAX, deletes move the COUNT, and the pair can never be restored.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.Footprint;

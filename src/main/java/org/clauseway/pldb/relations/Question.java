@@ -5,19 +5,19 @@ package org.clauseway.pldb.relations;
 // ABOUTME: retract removes; the same extraction the produce seam mints with.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.functional.monad.Cont;
+import org.clauseway.functional.fibers.Cont;
 import org.clauseway.logic.goals.Exhaustion;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.tabling.Residues;
-import org.clauseway.logic.tabling.Table;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import io.vavr.collection.Array;
 import java.util.Arrays;
 import java.util.Comparator;

@@ -7,7 +7,7 @@ import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.Unification;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.nogoods.Nogood;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.sql.SqlCompiler;
 import java.util.ArrayList;
 import java.util.Arrays;

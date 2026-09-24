@@ -4,10 +4,10 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: retractions — read as one source with the value semantics of a store.
 
 import org.clauseway.functional.Exceptions;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.tabling.JoinMap;
-import org.clauseway.logic.unification.Reified;
+import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.AnswerStore;

@@ -3,9 +3,9 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The one data row: a relation, its reified image — ground or wide — and
 // ABOUTME: the Condition it holds under; reads keep the guard, write doors refuse it.
 
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.functional.tuples.Tuple2;
 import io.vavr.collection.Array;

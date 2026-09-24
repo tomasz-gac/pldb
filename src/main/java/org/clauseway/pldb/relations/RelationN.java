@@ -1,7 +1,7 @@
 package org.clauseway.pldb.relations;
 
 import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerProducer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.constraints.TableConstraints;

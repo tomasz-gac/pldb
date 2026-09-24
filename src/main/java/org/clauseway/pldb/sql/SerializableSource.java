@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Native serialization over JDBC: a source under honest SERIALIZABLE
 // ABOUTME: isolation, its backend's conflict dialect recognized at the commit door.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;

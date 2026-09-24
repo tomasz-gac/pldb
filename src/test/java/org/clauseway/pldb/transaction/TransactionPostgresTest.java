@@ -3,11 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The Transaction over the rented certify tier on real PostgreSQL: staged
 // ABOUTME: facts land at commit, abandonment leaves no trace, SSI maps skew to Conflict.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.sql.SerializableSource;

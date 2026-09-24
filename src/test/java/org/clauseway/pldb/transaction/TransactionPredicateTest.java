@@ -3,10 +3,10 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The conflict predicate seam: a recognized commit failure maps to
 // ABOUTME: Conflict, an unrecognized one surfaces as itself.
 
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.sql.SerializableSource;

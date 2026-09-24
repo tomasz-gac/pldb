@@ -4,24 +4,23 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: conditional rows impose at commit, Any rows admit everything and skip supports.
 
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.functional.monad.Cont;
+import org.clauseway.functional.fibers.Cont;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.store.Constraint;
 import org.clauseway.logic.constraints.store.Theory;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Table;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.AnswerSource;

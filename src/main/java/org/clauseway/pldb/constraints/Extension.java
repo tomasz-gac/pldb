@@ -4,7 +4,7 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: conditions, filtered live, and answered with the shared verdict ladder.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
 import org.clauseway.functional.Exceptions;
 import org.clauseway.functional.fibers.Fiber;
@@ -13,13 +13,13 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.Update;
 import org.clauseway.logic.lattice.Verdict;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.tabling.JoinMap;
-import org.clauseway.logic.tabling.Residues;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Relation;

@@ -4,9 +4,9 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: on wake, and the row enumerator enforce uses to ground survivors.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.functional.monad.Cont;
+import org.clauseway.functional.fibers.Cont;
 import org.clauseway.logic.constraints.Propagation;
 import org.clauseway.logic.constraints.store.Constraint;
 import org.clauseway.logic.constraints.store.Theory;
@@ -15,11 +15,11 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.Propagator;
 import org.clauseway.logic.lattice.Verdict;
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.unification.MiniKanren;
-import org.clauseway.logic.unification.Reified;
+import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.Substitutions;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Relation;
 import io.vavr.collection.Array;

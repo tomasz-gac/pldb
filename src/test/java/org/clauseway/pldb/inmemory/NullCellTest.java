@@ -3,11 +3,11 @@ package org.clauseway.pldb.inmemory;
 // ABOUTME: In-memory null cells through the answers(Call) face: free probes
 // ABOUTME: deliver {null}, bound-null probes select, indexed null cells key.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
 import java.util.Arrays;

@@ -3,19 +3,16 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The composite pin's algebra: singletons lift, agreeing unions merge,
 // ABOUTME: a region read at two pins refuses — staleness is structural, not silent.
 
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answers;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Reified;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
 import lombok.Value;
 import org.junit.Test;
 

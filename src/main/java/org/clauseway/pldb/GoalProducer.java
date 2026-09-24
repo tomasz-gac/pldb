@@ -5,7 +5,7 @@ package org.clauseway.pldb;
 // ABOUTME: by whoever owns the residence.
 
 import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
 import org.clauseway.functional.category.Nothing;
 import org.clauseway.functional.fibers.Emitter;
@@ -13,13 +13,13 @@ import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.logic.goals.Conjunction;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Condition;
-import org.clauseway.logic.tabling.Residues;
-import org.clauseway.logic.tabling.Table;
-import org.clauseway.logic.tabling.TableEntry;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.tabling.table.TableEntry;
 import org.clauseway.logic.tabling.Tabling;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
 import io.vavr.collection.Array;

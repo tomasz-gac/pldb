@@ -3,15 +3,14 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The SQL polling source: one pinned connection, the compiler registry,
 // ABOUTME: the probe's pattern+region compiled to SELECT..WHERE — every answer a round trip.
 
-import org.clauseway.functional.Streams;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.constraints.store.Theory;
 import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
 import org.clauseway.logic.nogoods.NogoodConstraints;
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.tabling.Residues;
-import org.clauseway.logic.unification.Any;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Literal;
@@ -33,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;

@@ -3,11 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction ledger: a region's FIRST touch reads through the
 // ABOUTME: source, repeats serve from the ledger, commit carries that one pin.
 
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.tabling.Call;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;

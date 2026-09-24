@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Simulated serialization over standard SQL: per-relation marks in one
 // ABOUTME: private table; commit = one short lock-compare-flush-advance transaction.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.Footprint;

@@ -13,7 +13,7 @@ import org.clauseway.logic.finitedomain.domains.Singleton;
 import org.clauseway.logic.finitedomain.domains.Union;
 import org.clauseway.logic.lattice.Imposition;
 import org.clauseway.logic.lattice.Propagator;
-import org.clauseway.logic.unification.Term;
+import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.sql.SqlCompiler;
 import io.vavr.collection.Array;
 import java.util.ArrayDeque;

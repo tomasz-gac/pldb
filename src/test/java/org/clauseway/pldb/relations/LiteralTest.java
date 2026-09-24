@@ -5,13 +5,15 @@ package org.clauseway.pldb.relations;
 // ABOUTME: arity unbounded past the tuple cap.
 
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
-import static org.clauseway.logic.unification.LVal.lval;
-import static org.clauseway.logic.unification.LVar.lvar;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.unification.Unifiable;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import io.vavr.control.Try;
@@ -180,10 +182,10 @@ public class LiteralTest {
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
 				.get();
 		org.assertj.core.api.Assertions.assertThat(db.estimate(
-						org.clauseway.logic.tabling.Call.of(
+						Call.of(
 								Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),
 								Answers.image(
-										org.clauseway.logic.unification.Any.of(0), org.clauseway.logic.unification.Any.of(1)))))
+										Any.of(0), Any.of(1)))))
 				.isEqualTo(2);
 	}
 }

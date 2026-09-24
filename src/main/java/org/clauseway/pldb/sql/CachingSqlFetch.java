@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The JDBC-backed AnswerSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;

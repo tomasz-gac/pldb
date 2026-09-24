@@ -3,7 +3,7 @@ package org.clauseway.pldb.sql;
 // ABOUTME: An AnswerSource that caches its delegate subsumptively: answers land in a
 // ABOUTME: pool, the ledger records probes as calls, Call.subsumes proves coverage.
 
-import org.clauseway.logic.tabling.Call;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Answer;
