@@ -3,17 +3,17 @@ package org.clauseway.pldb;
 // ABOUTME: Pins the AnswerSource seam: lookups and posted constraints constructed
 // ABOUTME: against the read face answer identically to the AnswerStore-typed path.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class AnswerSourceTest {

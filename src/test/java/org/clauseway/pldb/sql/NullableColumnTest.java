@@ -3,15 +3,11 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Declared nullability: a nullable column carries SQL NULL as Java's own
 // ABOUTME: null inside lval — the typed surface intact, IS NULL at the probe.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.nogoods.Exclusion;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -20,6 +16,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.nogoods.Exclusion;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

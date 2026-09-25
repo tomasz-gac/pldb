@@ -1,15 +1,15 @@
 package org.clauseway.pldb.inmemory;
 
-import org.clauseway.logic.unification.terms.Reified;
-import org.clauseway.logic.unification.terms.Term;
-import io.vavr.collection.LinkedHashMap;
-import io.vavr.collection.LinkedHashSet;
-import io.vavr.collection.Map;
-import io.vavr.collection.Set;
 import java.util.HashSet;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.vavr.collection.LinkedHashMap;
+import org.clauseway.vavr.collection.LinkedHashSet;
+import org.clauseway.vavr.collection.Map;
+import org.clauseway.vavr.collection.Set;
 
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

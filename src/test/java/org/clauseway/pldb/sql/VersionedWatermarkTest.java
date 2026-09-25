@@ -3,19 +3,12 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Region-grain receipts: disjoint regions of ONE relation commit across
 // ABOUTME: each other, an insert into a pinned region bounces, no column refuses.
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.transaction.AbstractTransaction;
-import org.clauseway.pldb.transaction.Transaction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -24,6 +17,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.finitedomain.Longs;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.transaction.AbstractTransaction;
+import org.clauseway.pldb.transaction.Transaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

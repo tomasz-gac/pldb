@@ -4,22 +4,21 @@ package org.clauseway.pldb.relations;
 // ABOUTME: literal together, bare = exists, exclude converts, fact() terminal,
 // ABOUTME: arity unbounded past the tuple cap.
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
 import org.junit.Test;
 
 public class LiteralTest {

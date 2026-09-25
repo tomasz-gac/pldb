@@ -3,12 +3,12 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The adapter-side compiler a user registers per constraint family:
 // ABOUTME: one atom in, optionally one WHERE predicate out — weaker or equal.
 
-import org.clauseway.logic.constraints.store.Atom;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.pldb.sql.compiler.SqlPredicate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.clauseway.logic.constraints.store.Atom;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.pldb.sql.compiler.SqlPredicate;
 
 /**
  * Compiles one constraint atom into the adapter's predicate vocabulary.

@@ -3,17 +3,17 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: Direct receipts for the FD compiler: each domain kind's compiled
 // ABOUTME: predicate, including the Union hull — weaker than the union, lawful.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.finitedomain.Domain;
 import org.clauseway.logic.finitedomain.Longs;
 import org.clauseway.logic.unification.terms.Unifiable;
-import java.util.Optional;
 import org.junit.Test;
 
 public class FiniteDomainSqlCompilerTest {

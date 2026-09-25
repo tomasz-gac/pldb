@@ -3,28 +3,8 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: The posted table's extension read as its algebra: rows ⊕-folded with their
 // ABOUTME: conditions, filtered live, and answered with the shared verdict ladder.
 
-import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.functional.Exceptions;
-import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.logic.constraints.store.Theory;
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.lattice.Update;
-import org.clauseway.logic.lattice.Verdict;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Condition;
-import org.clauseway.logic.tabling.JoinMap;
-import org.clauseway.logic.tabling.conditions.Residues;
-import org.clauseway.logic.unification.terms.Reified;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import io.vavr.collection.IndexedSeq;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -32,6 +12,26 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.Value;
+import org.clauseway.functional.Exceptions;
+import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.logic.constraints.store.Theory;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.goals.Package;
+import org.clauseway.logic.lattice.Update;
+import org.clauseway.logic.lattice.Verdict;
+import org.clauseway.logic.tabling.JoinMap;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.vavr.collection.Array;
+import org.clauseway.vavr.collection.IndexedSeq;
 
 /**
  * The shared half of both posted-table kinds: the extension {(rᵢ, Cᵢ)} as

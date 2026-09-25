@@ -3,13 +3,6 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Simulated serialization over standard SQL: per-relation marks in one
 // ABOUTME: private table; commit = one short lock-compare-flush-advance transaction.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Relation;
-import org.clauseway.pldb.transaction.Footprint;
-import org.clauseway.pldb.transaction.Pin;
-import org.clauseway.pldb.transaction.Pinned;
-import org.clauseway.pldb.transaction.SimulatedSerialization;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,6 +19,13 @@ import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.pldb.transaction.Footprint;
+import org.clauseway.pldb.transaction.Pin;
+import org.clauseway.pldb.transaction.Pinned;
+import org.clauseway.pldb.transaction.SimulatedSerialization;
 
 /**
  * Equips a source with SIMULATED serialization in plain standard SQL: a
@@ -103,8 +103,10 @@ public class Watermark implements JdbcSource, SimulatedSerialization {
 		return Pinned.of(source.answers(probe), mark);
 	}
 
-	/** The pin statement joins the fetch's monitor: one connection, one
-	 * monitor — a ForkJoin solve's concurrent reads serialize here. */
+	/**
+	 * The pin statement joins the fetch's monitor: one connection, one
+	 * monitor — a ForkJoin solve's concurrent reads serialize here.
+	 */
 	private Pin markOf(String relation) {
 		synchronized (source) {
 			return readMark(relation);

@@ -3,6 +3,12 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: The FD family's WHERE compiler: domain impositions become in/between/eq,
 // ABOUTME: leq and separate propagators become comparisons — by name, the sanctioned identity.
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.clauseway.logic.constraints.store.Atom;
 import org.clauseway.logic.finitedomain.Domain;
 import org.clauseway.logic.finitedomain.domains.DomainVisitor;
@@ -15,13 +21,7 @@ import org.clauseway.logic.lattice.Imposition;
 import org.clauseway.logic.lattice.Propagator;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.pldb.sql.SqlCompiler;
-import io.vavr.collection.Array;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * Registered under the FD family class. Domain impositions compile through
@@ -47,9 +47,11 @@ public final class FiniteDomainSqlCompiler implements SqlCompiler {
 		return Optional.empty();
 	}
 
-	/** The domain conjoins across EVERY occurrence of a coupled target —
+	/**
+	 * The domain conjoins across EVERY occurrence of a coupled target —
 	 * rows disagreeing between coupled columns are never valid answers,
-	 * so the extra conjuncts buy bandwidth without dropping any. */
+	 * so the extra conjuncts buy bandwidth without dropping any.
+	 */
 	private static Optional<SqlPredicate> imposition(Imposition<?, ?> atom, ColumnResolver columns) {
 		List<String> occupied = columns.columnsOf(atom.getTarget());
 		if (occupied.isEmpty() || !(atom.getValue() instanceof Domain)) {

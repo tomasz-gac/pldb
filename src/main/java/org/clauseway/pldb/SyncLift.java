@@ -3,13 +3,13 @@ package org.clauseway.pldb;
 // ABOUTME: The sync kind lifted into the async seam: answers enumerated inline
 // ABOUTME: inside the claimed workforce — the inline cost the sync kind always had.
 
+import lombok.Value;
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Emitter;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
-import lombok.Value;
 
 /**
  * A sync {@link AnswerSource} worn as an {@link AnswerProducer}: the

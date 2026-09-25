@@ -3,25 +3,6 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The SQL polling source: one pinned connection, the compiler registry,
 // ABOUTME: the probe's pattern+region compiled to SELECT..WHERE — every answer a round trip.
 
-import org.clauseway.logic.constraints.store.Atom;
-import org.clauseway.logic.constraints.store.Theory;
-import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
-import org.clauseway.logic.nogoods.NogoodConstraints;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Residues;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
-import org.clauseway.pldb.sql.compiler.FiniteDomainSqlCompiler;
-import org.clauseway.pldb.sql.compiler.NogoodSqlCompiler;
-import org.clauseway.pldb.sql.compiler.SqlPredicate;
-import io.vavr.Tuple2;
-import io.vavr.collection.Array;
-import io.vavr.collection.IndexedSeq;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +18,25 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.clauseway.logic.constraints.store.Atom;
+import org.clauseway.logic.constraints.store.Theory;
+import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
+import org.clauseway.logic.nogoods.NogoodConstraints;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.pldb.sql.compiler.FiniteDomainSqlCompiler;
+import org.clauseway.pldb.sql.compiler.NogoodSqlCompiler;
+import org.clauseway.pldb.sql.compiler.SqlPredicate;
+import org.clauseway.vavr.Tuple2;
+import org.clauseway.vavr.collection.Array;
+import org.clauseway.vavr.collection.IndexedSeq;
 
 /**
  * Talks to the backend, nothing else: pins the connection at construction

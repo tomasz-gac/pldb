@@ -3,31 +3,30 @@ package org.clauseway.pldb;
 // ABOUTME: The produce bridge: probes memoize through the injected table, wide
 // ABOUTME: sealed entries serve narrow probes, conditional cells deliver converged.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.functional.Nothing;
-import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.tabling.table.Table;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.clauseway.functional.Nothing;
+import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Relation;
 import org.junit.Test;
 
 public class GoalProducerTest {

@@ -3,12 +3,12 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The composite pin: regions each with the pin captured at first touch —
 // ABOUTME: a Pin itself, composed by union, leaves compared but never interpreted.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Relation;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.relations.Relation;
 
 /**
  * The composite {@link Pin}: every probed region paired with the pin

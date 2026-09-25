@@ -3,12 +3,12 @@ package org.clauseway.pldb;
 // ABOUTME: The write face: Answer rows are the currency, Literal statements the
 // ABOUTME: threshold sugar — both polarities, holes and guards refusing loudly.
 
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Literal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Literal;
 
 /**
  * A value that accepts writes. The PRIMITIVE doors speak {@link Answer}

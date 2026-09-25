@@ -3,14 +3,11 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The write face: facts land as INSERTs by the schema convention, and a
 // ABOUTME: structural column value refuses by relation and column before any row lands.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -20,6 +17,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

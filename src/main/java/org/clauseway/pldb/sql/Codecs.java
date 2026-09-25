@@ -3,15 +3,15 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The per-source codec map: builtins pass through, column codecs bind
 // ABOUTME: through a template literal, the unknown refuses loudly on the write side.
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * The value↔wire translation table. Serialization is the BACKEND's

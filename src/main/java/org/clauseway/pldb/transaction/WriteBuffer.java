@@ -3,18 +3,6 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: A frozen base plus a private SIGNED delta — staged assertions and staged
 // ABOUTME: retractions — read as one source with the value semantics of a store.
 
-import org.clauseway.functional.Exceptions;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Condition;
-import org.clauseway.logic.tabling.JoinMap;
-import org.clauseway.logic.unification.terms.Reified;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import io.vavr.control.Try;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +13,17 @@ import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.clauseway.functional.Exceptions;
+import org.clauseway.logic.tabling.JoinMap;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * An immutable store value over a shared read-only base: reads union the

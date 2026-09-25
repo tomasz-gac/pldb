@@ -3,6 +3,7 @@ package org.clauseway.pldb.inmemory;
 // ABOUTME: The store as a genealogy database: joins, recursion through condu and
 // ABOUTME: matche, and optimizer-driven queries all read through the Call probe.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.goals.Goal.condu;
 import static org.clauseway.logic.goals.Goal.defer;
 import static org.clauseway.logic.goals.Logic.distincto;
@@ -11,8 +12,14 @@ import static org.clauseway.logic.goals.Matche.matche;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.functional.tuples.Tuple2;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Logic;
 import org.clauseway.logic.goals.optimizer.CascadingOptimizer;
@@ -21,13 +28,6 @@ import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Literal;
-import org.clauseway.functional.tuples.Tuple;
-import org.clauseway.functional.tuples.Tuple2;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import org.junit.Test;
 
 public class AnswerStoreQueriesTest {

@@ -3,18 +3,18 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: The nogood family's WHERE compiler: De Morgan over the registry —
 // ABOUTME: each literal negates through its own family, whole disjunctions or nothing.
 
-import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.constraints.Unification;
-import org.clauseway.logic.constraints.store.Atom;
-import org.clauseway.logic.nogoods.Nogood;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.pldb.sql.SqlCompiler;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.clauseway.logic.constraints.Posting;
+import org.clauseway.logic.constraints.Unification;
+import org.clauseway.logic.constraints.store.Atom;
+import org.clauseway.logic.nogoods.Nogood;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.pldb.sql.SqlCompiler;
 
 /**
  * A nogood is {@code ¬(c₁) ∧ ¬(c₂) ∧ …}, each conjunct {@code ¬(l₁ ∧ … ∧

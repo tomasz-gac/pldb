@@ -3,20 +3,20 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction ledger: a region's FIRST touch reads through the
 // ABOUTME: source, repeats serve from the ledger, commit carries that one pin.
 
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.Value;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import lombok.Value;
 import org.junit.Test;
 
 public class PinAtFirstTouchTest {

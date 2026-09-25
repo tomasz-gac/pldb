@@ -3,12 +3,16 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: Direct receipts for the nogood compiler: De Morgan over the registry —
 // ABOUTME: literals negate via their families, disjunctions push whole or not at all.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.Propagation;
 import org.clauseway.logic.constraints.store.Atom;
@@ -17,24 +21,19 @@ import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
 import org.clauseway.logic.finitedomain.Longs;
 import org.clauseway.logic.nogoods.Nogood;
 import org.clauseway.logic.nogoods.NogoodConstraints;
+import org.clauseway.logic.unification.Prefix;
+import org.clauseway.logic.unification.Substitutions;
 import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.terms.Name;
-import org.clauseway.logic.unification.Prefix;
-import org.clauseway.logic.unification.Substitutions;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.constraints.TableConstraints;
+import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.sql.SqlCompiler;
-import io.vavr.collection.Array;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.junit.Test;
 
 public class NogoodSqlCompilerTest {

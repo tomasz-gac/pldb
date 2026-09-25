@@ -3,14 +3,14 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The JDBC-backed AnswerSource: a constructor and a wrapper — the caching
 // ABOUTME: source over the pinned SQL fetch, plus the registration and close doors.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Relation;
 import java.sql.Connection;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Relation;
 
 /**
  * A relation backend over one pinned JDBC connection, by CONVENTION: the

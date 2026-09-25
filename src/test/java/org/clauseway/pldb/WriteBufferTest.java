@@ -3,19 +3,19 @@ package org.clauseway.pldb;
 // ABOUTME: The overlay value: a frozen base plus a private staged delta — reads
 // ABOUTME: union both, appends mint new values, ancestors and siblings stay true.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.transaction.WriteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.transaction.WriteBuffer;
 import org.junit.Test;
 
 public class WriteBufferTest {

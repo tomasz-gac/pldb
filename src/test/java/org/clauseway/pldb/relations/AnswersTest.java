@@ -3,26 +3,25 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The answer codec: a ground row encodes as (reified image, ONE); the image
 // ABOUTME: decodes per position — cells in Term vocabulary, values for rows.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.GoalProducer;
-import io.vavr.collection.Array;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Test;
-import java.util.Arrays;
 
 public class AnswersTest {
 

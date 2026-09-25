@@ -3,21 +3,21 @@ package org.clauseway.pldb;
 // ABOUTME: posted() over rule literals: the propagator reads the solve's shared
 // ABOUTME: table — negation shapes, both dual-driver orders, recursive closure.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.goals.Goal.defer;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.inmemory.AnswerStore;
 import org.clauseway.pldb.relations.Literal;
-import org.clauseway.functional.tuples.Tuple;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class RuleNegationTest {

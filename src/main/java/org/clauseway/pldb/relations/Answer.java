@@ -3,16 +3,15 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The one data row: a relation, its reified image — ground or wide — and
 // ABOUTME: the Condition it holds under; reads keep the guard, write doors refuse it.
 
+import java.util.List;
+import java.util.Optional;
+import lombok.Value;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.functional.tuples.Tuple2;
 import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.functional.tuples.Tuple;
-import org.clauseway.functional.tuples.Tuple2;
-import io.vavr.collection.Array;
-import io.vavr.control.Try;
-import java.util.Optional;
-import lombok.Value;
-import java.util.List;
+import org.clauseway.vavr.control.Try;
 
 /**
  * One row of data, whole: the {@link Relation} it belongs to, its reified

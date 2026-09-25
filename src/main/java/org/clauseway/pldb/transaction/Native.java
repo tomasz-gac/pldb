@@ -1,7 +1,7 @@
 package org.clauseway.pldb.transaction;
 
-import org.clauseway.pldb.relations.Answer;
 import java.util.List;
+import org.clauseway.pldb.relations.Answer;
 
 /**
  * NATIVE serialization: the backend tracks every read it serves, so this

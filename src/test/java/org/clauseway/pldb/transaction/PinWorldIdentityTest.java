@@ -3,20 +3,20 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: Pin equality is world identity: two reads of one world carry equal
 // ABOUTME: pins, any commit between them makes them differ — never content compare.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.logic.unification.terms.LVar;
-import org.clauseway.pldb.inmemory.SharedDatabase;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Relation;
 import java.util.Collections;
 import org.assertj.core.api.Assertions;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.LVar;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.inmemory.SharedDatabase;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Relation;
 import org.junit.Test;
 
 public class PinWorldIdentityTest {

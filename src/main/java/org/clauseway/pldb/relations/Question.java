@@ -4,21 +4,8 @@ package org.clauseway.pldb.relations;
 // ABOUTME: Answers WITH their guards — rows a caller reads, a persist lands, or a
 // ABOUTME: retract removes; the same extraction the produce seam mints with.
 
-import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.functional.Nothing;
-import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.functional.fibers.Cont;
-import org.clauseway.logic.goals.Exhaustion;
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.tabling.conditions.Condition;
-import org.clauseway.logic.tabling.conditions.Residues;
-import org.clauseway.logic.tabling.table.Table;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import io.vavr.collection.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +15,19 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.clauseway.functional.Nothing;
+import org.clauseway.functional.fibers.Cont;
+import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.logic.goals.Exhaustion;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.goals.Package;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.vavr.collection.Array;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Question {

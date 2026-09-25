@@ -1,13 +1,11 @@
 package org.clauseway.pldb.transaction;
 
-import org.clauseway.functional.Nothing;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
-import java.util.List;
-import io.vavr.control.Try;
-import java.util.concurrent.ConcurrentMap;
-import java.util.Map;
 
 /**
  * SIMULATED serialization: this transaction's ledger is the read cache

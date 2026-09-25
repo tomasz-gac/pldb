@@ -3,20 +3,11 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The north star's Phase 2 proof against real PostgreSQL (testcontainers):
 // ABOUTME: a nonrecursive and a recursive relation answer identically over memory and PG.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.goals.Goal.defer;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
-import org.clauseway.functional.tuples.Tuple;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -27,6 +18,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;

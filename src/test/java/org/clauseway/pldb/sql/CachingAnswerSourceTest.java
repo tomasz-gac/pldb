@@ -3,15 +3,20 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The pool speaks the whole entry shape: conditional answers land WITH
 // ABOUTME: their guards, serve from coverage, and never re-hit the delegate.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.logic.unification.terms.Unifiable;
@@ -21,13 +26,7 @@ import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
-import java.util.Arrays;
 
 public class CachingAnswerSourceTest {
 

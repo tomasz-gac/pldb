@@ -5,6 +5,12 @@ package org.clauseway.pldb.constraints;
 
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.IntPredicate;
+import java.util.stream.Collectors;
 import org.clauseway.functional.fibers.Cont;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.Propagation;
@@ -17,23 +23,17 @@ import org.clauseway.logic.lattice.LatticeFactor;
 import org.clauseway.logic.lattice.ParkingPropagator;
 import org.clauseway.logic.lattice.Propagator;
 import org.clauseway.logic.lattice.Update;
-import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.Prefix;
+import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerProducer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.Array;
-import io.vavr.collection.IndexedSeq;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.IntPredicate;
-import java.util.stream.Collectors;
+import org.clauseway.vavr.Tuple;
+import org.clauseway.vavr.Tuple2;
+import org.clauseway.vavr.collection.Array;
+import org.clauseway.vavr.collection.IndexedSeq;
 
 /**
  * The table constraint (docs/design/table-constraints.md): a posted lookup is

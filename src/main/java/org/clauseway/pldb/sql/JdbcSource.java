@@ -1,7 +1,7 @@
 package org.clauseway.pldb.sql;
 
-import org.clauseway.pldb.AnswerSource;
 import java.sql.Connection;
+import org.clauseway.pldb.AnswerSource;
 
 public interface JdbcSource extends AnswerSource, AutoCloseable {
 	Connection getConnection();

@@ -3,10 +3,10 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: The column-support lattice: the finite set of values a column may still
 // ABOUTME: take across a posted table's candidate rows. Meet is intersection.
 
-import org.clauseway.logic.lattice.Domain;
-import io.vavr.collection.HashSet;
-import io.vavr.control.Option;
 import lombok.Value;
+import org.clauseway.logic.lattice.Domain;
+import org.clauseway.vavr.collection.HashSet;
+import org.clauseway.vavr.control.Option;
 
 /**
  * A free column's possible values across the candidate rows ARE a finite

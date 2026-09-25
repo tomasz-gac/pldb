@@ -3,37 +3,35 @@ package org.clauseway.pldb.inmemory;
 // ABOUTME: The Call-native store's receipts: buckets serve ground probes, null and
 // ABOUTME: wide rows key honestly, duplicate images ⊕-fold, values fork persistent.
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.clauseway.functional.Nothing;
-import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Condition;
-import org.clauseway.logic.tabling.table.Table;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.GoalProducer;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.logic.unification.terms.Reified;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Answers;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.clauseway.functional.Nothing;
+import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.table.Table;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.GoalProducer;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Relation;
 import org.junit.Test;
-import java.util.Arrays;
 
 public class AnswerStoreTest {
 
@@ -109,7 +107,7 @@ public class AnswerStoreTest {
 		Answer wide = Answer.of(LOAN,
 				Answers.image(Any.of(0), lval("c9")), Condition.ONE);
 
-				assertThatThrownBy(() -> AnswerStore.empty()
+		assertThatThrownBy(() -> AnswerStore.empty()
 				.asserting(Collections.singletonList(wide)))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("loan")
@@ -121,7 +119,7 @@ public class AnswerStoreTest {
 		Condition guarded = forbidding("m9");
 		Answer row = Answer.of(LOAN, row("m1", "c1").getReified(), guarded);
 
-				assertThatThrownBy(() -> AnswerStore.empty()
+		assertThatThrownBy(() -> AnswerStore.empty()
 				.asserting(Collections.singletonList(row)))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("unconditional");

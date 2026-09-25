@@ -3,15 +3,15 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Native serialization over JDBC: a source under honest SERIALIZABLE
 // ABOUTME: isolation, its backend's conflict dialect recognized at the commit door.
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.function.Predicate;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Relation;
 import org.clauseway.pldb.transaction.NativeSerialization;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * A pinned source whose backend certifies reads itself: the connection

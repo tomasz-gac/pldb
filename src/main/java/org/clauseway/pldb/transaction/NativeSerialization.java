@@ -3,9 +3,9 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: Native serialization: the backend validates read sets at commit
 // ABOUTME: itself; the source owns the whole commit door and its dialect.
 
+import java.util.List;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
-import java.util.List;
 
 /**
  * A source whose backend serializes transactions itself — an

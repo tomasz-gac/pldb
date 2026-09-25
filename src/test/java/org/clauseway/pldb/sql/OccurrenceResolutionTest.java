@@ -4,22 +4,22 @@ package org.clauseway.pldb.sql;
 // ABOUTME: constrained free makes occurrence and position diverge — pushed must
 // ABOUTME: still agree with the unpushed oracle, or the WHERE hit the wrong column.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.finitedomain.Longs;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,9 +49,11 @@ public class OccurrenceResolutionTest {
 				.from(db);
 	}
 
-	/** Bound a=1, domain on the FREE b: the image is ({1}, _.0) — the atom's
+	/**
+	 * Bound a=1, domain on the FREE b: the image is ({1}, _.0) — the atom's
 	 * _.0 is COLUMN 1; positional resolution would compile the WHERE against
-	 * column a and silently under-deliver. */
+	 * column a and silently under-deliver.
+	 */
 	private static List<Long> boundThenConstrained(AnswerSource db) {
 		Unifiable<Long> b = lvar();
 		return dom(b, Longs.range(10, 16))

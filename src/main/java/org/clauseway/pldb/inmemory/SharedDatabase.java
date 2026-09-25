@@ -3,6 +3,11 @@ package org.clauseway.pldb.inmemory;
 // ABOUTME: The shared in-memory store: one mutable cell of persistent AnswerStore
 // ABOUTME: values, opened as snapshots with simulated serialization per relation.
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import lombok.Value;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
@@ -10,11 +15,6 @@ import org.clauseway.pldb.transaction.Footprint;
 import org.clauseway.pldb.transaction.Pin;
 import org.clauseway.pldb.transaction.Pinned;
 import org.clauseway.pldb.transaction.SimulatedSerialization;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import lombok.Value;
 
 /**
  * The one history of an in-memory world: a mutable cell holding a

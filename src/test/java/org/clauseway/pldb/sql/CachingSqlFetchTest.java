@@ -4,18 +4,11 @@ package org.clauseway.pldb.sql;
 // ABOUTME: the in-memory reference, refuses unserved relations, and lands fetches
 // ABOUTME: so subsumed probes never touch the backend again.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
-import org.clauseway.pldb.relations.RelationN;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,6 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.pldb.relations.RelationN;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

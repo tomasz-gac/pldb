@@ -3,25 +3,13 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: The compiler law harness: admission judged engine-true per row, selection
 // ABOUTME: judged by H2 — superset always, equality when exact, complement when negated.
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.constraints.store.Atom;
-import org.clauseway.logic.constraints.store.Renaming;
-import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
-import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.lattice.Imposition;
-import org.clauseway.logic.nogoods.NogoodConstraints;
-import org.clauseway.logic.unification.terms.Any;
-import org.clauseway.logic.unification.terms.Name;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.sql.SqlCompiler;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -38,6 +26,18 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import org.clauseway.logic.constraints.Posting;
+import org.clauseway.logic.constraints.store.Atom;
+import org.clauseway.logic.constraints.store.Renaming;
+import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
+import org.clauseway.logic.finitedomain.Longs;
+import org.clauseway.logic.lattice.Imposition;
+import org.clauseway.logic.nogoods.NogoodConstraints;
+import org.clauseway.logic.unification.terms.Any;
+import org.clauseway.logic.unification.terms.Name;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.sql.SqlCompiler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

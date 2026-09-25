@@ -5,19 +5,18 @@ package org.clauseway.pldb.relations;
 
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.terms.Term;
-import io.vavr.collection.Array;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.IntStream;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The seam's value codec, written once. An answer is the cell's entry

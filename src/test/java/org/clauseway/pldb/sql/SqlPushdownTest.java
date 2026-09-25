@@ -3,20 +3,12 @@ package org.clauseway.pldb.sql;
 // ABOUTME: Pins the pushdown core: the coverage trap (a pushed fetch must not serve
 // ABOUTME: a wider probe), answer identity vs the unpushed source, locality receipts.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.finitedomain.FiniteDomain.dom;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
-import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
-import org.clauseway.logic.finitedomain.Longs;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -26,6 +18,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.clauseway.logic.finitedomain.FiniteDomainConstraints;
+import org.clauseway.logic.finitedomain.Longs;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

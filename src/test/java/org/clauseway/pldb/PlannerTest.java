@@ -3,24 +3,24 @@ package org.clauseway.pldb;
 // ABOUTME: Acceptance for the ordered planner: answers identical planned vs
 // ABOUTME: unplanned, and a mis-ordered query enumerates an order of magnitude fewer facts.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import org.clauseway.logic.goals.optimizer.CascadingOptimizer;
 import org.clauseway.logic.goals.optimizer.Optimizer;
 import org.clauseway.logic.goals.optimizer.OrderingOptimizer;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class PlannerTest {

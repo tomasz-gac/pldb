@@ -3,18 +3,17 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The premise: a client's earlier pinned reads carried into a later commit —
 // ABOUTME: certified beside the transaction's own ledger, refusing if that world moved.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
+import java.util.Collections;
+import java.util.stream.Collectors;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.SharedDatabase;
 import org.clauseway.pldb.relations.Literal;
-import io.vavr.control.Try;
-import java.util.Collections;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class PremiseTest {
@@ -115,7 +114,7 @@ public class PremiseTest {
 
 		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
 		solveNames(post);
-				assertThatThrownBy(() -> post
+		assertThatThrownBy(() -> post
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.commit())
 				.describedAs("the premise and the own read saw different person worlds")
@@ -135,7 +134,7 @@ public class PremiseTest {
 				.asserting(Collections.singletonList(person(null, lval(2), lval("Alan"))))
 				.commit();
 
-				assertThatThrownBy(() -> AbstractTransaction.over(store.open("post"))
+		assertThatThrownBy(() -> AbstractTransaction.over(store.open("post"))
 				.requiring(premise)
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.commit())

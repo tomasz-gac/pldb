@@ -3,15 +3,21 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: The parking posted table's receipts: ground rows match the sync oracle,
 // ABOUTME: conditional rows impose at commit, Any rows admit everything and skip supports.
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.clauseway.functional.Nothing;
+import org.clauseway.functional.fibers.Cont;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.functional.fibers.Cont;
+import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.constraints.Posting;
 import org.clauseway.logic.constraints.store.Constraint;
 import org.clauseway.logic.constraints.store.Theory;
@@ -21,21 +27,14 @@ import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.GoalProducer;
 import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Literal;
 import org.clauseway.pldb.relations.Property;
 import org.clauseway.pldb.relations.Relation;
-import org.clauseway.functional.tuples.Tuple;
-import io.vavr.collection.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class TableParkingPropagatorTest {

@@ -1,11 +1,11 @@
 package org.clauseway.pldb.relations;
 
-import org.clauseway.functional.tuples.Tuple;
-import org.clauseway.functional.tuples.Tuple2;
-import io.vavr.collection.Stream;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.functional.tuples.Tuple2;
+import org.clauseway.vavr.collection.Stream;
 
 public interface Relation {
 	String getName();

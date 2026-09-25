@@ -3,22 +3,21 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The Transaction over the in-memory simulated serialization: the shared
 // ABOUTME: cell is the one history, snapshots are values, the CAS is the commit lock.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.SharedDatabase;
-import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Question;
-import org.clauseway.pldb.relations.Literal;
-import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.functional.fibers.schedulers.BreadthFirstScheduler;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.SharedDatabase;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Question;
 import org.junit.Test;
 
 public class TransactionMemoryTest {
@@ -115,7 +114,7 @@ public class TransactionMemoryTest {
 				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 				.commit();
 
-				assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
+		assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
 				book(null, lval("i1"), lval("Tar Pit")))).commit())
 				.describedAs("the pinned person region lost a row — the retraction divides pins")
 				.isInstanceOf(Transaction.Conflict.class);

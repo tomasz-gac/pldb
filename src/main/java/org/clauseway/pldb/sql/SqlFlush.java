@@ -3,18 +3,12 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The JDBC write face: asserted facts land as INSERTs, retracted facts
 // ABOUTME: leave as by-fact DELETEs — one schema convention, one codec registry.
 
-import org.clauseway.pldb.Writer;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.relations.Property;
-import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,6 +16,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.clauseway.pldb.Writer;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.relations.Property;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * Flushes facts through one JDBC connection by the same convention the
@@ -51,9 +51,11 @@ public class SqlFlush {
 		return new SqlFlush(connection, codecs, null, null);
 	}
 
-	/** Every inserted row additionally carries {@code column = value} — the
+	/**
+	 * Every inserted row additionally carries {@code column = value} — the
 	 * version stamp of a certify kind; the column is the backend's private
-	 * surface, invisible to the schema. */
+	 * surface, invisible to the schema.
+	 */
 	public SqlFlush stamped(String column, Object value) {
 		return new SqlFlush(connection, codecs, column, value);
 	}

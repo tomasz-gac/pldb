@@ -3,14 +3,14 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction: a read face, a write face staging facts, and a commit
 // ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Relation;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Relation;
 
 /**
  * One transaction over one serialized source: an {@link AnswerSource}

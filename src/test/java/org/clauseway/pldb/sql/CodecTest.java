@@ -3,15 +3,11 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The codec map: builtins pass through, column codecs register through a
 // ABOUTME: template literal on the SOURCE — serialization is the backend's concern.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -22,6 +18,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,8 +58,10 @@ public class CodecTest {
 				.from(db);
 	}
 
-	/** One Java type, TWO wire encodings in one relation — the codec is a
-	 * property of the COLUMN, addressed through the defining method. */
+	/**
+	 * One Java type, TWO wire encodings in one relation — the codec is a
+	 * property of the COLUMN, addressed through the defining method.
+	 */
 	private static Literal event(AnswerSource db, Unifiable<LocalDate> at, Unifiable<LocalDate> logged) {
 		return Literal.relation(CodecTest.class, "event")
 				.arg("at", at).indexed()
@@ -74,8 +76,10 @@ public class CodecTest {
 				loan(null, lval(1), lval(LocalDate.of(2026, 9, 11))),
 				loan(null, lval(2), lval(LocalDate.of(2026, 12, 24)))));
 
-		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
-				.withCodec(loan(null, lvar(), AS_DATE.arg()))) {
+		try (
+				CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+						.withCodec(loan(null, lvar(), AS_DATE.arg()))
+		) {
 			Unifiable<LocalDate> due = lvar();
 			List<LocalDate> dues = loan(source, lvar(), due).solve(due)
 					.map(Term::get)
@@ -93,11 +97,13 @@ public class CodecTest {
 				event(null, lval(LocalDate.of(2026, 9, 11)), lval(LocalDate.of(2026, 9, 12)))));
 		try (Statement read = connection.createStatement()) {
 			assertThat(read.executeQuery(
-					"SELECT 1 FROM event WHERE at = DATE '2026-09-11' AND logged = '20260912'")
+							"SELECT 1 FROM event WHERE at = DATE '2026-09-11' AND logged = '20260912'")
 					.next()).isTrue();
 		}
-		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
-				.withCodec(event(null, AS_DATE.arg(), AS_TEXT.arg()))) {
+		try (
+				CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+						.withCodec(event(null, AS_DATE.arg(), AS_TEXT.arg()))
+		) {
 			Unifiable<LocalDate> logged = lvar();
 			assertThat(event(source, lvar(), logged).solve(logged)
 					.map(Term::get)
@@ -112,8 +118,10 @@ public class CodecTest {
 				loan(null, lval(1), lval(LocalDate.of(2026, 9, 11))),
 				loan(null, lval(2), lval(LocalDate.of(2026, 12, 24)))));
 
-		try (CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
-				.withCodec(loan(null, lvar(), AS_DATE.arg()))) {
+		try (
+				CachingSqlFetch source = CachingSqlFetch.pinned("h2", connection)
+						.withCodec(loan(null, lvar(), AS_DATE.arg()))
+		) {
 			Unifiable<Integer> id = lvar();
 			assertThat(loan(source, id, lval(LocalDate.of(2026, 12, 24))).solve(id)
 					.map(Object::toString)

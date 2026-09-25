@@ -4,13 +4,6 @@ package org.clauseway.pldb.sql;
 // ABOUTME: table, the region pin is (MAX(version), COUNT(*)) — inserts move the
 // ABOUTME: MAX, deletes move the COUNT, and the pair can never be restored.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Relation;
-import org.clauseway.pldb.transaction.Footprint;
-import org.clauseway.pldb.transaction.Pin;
-import org.clauseway.pldb.transaction.Pinned;
-import org.clauseway.pldb.transaction.SimulatedSerialization;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,6 +15,13 @@ import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Relation;
+import org.clauseway.pldb.transaction.Footprint;
+import org.clauseway.pldb.transaction.Pin;
+import org.clauseway.pldb.transaction.Pinned;
+import org.clauseway.pldb.transaction.SimulatedSerialization;
 
 /**
  * Simulated serialization at REGION grain: every table carries a
@@ -117,11 +117,13 @@ public class VersionedWatermark implements JdbcSource, SimulatedSerialization {
 		}
 	}
 
-	/** The pin statement joins the fetch's monitor: one connection, one
+	/**
+	 * The pin statement joins the fetch's monitor: one connection, one
 	 * monitor — a ForkJoin solve's concurrent reads serialize here. The
 	 * commit lane's calls ride the same monitor harmlessly (its own
 	 * connection is private; reads never touch the DB lock row, so the
-	 * monitor→lock order cannot invert). */
+	 * monitor→lock order cannot invert).
+	 */
 	private RegionPin regionPin(Connection connection, Call<Relation> probe) {
 		synchronized (source) {
 			return readRegionPin(connection, probe);

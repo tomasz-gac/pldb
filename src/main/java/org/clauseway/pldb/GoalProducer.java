@@ -4,28 +4,28 @@ package org.clauseway.pldb;
 // ABOUTME: produce bridge: rule extensions for the constraint side, table supplied
 // ABOUTME: by whoever owns the residence.
 
-import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
+import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Emitter;
 import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.goals.Conjunction;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.tabling.Tabling;
 import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.tabling.table.TableEntry;
-import org.clauseway.logic.tabling.Tabling;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import java.util.List;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * The produce face of a rule over an INJECTED table: the anchor is the

@@ -3,12 +3,14 @@ package org.clauseway.pldb.relations;
 // ABOUTME: Receipts for the row image: tuple-backed construction and decode, and
 // ABOUTME: delivery through the engine's one restate — coupled anys mint once.
 
-import org.clauseway.functional.tuples.Tuple;
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.constraints.Constraints;
 import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.tabling.conditions.Residues;
@@ -16,8 +18,6 @@ import org.clauseway.logic.unification.terms.Any;
 import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class RowImageTest {

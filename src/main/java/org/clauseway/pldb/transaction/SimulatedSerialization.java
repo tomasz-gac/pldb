@@ -3,11 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: Simulated serialization: a source whose reads return data WITH the pin
 // ABOUTME: naming their world, and whose commit proves the footprint unmoved.
 
+import java.util.List;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
-import java.util.List;
 
 /**
  * A source that serializes by proof, at the footprint's grain:

@@ -3,7 +3,6 @@ package org.clauseway.pldb.sql.compiler;
 // ABOUTME: One adapter-side predicate value: a WHERE fragment with its parameters
 // ABOUTME: bound positionally — what a registered compiler produces from an atom.
 
-import io.vavr.collection.Array;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -11,6 +10,7 @@ import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * The compiled form of one constraint atom, in the adapter's own vocabulary:

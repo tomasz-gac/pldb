@@ -3,17 +3,17 @@ package org.clauseway.pldb.sql;
 // ABOUTME: The null catcher: a NULL cell in a column the schema did not declare
 // ABOUTME: nullable refuses loudly by relation and column, never a silent broken fact.
 
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

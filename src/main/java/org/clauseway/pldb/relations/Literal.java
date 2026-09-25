@@ -3,30 +3,8 @@ package org.clauseway.pldb.relations;
 // ABOUTME: A relation applied to arguments — ONE public type, with how it reads
 // ABOUTME: (source, producer, or rule) as a polymorphic Reading behind it.
 
-import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
-import org.clauseway.functional.Nothing;
-import org.clauseway.functional.fibers.Fiber;
-import org.clauseway.functional.fibers.Cont;
-import org.clauseway.logic.constraints.Postable;
-import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.goals.Goal;
-import org.clauseway.logic.goals.Package;
-import org.clauseway.logic.goals.optimizer.Bounded;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Residues;
-import org.clauseway.logic.tabling.Tabling;
-import org.clauseway.logic.unification.MiniKanren;
-import org.clauseway.logic.unification.terms.Reified;
-import org.clauseway.logic.unification.Substitutions;
-import org.clauseway.logic.unification.terms.Term;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerProducer;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.GoalProducer;
-import org.clauseway.pldb.constraints.TableConstraints;
-import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -36,6 +14,28 @@ import java.util.stream.StreamSupport;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.clauseway.functional.Nothing;
+import org.clauseway.functional.fibers.Cont;
+import org.clauseway.functional.fibers.Fiber;
+import org.clauseway.functional.tuples.Tuple;
+import org.clauseway.logic.constraints.Postable;
+import org.clauseway.logic.constraints.Posting;
+import org.clauseway.logic.goals.Goal;
+import org.clauseway.logic.goals.Package;
+import org.clauseway.logic.goals.optimizer.Bounded;
+import org.clauseway.logic.tabling.Tabling;
+import org.clauseway.logic.tabling.conditions.Residues;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.logic.unification.MiniKanren;
+import org.clauseway.logic.unification.Substitutions;
+import org.clauseway.logic.unification.terms.Reified;
+import org.clauseway.logic.unification.terms.Term;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerProducer;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.GoalProducer;
+import org.clauseway.pldb.constraints.TableConstraints;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * A relation applied to arguments. ONE user-facing type: how the relation

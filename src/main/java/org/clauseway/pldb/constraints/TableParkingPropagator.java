@@ -3,12 +3,15 @@ package org.clauseway.pldb.constraints;
 // ABOUTME: The parking posted table: a Condition-valued constraint over an AnswerProducer —
 // ABOUTME: conditional rows impose at commit, Any rows admit everything, verdicts never test.
 
-import org.clauseway.functional.tuples.Tuple;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Fiber;
 import org.clauseway.functional.fibers.interpreter.Scope;
+import org.clauseway.functional.tuples.Tuple;
 import org.clauseway.logic.constraints.Propagation;
 import org.clauseway.logic.constraints.store.Constraint;
 import org.clauseway.logic.constraints.store.Theory;
@@ -17,23 +20,20 @@ import org.clauseway.logic.goals.Goal;
 import org.clauseway.logic.goals.Package;
 import org.clauseway.logic.lattice.ParkingPropagator;
 import org.clauseway.logic.lattice.Verdict;
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.logic.tabling.conditions.Condition;
 import org.clauseway.logic.tabling.JoinMap;
+import org.clauseway.logic.tabling.conditions.Condition;
+import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.tabling.table.Table;
 import org.clauseway.logic.unification.MiniKanren;
-import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.Substitutions;
+import org.clauseway.logic.unification.terms.Reified;
 import org.clauseway.logic.unification.terms.Term;
 import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerProducer;
 import org.clauseway.pldb.GoalProducer;
+import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.collection.Array;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Function;
+import org.clauseway.vavr.collection.Array;
 
 /**
  * The posted table over the ASYNC kind, read as its algebra: the constraint

@@ -3,17 +3,11 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The Transaction over the owned certify tier: watermark receipts on H2 —
 // ABOUTME: refusal without a capability, write skew refused, disjoint relations pass.
 
-import static org.clauseway.logic.unification.terms.LVal.lval;
-import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.clauseway.logic.unification.terms.LVal.lval;
+import static org.clauseway.logic.unification.terms.LVar.lvar;
 
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.relations.Literal;
-import org.clauseway.pldb.sql.SqlFetch;
-import org.clauseway.pldb.sql.Watermark;
-import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -21,6 +15,11 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.relations.Literal;
+import org.clauseway.pldb.sql.SqlFetch;
+import org.clauseway.pldb.sql.Watermark;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -96,16 +95,20 @@ public class TransactionTest {
 		// the counter-pin sees polarity by construction: advance runs over
 		// the union, so a retraction divides pins like any insert — no
 		// data-derived witness needed at relation grain
-		try (Transaction seed = transaction("seed")
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))) {
+		try (
+				Transaction seed = transaction("seed")
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+		) {
 			seed.commit();
 		}
 
 		Transaction reader = transaction("reader");
 		assertThat(names(reader)).containsExactly("{Ada}");
 
-		try (Transaction mover = transaction("mover")
-				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))) {
+		try (
+				Transaction mover = transaction("mover")
+						.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+		) {
 			mover.commit();
 		}
 
@@ -113,7 +116,7 @@ public class TransactionTest {
 			assertThat(names(after)).isEmpty();
 		}
 
-				assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
+		assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
 				book(null, lval("i1"), lval("Tar Pit")))).commit())
 				.isInstanceOf(Transaction.Conflict.class);
 	}

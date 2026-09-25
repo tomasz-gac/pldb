@@ -1,11 +1,5 @@
 package org.clauseway.pldb.relations;
 
-import org.clauseway.logic.constraints.Posting;
-import org.clauseway.logic.unification.terms.Unifiable;
-import org.clauseway.pldb.AnswerProducer;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.constraints.TableConstraints;
-import io.vavr.collection.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +7,11 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import org.clauseway.logic.constraints.Posting;
+import org.clauseway.logic.unification.terms.Unifiable;
+import org.clauseway.pldb.AnswerProducer;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.constraints.TableConstraints;
 
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

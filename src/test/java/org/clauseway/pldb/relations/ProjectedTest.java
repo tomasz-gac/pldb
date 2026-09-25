@@ -3,18 +3,18 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The projected() marker: inline ∃-projection — set semantics over the
 // ABOUTME: kept columns, honest ¬∃ under exclude, a real join var inside bodies.
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.clauseway.pldb.relations.Projected.projected;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.inmemory.AnswerStore;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 public class ProjectedTest {
@@ -112,8 +112,10 @@ public class ProjectedTest {
 				.solving(edge(db, node, via));
 	}
 
-	/** The marker is a JOIN variable in the body: used twice, the projection
-	 * must not sever the join — that is the leak that broke availableCopy. */
+	/**
+	 * The marker is a JOIN variable in the body: used twice, the projection
+	 * must not sever the join — that is the leak that broke availableCopy.
+	 */
 	private static Literal reciprocal(AnswerSource db, Unifiable<Integer> node, Unifiable<Integer> via) {
 		return Literal.relation(ProjectedTest.class, "reciprocal")
 				.arg("node", node)

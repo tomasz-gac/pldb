@@ -3,10 +3,10 @@ package org.clauseway.pldb.relations;
 // ABOUTME: The marker-variable base: a fresh lvar in every respect except to the
 // ABOUTME: ONE consumer that recognizes the wrapper and reads its payload.
 
+import java.util.Optional;
 import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.terms.Name;
 import org.clauseway.logic.unification.terms.Unifiable;
-import java.util.Optional;
 
 /**
  * A marker riding a typed argument slot: every term door delegates to a

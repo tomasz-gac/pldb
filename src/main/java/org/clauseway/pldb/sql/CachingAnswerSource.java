@@ -3,11 +3,6 @@ package org.clauseway.pldb.sql;
 // ABOUTME: An AnswerSource that caches its delegate subsumptively: answers land in a
 // ABOUTME: pool, the ledger records probes as calls, Call.subsumes proves coverage.
 
-import org.clauseway.logic.tabling.table.Call;
-import org.clauseway.pldb.AnswerSource;
-import org.clauseway.pldb.inmemory.AnswerStore;
-import org.clauseway.pldb.relations.Answer;
-import org.clauseway.pldb.relations.Relation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +10,11 @@ import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.clauseway.logic.tabling.table.Call;
+import org.clauseway.pldb.AnswerSource;
+import org.clauseway.pldb.inmemory.AnswerStore;
+import org.clauseway.pldb.relations.Answer;
+import org.clauseway.pldb.relations.Relation;
 
 /**
  * Subsumptive reuse over any delegate source — call subsumption at the data
