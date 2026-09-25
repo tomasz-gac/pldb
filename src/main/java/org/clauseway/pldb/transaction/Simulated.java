@@ -7,6 +7,7 @@ import org.clauseway.pldb.relations.Relation;
 import java.util.List;
 import io.vavr.control.Try;
 import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 /**
  * SIMULATED serialization: this transaction's ledger is the read cache
@@ -52,10 +53,12 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	/** The ledger folded: every region this transaction read, at its pin. */
-	public Footprint footprint() {
-		return reads.entrySet().stream()
-				.map(read -> Footprint.of(read.getKey(), read.getValue().getPin()))
-				.reduce(Footprint.empty(), Footprint::union);
+	public Footprint footprint() throws Transaction.Conflict {
+		Footprint folded = Footprint.empty();
+		for (Map.Entry<Call<Relation>, Pinned<Iterable<Answer>>> read : reads.entrySet()) {
+			folded = folded.union(Footprint.of(read.getKey(), read.getValue().getPin()));
+		}
+		return folded;
 	}
 
 	/**
@@ -64,13 +67,14 @@ public class Simulated extends AbstractTransaction {
 	 * the decision behind the write stood on them, whether or not this
 	 * transaction reads them itself. Premises accumulate by union.
 	 */
-	public Simulated requiring(Footprint required) {
+	public Simulated requiring(Footprint required) throws Transaction.Conflict {
 		return new Simulated(writeBuffer, serialization, reads, premise.union(required));
 	}
 
 	@Override
 	public void commit() throws Conflict {
-		through(() -> serialization.commit(footprint().union(premise),
+		Footprint certified = footprint().union(premise);
+		through(() -> serialization.commit(certified,
 				writeBuffer.stagedAssertions(),
 				writeBuffer.stagedRetractions()));
 	}

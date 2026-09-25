@@ -119,7 +119,7 @@ public class PremiseTest {
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
 				.commit())
 				.describedAs("the premise and the own read saw different person worlds")
-				.isInstanceOf(IllegalStateException.class);
+				.isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test

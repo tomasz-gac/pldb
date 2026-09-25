@@ -45,7 +45,7 @@ public class PinWorldIdentityTest {
 	}
 
 	@Test
-	public void aCommitElsewhereDoesNotDivideAnUntouchedRelationsPins() {
+	public void aCommitElsewhereDoesNotDivideAnUntouchedRelationsPins() throws Exception {
 		// the premise flow composes pins minted in DIFFERENT requests: a pin
 		// names the RELATION's world, so a commit that never touched it must
 		// leave later pins equal and the footprint union composable
@@ -69,7 +69,7 @@ public class PinWorldIdentityTest {
 		Assertions.assertThatThrownBy(() ->
 						Footprint.of(probe(), first).union(Footprint.of(probe(), third)))
 				.describedAs("person moved — composing across its worlds refuses")
-				.isInstanceOf(IllegalStateException.class);
+				.isInstanceOf(Transaction.Conflict.class);
 	}
 
 	/** A stranger's relation wearing the same bare name, other namespace. */
@@ -83,7 +83,7 @@ public class PinWorldIdentityTest {
 	}
 
 	@Test
-	public void aSameNamedRelationInAnotherNamespaceDoesNotDividePins() {
+	public void aSameNamedRelationInAnotherNamespaceDoesNotDividePins() throws Exception {
 		// the pin holds the RELATION, not its bare name: a commit to
 		// Elsewhere.person must not move this namespace's person
 		SharedDatabase shared = SharedDatabase.empty();
@@ -98,7 +98,7 @@ public class PinWorldIdentityTest {
 	}
 
 	@Test
-	public void pinsOfOneWorldAreEqualAndACommitDividesThem() {
+	public void pinsOfOneWorldAreEqualAndACommitDividesThem() throws Exception {
 		SharedDatabase shared = SharedDatabase.empty();
 		Pin first = shared.open("a").read(probe()).getPin();
 		Pin second = shared.open("b").read(probe()).getPin();

@@ -37,7 +37,7 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void aFootprintIsAPinAndSingletonsLiftLeaves() {
+	public void aFootprintIsAPinAndSingletonsLiftLeaves() throws Exception {
 		Footprint singleton = Footprint.of(region("person"), new Generation(1));
 		assertThat(singleton).isInstanceOf(Pin.class);
 		assertThat(Pinned.of("answers", singleton).getPin())
@@ -46,7 +46,7 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void agreeingUnionsMergeAndDuplicateRegionsFold() {
+	public void agreeingUnionsMergeAndDuplicateRegionsFold() throws Exception {
 		Footprint left = Footprint.of(region("person"), new Generation(1))
 				.union(Footprint.of(region("book"), new Generation(4)));
 		Footprint right = Footprint.of(region("person"), new Generation(1))
@@ -58,20 +58,20 @@ public class FootprintTest {
 	}
 
 	@Test
-	public void aRegionReadAtTwoPinsRefusesTheUnion() {
+	public void aRegionReadAtTwoPinsRefusesTheUnion() throws Exception {
 		// the wire-face claim at unit grain: composing a part that read
 		// person at world 1 with a part that read it at world 2 is a
 		// STRUCTURAL conflict — never a silently stale answer
 		Footprint atOne = Footprint.of(region("person"), new Generation(1));
 		Footprint atTwo = Footprint.of(region("person"), new Generation(2));
 		assertThatThrownBy(() -> atOne.union(atTwo))
-				.isInstanceOf(IllegalStateException.class)
+				.isInstanceOf(Transaction.Conflict.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("different");
 	}
 
 	@Test
-	public void emptyIsTheUnionIdentity() {
+	public void emptyIsTheUnionIdentity() throws Exception {
 		Footprint some = Footprint.of(region("person"), new Generation(1));
 		assertThat(Footprint.empty().union(some)).isEqualTo(some);
 		assertThat(some.union(Footprint.empty())).isEqualTo(some);
