@@ -235,7 +235,7 @@ public final class SqlFetch implements JdbcSource {
 		List<String> conditions = new ArrayList<>();
 		List<Object> parameters = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
-			if (args.get(i).asVal().isDefined()) {
+			if (args.get(i).isVal()) {
 				if (args.get(i).get() == null) {
 					requireNullable(relation, columns[i]);
 					conditions.add(columns[i].getName() + " IS NULL");
@@ -257,7 +257,7 @@ public final class SqlFetch implements JdbcSource {
 		List<String> unboundColumns = new ArrayList<>();
 		List<Property<?>> unboundProperties = new ArrayList<>();
 		for (int i = 0; i < args.size(); i++) {
-			if (!args.get(i).asVal().isDefined()) {
+			if (!args.get(i).isVal()) {
 				unboundColumns.add(columns[i].getName());
 				unboundProperties.add(columns[i]);
 			}
@@ -304,7 +304,7 @@ public final class SqlFetch implements JdbcSource {
 		int i = 0, j = 0;
 		Array<Object> result = Array.empty();
 		while (i + j < args.length()) {
-			if (args.get(i + j).asVal().isDefined()) {
+			if (args.get(i + j).isVal()) {
 				result = result.append(args.get(i + j).get());
 				++i;
 			} else {

@@ -6,7 +6,7 @@ package org.clauseway.pldb.relations;
 import org.clauseway.logic.unification.terms.LVar;
 import org.clauseway.logic.unification.terms.Name;
 import org.clauseway.logic.unification.terms.Unifiable;
-import io.vavr.control.Option;
+import java.util.Optional;
 
 /**
  * A marker riding a typed argument slot: every term door delegates to a
@@ -24,12 +24,12 @@ public abstract class MagicVar<T> implements Unifiable<T> {
 	private final Unifiable<T> variable = LVar.lvar();
 
 	@Override
-	public final Option<LVar<T>> asVar() {
+	public final Optional<LVar<T>> asVar() {
 		return variable.asVar();
 	}
 
 	@Override
-	public final Option<Name<T>> asName() {
+	public final Optional<Name<T>> asName() {
 		return variable.asName();
 	}
 

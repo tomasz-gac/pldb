@@ -108,7 +108,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 
 	private static long labelOrder(Package p, Term<?> x) {
 		Term<?> w = p.walk(x);
-		if (!w.asVar().isDefined()) {
+		if (!w.asVar().isPresent()) {
 			return 1;
 		}
 		return Constraint.in(p, TableConstraints.class)
@@ -148,7 +148,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 				continue;
 			}
 			Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
-			if (walked.forAll(w -> w.asVal().isDefined())) {
+			if (walked.forAll(w -> w.isVal())) {
 				continue;
 			}
 			survivors.add(Tuple.of(((TablePropagator) p).estimate(walked),
@@ -159,7 +159,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 				continue;
 			}
 			Array<Term<?>> walked = p.watchedTerms().map(t -> (Term<?>) s.walk(t));
-			if (walked.forAll(w -> w.asVal().isDefined())) {
+			if (walked.forAll(w -> w.isVal())) {
 				continue;
 			}
 			survivors.add(Tuple.of(((TableParkingPropagator) p).estimate(walked, s),
@@ -171,7 +171,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	private static Goal label(Term<?> x) {
 		return s -> {
 			Term<?> w = s.walk(x);
-			if (!w.asVar().isDefined()) {
+			if (!w.asVar().isPresent()) {
 				return Cont.just(s);
 			}
 			return Constraint.in(s, TableConstraints.class)
@@ -196,7 +196,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 		boolean bound = false;
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined()) {
+			if (w.isVal()) {
 				continue;
 			}
 			Prefix prefix = bindingOf(state, w, row.get(i));
@@ -245,9 +245,9 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 		return narrow(state, theory, walked,
 				candidates.stream()
 						.map(c -> Array.ofAll(c.map(cell ->
-								cell.asVal().isDefined() ? cell.get() : FREE_CELL)))
+								cell.isVal() ? cell.get() : FREE_CELL)))
 						.collect(Collectors.toList()),
-				column -> candidates.stream().anyMatch(c -> !c.get(column).asVal().isDefined()));
+				column -> candidates.stream().anyMatch(c -> !c.get(column).isVal()));
 	}
 
 	/** A free candidate cell's placeholder — never stored, columns holding one are skipped. */
@@ -275,7 +275,7 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 		List<Term<?>> reexamine = new ArrayList<>();
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
-			if (w.asVal().isDefined() || topColumn.test(i)) {
+			if (w.isVal() || topColumn.test(i)) {
 				continue;
 			}
 			int column = i;

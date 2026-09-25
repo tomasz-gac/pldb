@@ -100,7 +100,7 @@ final class Extension {
 		if (live.stream().anyMatch(row -> entailed(row, walked))) {
 			return Verdict.subsumed();
 		}
-		if (walked.forAll(w -> w.asVal().isDefined())) {
+		if (walked.forAll(w -> w.isVal())) {
 			return discharge(live, walked, retire);
 		}
 		if (live.size() == 1) {
@@ -152,7 +152,7 @@ final class Extension {
 	}
 
 	private static boolean isGround(Row only) {
-		return only.getCells().forAll(cell -> cell.asVal().isDefined());
+		return only.getCells().forAll(cell -> cell.isVal());
 	}
 
 	/**
@@ -169,14 +169,14 @@ final class Extension {
 	/** A ground cell must already match; a free cell's couplings must already agree. */
 	private static boolean imposesNothingAt(Row row, Array<Term<?>> walked, int position) {
 		Term<Object> cell = row.getCells().get(position);
-		return cell.asVal().isDefined() ?
+		return cell.isVal() ?
 				alreadyMatches(cell, walked.get(position)) :
 				couplingsAlreadyAgree(row, walked, position);
 	}
 
 	/** The walked term holds this very value — unifying them would bind nothing. */
 	private static boolean alreadyMatches(Term<Object> cell, Term<?> walked) {
-		return walked.asVal().isDefined() && cell.get().equals(walked.get());
+		return walked.isVal() && cell.get().equals(walked.get());
 	}
 
 	/** Every earlier cell holding the SAME any already walks equal — the coupling is spent. */
@@ -197,10 +197,10 @@ final class Extension {
 		for (int i = 0; i < walked.size(); i++) {
 			Term<?> w = walked.get(i);
 			Term<Object> cell = cells.get(i);
-			if (!cell.asVal().isDefined()) {
+			if (!cell.isVal()) {
 				continue;
 			}
-			if (w.asVal().isDefined()) {
+			if (w.isVal()) {
 				if (!cell.get().equals(w.get())) {
 					return false;
 				}

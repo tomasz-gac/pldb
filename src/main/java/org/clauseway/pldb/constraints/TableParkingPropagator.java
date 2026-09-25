@@ -139,7 +139,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	Goal enumerate(Array<? extends Term<?>> watched) {
 		return st -> k -> {
 			Array<Term<?>> walked = watched.map(t -> (Term<?>) st.walk(t));
-			if (walked.forAll(w -> w.asVal().isDefined())) {
+			if (walked.forAll(w -> w.isVal())) {
 				return Goal.success().apply(st).apply(k);
 			}
 			return Extension.probe(st, rel, walked)

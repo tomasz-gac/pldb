@@ -53,7 +53,7 @@ class ColumnIndex {
 	}
 
 	private static boolean isFree(Term<?> v) {
-		return !v.asVal().isDefined();
+		return !v.isVal();
 	}
 
 	private static Object getKey(Term<Object> cell) {

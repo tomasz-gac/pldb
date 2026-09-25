@@ -149,7 +149,6 @@ public final class NogoodSqlCompiler implements SqlCompiler {
 
 	private static Optional<Object> value(Term<?> term) {
 		return term.asVal()
-				.map(v -> (Object) v)
-				.toJavaOptional();
+				.map(v -> (Object) v);
 	}
 }

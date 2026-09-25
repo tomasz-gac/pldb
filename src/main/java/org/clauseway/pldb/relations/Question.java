@@ -80,7 +80,7 @@ public class Question {
 				.flatMap(schema -> schema.getArgs().toJavaStream())
 				.flatMap(arg -> arg.asVar()
 						.map(Stream::<Unifiable<?>>of)
-						.getOrElse(Stream::empty))
+						.orElseGet(Stream::empty))
 				.sorted(Comparator.comparing(v -> v.asVar().get().getBirth()))
 				.distinct()
 				.collect(Array.collector());
@@ -118,6 +118,6 @@ public class Question {
 	 */
 	private static Term<?> cell(Literal schema, int position, Map<Unifiable<?>, Term<?>> bound) {
 		Unifiable<?> arg = schema.getArgs().get(position);
-		return arg.asVal().isDefined() ? arg : bound.get(arg);
+		return arg.isVal() ? arg : bound.get(arg);
 	}
 }

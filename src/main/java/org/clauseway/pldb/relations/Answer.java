@@ -48,7 +48,7 @@ public class Answer {
 	public <T> Optional<T> get(Property<T> property) {
 		return relation.indexOf(property)
 				.map(i -> Answers.positions(reified).get(i))
-				.filter(cell -> cell.asVal().isDefined())
+				.filter(cell -> cell.isVal())
 				.flatMap(cell -> Try.of(() -> (T) ((Term<Object>) cell).get())
 						.toJavaOptional());
 	}

@@ -31,13 +31,13 @@ public class FiniteDomainSqlCompilerTest {
 
 		Atom<?> colVal = ((Posting.Activation) Longs.lss(x, lval(2L))).getItem();
 		Optional<SqlPredicate> lss = new FiniteDomainSqlCompiler()
-				.compile(colVal, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
+				.compile(colVal, term -> term.asVar().isPresent() ? Optional.of("id") : Optional.empty());
 		assertThat(lss).isPresent();
 		assertThat(lss.get().getFragment()).isEqualTo("id < ?");
 
 		Atom<?> valCol = ((Posting.Activation) Longs.gtr(x, lval(2L))).getItem();
 		Optional<SqlPredicate> gtr = new FiniteDomainSqlCompiler()
-				.compile(valCol, term -> term.asVar().isDefined() ? Optional.of("id") : Optional.empty());
+				.compile(valCol, term -> term.asVar().isPresent() ? Optional.of("id") : Optional.empty());
 		assertThat(gtr).isPresent();
 		assertThat(gtr.get().getFragment()).isEqualTo("id > ?");
 

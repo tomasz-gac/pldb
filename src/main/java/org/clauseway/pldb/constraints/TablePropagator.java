@@ -97,7 +97,7 @@ final class TablePropagator extends Propagator<TableConstraints> {
 	Goal enumerate(Array<? extends Term<?>> watched) {
 		return s -> {
 			Array<Term<?>> walked = watched.map(t -> (Term<?>) s.walk(t));
-			if (walked.forAll(w -> w.asVal().isDefined())) {
+			if (walked.forAll(w -> w.isVal())) {
 				return Cont.just(s);
 			}
 			List<Extension.Row> live = Extension.live(walked,

@@ -69,8 +69,8 @@ public final class Answers {
 		for (int i = 0; i < w.size(); i++) {
 			Term<Object> wc = w.get(i);
 			Term<Object> nc = n.get(i);
-			if (wc.asVal().isDefined()) {
-				if (!nc.asVal().isDefined() || !Objects.equals(wc.get(), nc.get())) {
+			if (wc.isVal()) {
+				if (!nc.isVal() || !Objects.equals(wc.get(), nc.get())) {
 					return false;
 				}
 			} else {
@@ -92,7 +92,7 @@ public final class Answers {
 	public static Answer landable(Answer row) {
 		Array<Term<Object>> cells = positions(row.getReified());
 		for (int i = 0; i < cells.size(); i++) {
-			if (!cells.get(i).asVal().isDefined()) {
+			if (!cells.get(i).isVal()) {
 				throw new IllegalStateException(row.getRelation().getName() + "."
 						+ row.getRelation().getArgs()[i].getName()
 						+ " is not ground — a write lands whole rows only");

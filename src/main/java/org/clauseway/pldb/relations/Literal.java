@@ -285,11 +285,11 @@ public class Literal implements Goal, Bounded, Postable {
 	 */
 	public Answer fact() {
 		Array<Object> values = args.zipWithIndex().map(t -> {
-			if (!t._1.asVal().isDefined()) {
+			if (!t._1.isVal()) {
 				throw new IllegalStateException("fact() over " + rel.getName()
 						+ ": column '" + rel.getArgs()[t._2].getName() + "' is unbound");
 			}
-			return (Object) t._1.asVal().get();
+			return (Object) t._1.get();
 		});
 		return Answers.answer(rel, values);
 	}
@@ -304,7 +304,7 @@ public class Literal implements Goal, Bounded, Postable {
 	private void requireGroundColumns(Package s) {
 		Property<?>[] cols = rel.getArgs();
 		for (int i = 0; i < cols.length; i++) {
-			if (cols[i].isGround() && !((Term<?>) s.walk(args.get(i))).asVal().isDefined()) {
+			if (cols[i].isGround() && !((Term<?>) s.walk(args.get(i))).isVal()) {
 				throw new IllegalStateException(rel.getName()
 						+ ": ground column '" + cols[i].getName() + "' is unbound at application");
 			}

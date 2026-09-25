@@ -116,6 +116,6 @@ class AnswerIndex {
 	}
 
 	private static boolean isGround(Term<?> v) {
-		return v.asVal().isDefined();
+		return v.isVal();
 	}
 }
