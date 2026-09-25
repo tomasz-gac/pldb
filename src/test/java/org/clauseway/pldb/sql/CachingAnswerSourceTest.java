@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
+import java.util.Arrays;
 
 public class CachingAnswerSourceTest {
 
@@ -45,7 +46,7 @@ public class CachingAnswerSourceTest {
 		Unifiable<Object> id = lvar();
 		Unifiable<Object> tag = lvar();
 		GoalProducer guarded = GoalProducer.of(GUARDED,
-				exclude(id.unifies(9L)), Array.of(id, tag), Table.empty());
+				exclude(id.unifies(9L)), Arrays.asList(id, tag), Table.empty());
 		List<Answer> delivered = new ArrayList<>();
 		new BreadthFirstScheduler<>(guarded.produce(everything(), one -> {
 			delivered.add(one);

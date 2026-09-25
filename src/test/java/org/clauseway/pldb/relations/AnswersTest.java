@@ -22,6 +22,7 @@ import io.vavr.collection.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
+import java.util.Arrays;
 
 public class AnswersTest {
 
@@ -30,14 +31,14 @@ public class AnswersTest {
 
 	@Test
 	public void aFactEncodesAsAGroundRowAtOne() {
-		Answer answer = Answers.answer(person, Array.of(1L, "Alan"));
+		Answer answer = Answers.answer(person, Arrays.asList(1L, "Alan"));
 		assertThat(answer.getCondition()).isEqualTo(Condition.ONE);
 		assertThat(answer.getReified().isGround()).isTrue();
-		assertThat(Answers.values(answer.getReified()).toJavaList()).containsExactly(1L, "Alan");
+		assertThat(Answers.values(answer.getReified())).containsExactly(1L, "Alan");
 	}
 
 	private Answer ground(Object id, Object name) {
-		return Answers.answer(person, Array.of(id, name));
+		return Answers.answer(person, Arrays.asList(id, name));
 	}
 
 	private Answer answer(Condition condition, Term<?>... cells) {
@@ -49,7 +50,7 @@ public class AnswersTest {
 		Unifiable<Object> a = lvar();
 		Unifiable<Object> b = lvar();
 		GoalProducer guarded = GoalProducer.of(person,
-				exclude(a.unifies(id)), Array.of(a, b), Table.empty());
+				exclude(a.unifies(id)), Arrays.asList(a, b), Table.empty());
 		List<Answer> delivered = new ArrayList<>();
 		new BreadthFirstScheduler<>(guarded.produce(
 				Call.of(person, Answers.image(Any.of(0), Any.of(1))), one -> {
@@ -99,7 +100,7 @@ public class AnswersTest {
 		// the braces gotcha: a reified term's toString renders decoration;
 		// the codec hands back the VALUES, never their rendering
 		Object first = Answers.values(
-				Answers.answer(person, Array.of(1L, "Alan")).getReified()).get(0);
+				Answers.answer(person, Arrays.asList(1L, "Alan")).getReified()).get(0);
 		assertThat(first).isInstanceOf(Long.class).isEqualTo(1L);
 	}
 

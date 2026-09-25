@@ -142,7 +142,7 @@ public final class SqlFetch implements JdbcSource {
 	@Override
 	public synchronized Iterable<Answer> answers(Call<Relation> probe) {
 		Relation relation = probe.getRelation();
-		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
+		IndexedSeq<Term<Object>> args = Array.ofAll(Answers.positions(probe.getArguments()));
 		List<Answer> answers = new ArrayList<>();
 		answers.addAll(rows(relation, args, push(relation, args, probe.getResidues())));
 		return answers;
@@ -226,7 +226,7 @@ public final class SqlFetch implements JdbcSource {
 	/** The probe's region as SQL — the certify side's door to the one rendering. */
 	RegionSql region(Call<Relation> probe) {
 		Relation relation = probe.getRelation();
-		IndexedSeq<Term<Object>> args = Answers.positions(probe.getArguments());
+		IndexedSeq<Term<Object>> args = Array.ofAll(Answers.positions(probe.getArguments()));
 		return regionSql(relation, args, push(relation, args, probe.getResidues()));
 	}
 
@@ -291,7 +291,7 @@ public final class SqlFetch implements JdbcSource {
 						}
 					}
 					Array<Object> vals = mergeValuesWithSupplied(args, values);
-					facts.add(Answers.answer(relation, Array.ofAll(vals)));
+					facts.add(Answers.answer(relation, vals.toJavaList()));
 				}
 				return facts;
 			}

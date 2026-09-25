@@ -269,7 +269,7 @@ public class TableParkingPropagatorTest {
 		Unifiable<Integer> gi = lvar();
 		Unifiable<String> gt = lvar();
 		GoalProducer producing = GoalProducer.of(rRel(),
-				exclude(gi.unifies(2)), Array.of(gi, gt), Table.empty());
+				exclude(gi.unifies(2)), Arrays.asList(gi, gt), Table.empty());
 		Call<Relation> wide = Call.of(rRel(), Answers.image(Any.of(0), Any.of(1)));
 		List<Answer> canned = new ArrayList<>();
 		new BreadthFirstScheduler<>(producing.produce(wide, answer -> {

@@ -95,7 +95,7 @@ public class NogoodSqlCompilerTest {
 		// the REST of the disjunction would strengthen — whole or not at all
 		Property<Long> id = Property.of("id");
 		Relation r = Literal.relation(NogoodSqlCompilerTest.class, "r").arg("id", lvar()).from(null).getRel();
-		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Array.of(x));
+		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Collections.singletonList(x));
 		assertThat(compiled(exclude(Posting.all(x.unifies(2L), posted)))).isEmpty();
 	}
 
@@ -148,7 +148,7 @@ public class NogoodSqlCompilerTest {
 		// flips the direction ONCE, at the conjunct boundary.
 		Property<Long> id = Property.of("id");
 		Relation r = Literal.relation(NogoodSqlCompilerTest.class, "r").arg("id", lvar()).from(null).getRel();
-		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Array.of(x));
+		Posting posted = TableConstraints.posted(AnswerStore.empty(), r, Collections.singletonList(x));
 		Nogood refused = (Nogood) ((Posting.Activation) exclude(posted)).getItem();
 		Optional<SqlPredicate> partial = compiler().compile(first.combine(refused), this::column);
 		assertThat(partial).isPresent();

@@ -25,6 +25,7 @@ import org.clauseway.pldb.relations.Relation;
 import io.vavr.collection.Array;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 /**
  * The produce face of a rule over an INJECTED table: the anchor is the
@@ -44,8 +45,8 @@ public final class GoalProducer implements AnswerProducer {
 	private final Array<Unifiable<?>> heads;
 	private final Table table;
 
-	public static GoalProducer of(Relation rel, Goal rule, Array<Unifiable<?>> heads, Table table) {
-		return new GoalProducer(rel, rule, heads, table);
+	public static GoalProducer of(Relation rel, Goal rule, List<Unifiable<?>> heads, Table table) {
+		return new GoalProducer(rel, rule, Array.ofAll(heads), table);
 	}
 
 	@Override

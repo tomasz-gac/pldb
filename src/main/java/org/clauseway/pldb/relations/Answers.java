@@ -16,6 +16,8 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The seam's value codec, written once. An answer is the cell's entry
@@ -34,15 +36,15 @@ public final class Answers {
 	}
 
 	/** {@link #image(Term[])} over a collected cell sequence. */
-	public static Reified<?> image(Array<? extends Term<?>> cells) {
-		return (Reified<?>) lval(Tuple.ofAll(cells.toJavaArray()));
+	public static Reified<?> image(List<? extends Term<?>> cells) {
+		return (Reified<?>) lval(Tuple.ofAll(cells.toArray()));
 	}
 
 	/** A ground row as the answer shape: values reified, conditioned ONE. */
-	public static Answer answer(Relation relation, Array<?> values) {
-		return Answer.of(relation, image(values
-				.map(Object.class::cast)
-				.map(v -> (Term<?>) lval(v))), Condition.ONE);
+	public static Answer answer(Relation relation, List<?> values) {
+		return Answer.of(relation, image(values.stream()
+				.map(v -> (Term<?>) lval(v))
+				.collect(Collectors.toList())), Condition.ONE);
 	}
 
 	/**
@@ -57,8 +59,8 @@ public final class Answers {
 	 * wide never swallows an unconditional row).
 	 */
 	public static boolean subsumes(Answer wide, Answer narrow) {
-		Array<Term<Object>> w = positions(wide.getReified());
-		Array<Term<Object>> n = positions(narrow.getReified());
+		List<Term<Object>> w = positions(wide.getReified());
+		List<Term<Object>> n = positions(narrow.getReified());
 		if (w.size() != n.size()) {
 			return false;
 		}
@@ -90,7 +92,7 @@ public final class Answers {
 	 * explicit choice ({@link Answer#unconditional()}).
 	 */
 	public static Answer landable(Answer row) {
-		Array<Term<Object>> cells = positions(row.getReified());
+		List<Term<Object>> cells = positions(row.getReified());
 		for (int i = 0; i < cells.size(); i++) {
 			if (!cells.get(i).isVal()) {
 				throw new IllegalStateException(row.getRelation().getName() + "."
@@ -107,8 +109,8 @@ public final class Answers {
 	}
 
 	/** The row's raw values, positional. The row must be fully ground. */
-	public static Array<Object> values(Reified<?> row) {
-		return positions(row).map(Term::get);
+	public static List<Object> values(Reified<?> row) {
+		return positions(row).stream().map(Term::get).collect(Collectors.toList());
 	}
 
 	/**
@@ -119,7 +121,7 @@ public final class Answers {
 	 * the representation: cells are read through the structural contract.
 	 */
 	@SuppressWarnings("unchecked")
-	public static Array<Term<Object>> positions(Reified<?> image) {
+	public static List<Term<Object>> positions(Reified<?> image) {
 		Object w = image.get();
 		if (!(w instanceof Tuple)) {
 			throw new IllegalArgumentException("not a row image: " + image);
@@ -127,6 +129,6 @@ public final class Answers {
 		Tuple row = (Tuple) w;
 		return IntStream.rangeClosed(1, row.arity())
 				.mapToObj(i -> (Term<Object>) row.get(i))
-				.collect(Array.collector());
+				.collect(Collectors.toList());
 	}
 }

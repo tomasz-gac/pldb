@@ -37,7 +37,7 @@ public class QuestionTest {
 	}
 
 	private static String render(Answer row) {
-		return row.getRelation().getName() + row.values().toJavaList();
+		return row.getRelation().getName() + row.values();
 	}
 
 	@Test

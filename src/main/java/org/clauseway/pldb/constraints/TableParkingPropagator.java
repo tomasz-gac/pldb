@@ -86,7 +86,7 @@ public class TableParkingPropagator extends ParkingPropagator<TableConstraints> 
 	 */
 	static TableParkingPropagator rule(Relation rel, Goal rule, Array<Unifiable<?>> heads) {
 		return new TableParkingPropagator(rel, "rule",
-				pkg -> GoalProducer.of(rel, rule, heads, tableOf(pkg, rel)), heads);
+				pkg -> GoalProducer.of(rel, rule, heads.toJavaList(), tableOf(pkg, rel)), heads);
 	}
 
 	private static Table tableOf(Package pkg, Relation rel) {

@@ -82,7 +82,7 @@ final class Extension {
 			Theory<TableConstraints> theory) {
 		return extension.order.toJavaStream()
 				.flatMap(image -> Stream.of(image)
-						.map(Answers::positions)
+						.map(img -> Array.ofAll(Answers.positions(img)))
 						.filter(cells -> compatible(theory, walked, cells))
 						.map(cells -> new Row(image, cells, extension.members.get(image).get())))
 				.collect(Collectors.toList());

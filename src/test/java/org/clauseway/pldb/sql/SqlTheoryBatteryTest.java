@@ -100,7 +100,7 @@ public class SqlTheoryBatteryTest {
 			members.add(Any.of(i));
 		}
 		return StreamSupport.stream(reference.answers(
-								Call.of(relation, Answers.image(Array.ofAll(members))))
+								Call.of(relation, Answers.image(members)))
 						.spliterator(), false)
 				.map(answer -> Answers.answer(relation, Answers.values(answer.getReified())));
 	}

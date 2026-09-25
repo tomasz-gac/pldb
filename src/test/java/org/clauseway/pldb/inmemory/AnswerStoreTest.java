@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.junit.Test;
+import java.util.Arrays;
 
 public class AnswerStoreTest {
 
@@ -42,7 +43,7 @@ public class AnswerStoreTest {
 			.getRel();
 
 	private static Answer row(Object member, Object copy) {
-		return Answers.answer(LOAN, Array.of(member, copy));
+		return Answers.answer(LOAN, Arrays.asList(member, copy));
 	}
 
 	private static Call<Relation> probe(Term<?> member, Term<?> copy) {
@@ -180,7 +181,7 @@ public class AnswerStoreTest {
 		Unifiable<Object> member = lvar();
 		Unifiable<Object> copy = lvar();
 		GoalProducer guarded = GoalProducer.of(LOAN,
-				exclude(member.unifies(forbidden)), Array.of(member, copy), Table.empty());
+				exclude(member.unifies(forbidden)), Arrays.asList(member, copy), Table.empty());
 		List<Answer> delivered = new ArrayList<>();
 		new BreadthFirstScheduler<>(guarded.produce(probe(Any.of(0), Any.of(1)), answer -> {
 			delivered.add(answer);
@@ -276,7 +277,7 @@ public class AnswerStoreTest {
 			.getRel();
 
 	private static Answer pair(Object a, Object b) {
-		return Answers.answer(PAIR, Array.of(a, b));
+		return Answers.answer(PAIR, Arrays.asList(a, b));
 	}
 
 	private static Call<Relation> pairProbe(Term<?> a, Term<?> b) {
@@ -336,8 +337,8 @@ public class AnswerStoreTest {
 		// no indexed() declarations on the relation — the store consults the
 		// access-pattern contract and finds none: every probe walks all rows
 		AnswerStore store = AnswerStore.empty()
-				.with(FLAGLESS, Answers.answer(FLAGLESS, Array.of("m1", "c1")))
-				.with(FLAGLESS, Answers.answer(FLAGLESS, Array.of("m2", "c2")));
+				.with(FLAGLESS, Answers.answer(FLAGLESS, Arrays.asList("m1", "c1")))
+				.with(FLAGLESS, Answers.answer(FLAGLESS, Arrays.asList("m2", "c2")));
 
 		Call<Relation> bound = Call.of(FLAGLESS,
 				Answers.image((Term<?>) lval("m1"), Any.of(0)));

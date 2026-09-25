@@ -57,12 +57,12 @@ public class Literal implements Goal, Bounded, Postable {
 	Array<Unifiable<?>> args;
 	Reading reading;
 
-	public static Literal of(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(rel, args, new SourceReading(source));
+	public static Literal of(AnswerSource source, Relation rel, List<Unifiable<?>> args) {
+		return new Literal(rel, Array.ofAll(args), new SourceReading(source));
 	}
 
-	public static Literal of(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
-		return new Literal(rel, args, new ProducerReading(producer));
+	public static Literal of(AnswerProducer producer, Relation rel, List<Unifiable<?>> args) {
+		return new Literal(rel, Array.ofAll(args), new ProducerReading(producer));
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class Literal implements Goal, Bounded, Postable {
 
 		@Override
 		public Posting posted(Literal lit) {
-			return TableConstraints.posted(source, lit.rel, lit.args);
+			return TableConstraints.posted(source, lit.rel, lit.args.toJavaList());
 		}
 
 		@Override
@@ -116,7 +116,7 @@ public class Literal implements Goal, Bounded, Postable {
 
 		@Override
 		public Posting posted(Literal lit) {
-			return TableConstraints.posted(producer, lit.rel, lit.args);
+			return TableConstraints.posted(producer, lit.rel, lit.args.toJavaList());
 		}
 
 		@Override
@@ -143,7 +143,7 @@ public class Literal implements Goal, Bounded, Postable {
 
 		@Override
 		public Posting posted(Literal lit) {
-			return TableConstraints.postedRule(lit.rel, body, lit.args);
+			return TableConstraints.postedRule(lit.rel, body, lit.args.toJavaList());
 		}
 
 		@Override
@@ -291,7 +291,7 @@ public class Literal implements Goal, Bounded, Postable {
 			}
 			return (Object) t._1.get();
 		});
-		return Answers.answer(rel, values);
+		return Answers.answer(rel, values.toJavaList());
 	}
 
 	@Override

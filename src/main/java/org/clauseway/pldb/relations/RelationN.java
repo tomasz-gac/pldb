@@ -54,11 +54,11 @@ public class RelationN implements Relation {
 	}
 
 	public static Literal relation(AnswerSource source, Relation rel, Unifiable<?>... args) {
-		return Literal.of(source, rel, Array.of(args));
+		return Literal.of(source, rel, Arrays.asList(args));
 	}
 
 	public static Literal relation(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
-		return Literal.of(producer, rel, Array.of(args));
+		return Literal.of(producer, rel, Arrays.asList(args));
 	}
 
 	public Posting posted(AnswerSource source, Unifiable<?>... args) {
@@ -66,7 +66,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Posting posted(AnswerSource source, Relation rel, Unifiable<?>... args) {
-		return TableConstraints.posted(source, rel, Array.of(args));
+		return TableConstraints.posted(source, rel, Arrays.asList(args));
 	}
 
 	public Posting posted(AnswerProducer producer, Unifiable<?>... args) {
@@ -74,7 +74,7 @@ public class RelationN implements Relation {
 	}
 
 	public static Posting posted(AnswerProducer producer, Relation rel, Unifiable<?>... args) {
-		return TableConstraints.posted(producer, rel, Array.of(args));
+		return TableConstraints.posted(producer, rel, Arrays.asList(args));
 	}
 
 	public Answer apply(Object... vs) {
@@ -83,6 +83,6 @@ public class RelationN implements Relation {
 
 	/** The relation's stored-row face: ground values in declared order. */
 	public Answer fact(Object... vs) {
-		return Answers.answer(this, Array.of(vs));
+		return Answers.answer(this, Arrays.asList(vs));
 	}
 }

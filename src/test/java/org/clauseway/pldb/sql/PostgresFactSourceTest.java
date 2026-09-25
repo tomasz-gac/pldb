@@ -131,7 +131,7 @@ public class PostgresFactSourceTest {
 			}
 		}
 		for (Map.Entry<Relation, List<Answer>> table : byRelation.entrySet()) {
-			String placeholders = table.getValue().get(0).values().toJavaStream()
+			String placeholders = table.getValue().get(0).values().stream()
 					.map(v -> "?")
 					.collect(Collectors.joining(", "));
 			try (

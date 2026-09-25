@@ -19,6 +19,7 @@ import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import java.util.List;
 
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -39,7 +40,7 @@ class AnswerIndex {
 			return new AnswerIndex(byImage.put(image, folded), byColumn);
 		}
 		Map<Integer, ColumnIndex> indexed = byColumn;
-		Array<Term<Object>> cells = Answers.positions(image);
+		List<Term<Object>> cells = Answers.positions(image);
 		for (int i = 0; i < cells.size(); i++) {
 			if (!positions.contains(i)) {
 				continue;
@@ -55,7 +56,7 @@ class AnswerIndex {
 			return this;
 		}
 		Map<Integer, ColumnIndex> indexed = byColumn;
-		Array<Term<Object>> cells = Answers.positions(image);
+		List<Term<Object>> cells = Answers.positions(image);
 		for (int i = 0; i < cells.size(); i++) {
 			if (!positions.contains(i)) {
 				continue;
@@ -69,7 +70,7 @@ class AnswerIndex {
 	}
 
 	Iterable<Answer> answers(Relation relation, Set<Integer> positions, Call<?> probe) {
-		Array<Term<Object>> args = Answers.positions(probe.getArguments());
+		List<Term<Object>> args = Answers.positions(probe.getArguments());
 		Set<Reified<?>> candidates = candidates(positions, args);
 		return byImage.toJavaStream()
 				.filter(row -> candidates == null || candidates.contains(row._1))
@@ -89,7 +90,7 @@ class AnswerIndex {
 	 * rows". The scratch is MUTABLE java — the stored index stays
 	 * persistent, the per-probe computation never does.
 	 */
-	private Set<Reified<?>> candidates(Set<Integer> positions, Array<Term<Object>> args) {
+	private Set<Reified<?>> candidates(Set<Integer> positions, List<Term<Object>> args) {
 		Set<Reified<?>> narrowed = null;
 		for (int i = 0; i < args.size(); i++) {
 			if (!positions.contains(i) || !isGround(args.get(i))) {
@@ -108,7 +109,7 @@ class AnswerIndex {
 	}
 
 	/** Every bound probe position: the row's cell equals it, or the cell is free. */
-	private static boolean matches(Array<Term<Object>> probe, Array<Term<Object>> cells) {
+	private static boolean matches(List<Term<Object>> probe, List<Term<Object>> cells) {
 		return IntStream.range(0, probe.size())
 				.filter(i -> isGround(probe.get(i)))
 				.noneMatch(i -> isGround(cells.get(i))

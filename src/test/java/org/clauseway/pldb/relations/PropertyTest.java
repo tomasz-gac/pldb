@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.vavr.collection.Array;
 import org.junit.Test;
+import java.util.Arrays;
 
 public class PropertyTest {
 
@@ -40,7 +41,7 @@ public class PropertyTest {
 
 		// the bare constant finds the flagged copy's column
 		assertThat(rel.indexOf(id)).contains(0);
-		Answer fact = Answers.answer(rel, Array.of(7, "a"));
+		Answer fact = Answers.answer(rel, Arrays.asList(7, "a"));
 		assertThat(fact.get(id)).contains(7);
 	}
 

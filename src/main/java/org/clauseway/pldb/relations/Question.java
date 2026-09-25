@@ -67,7 +67,7 @@ public class Question {
 		return Cont.suspend(k -> question.apply(Package.empty().withStore(Table.empty()))
 				.apply(answerPkg -> Residues.all(answerPkg, anchor)
 						.flatMap(answer -> facts(
-								bind(variables, Answers.positions(answer._1)),
+								bind(variables, Array.ofAll(Answers.positions(answer._1))),
 								Condition.of(answer._2), schemas)
 								.map(k)
 								.reduce(Fiber.done(Nothing.nothing()),
@@ -107,7 +107,7 @@ public class Question {
 				.map(schema -> Answer.of(schema.getRel(),
 						Answers.image(IntStream.range(0, schema.getArgs().length())
 								.mapToObj(i -> cell(schema, i, bound))
-								.collect(Array.collector())),
+								.collect(Collectors.<Term<?>> toList())),
 						condition));
 	}
 

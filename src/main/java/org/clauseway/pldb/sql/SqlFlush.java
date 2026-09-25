@@ -201,7 +201,7 @@ public class SqlFlush {
 	 */
 	private Row encoded(Answer fact) {
 		Property<?>[] columns = fact.getRelation().getArgs();
-		Array<Object> values = fact.values();
+		List<Object> values = fact.values();
 		Object[] cells = new Object[columns.length];
 		for (int i = 0; i < columns.length; i++) {
 			Object value = values.get(i);

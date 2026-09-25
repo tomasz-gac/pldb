@@ -67,7 +67,7 @@ public class GoalProducerTest {
 		Unifiable<String> name = lvar();
 		return GoalProducer.of(personRel(),
 				person(counting(), id, name),
-				Array.of(id, name), Table.empty());
+				Arrays.asList(id, name), Table.empty());
 	}
 
 	/** A probe image: bound slots carry their value, nulls are free. */
@@ -77,7 +77,7 @@ public class GoalProducerTest {
 		for (Object slot : slots) {
 			members.add(slot == null ? Any.of(frees++) : lval(slot));
 		}
-		return Call.of(personRel(), Answers.image(Array.ofAll(members)));
+		return Call.of(personRel(), Answers.image(members));
 	}
 
 	/** Drive produce to completion, collecting the emissions. */
@@ -118,13 +118,13 @@ public class GoalProducerTest {
 		// inert fold — no log entry, no emission
 		// minted directly: the db's unindexed probe over-delivers by license,
 		// so iterator().next() was order-dependent debris
-		Answer row = Answers.answer(personRel(), Array.of((Object) 2L, "Alan"));
+		Answer row = Answers.answer(personRel(), Arrays.asList((Object) 2L, "Alan"));
 		AnswerSource stuttering = probe -> Arrays.asList(row, row, row);
 		Unifiable<Long> id = lvar();
 		Unifiable<String> name = lvar();
 		GoalProducer source = GoalProducer.of(personRel(),
 				person(stuttering, id, name),
-				Array.of(id, name), Table.empty());
+				Arrays.asList(id, name), Table.empty());
 		assertThat(drain(source, probe(2L, null))).hasSize(1);
 	}
 
@@ -143,7 +143,7 @@ public class GoalProducerTest {
 		Unifiable<Long> gid = lvar();
 		Unifiable<String> gname = lvar();
 		GoalProducer guarded = GoalProducer.of(personRel(),
-				exclude(gid.unifies(2L)), Array.of(gid, gname), Table.empty());
+				exclude(gid.unifies(2L)), Arrays.asList(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
 		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(1L)), id)).containsExactly("{1}");
@@ -161,7 +161,7 @@ public class GoalProducerTest {
 		Unifiable<String> gname = lvar();
 		GoalProducer guarded = GoalProducer.of(personRel(),
 				exclude(gid.unifies(2L)).or(exclude(gid.unifies(3L))),
-				Array.of(gid, gname), Table.empty());
+				Arrays.asList(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
 		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(4L)), id)).containsExactlyInAnyOrder("{4}", "{4}");
@@ -175,7 +175,7 @@ public class GoalProducerTest {
 		Unifiable<String> gname = lvar();
 		GoalProducer guarded = GoalProducer.of(personRel(),
 				exclude(gid.unifies(2L)).or(Goal.success()),
-				Array.of(gid, gname), Table.empty());
+				Arrays.asList(gid, gname), Table.empty());
 		Unifiable<Long> id = lvar();
 		assertThat(answers(person(guarded, id, lvar())
 				.and(id.unifies(4L)), id)).containsExactly("{4}");

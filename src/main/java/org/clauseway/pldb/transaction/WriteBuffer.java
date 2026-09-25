@@ -81,13 +81,13 @@ public class WriteBuffer implements AnswerSource {
 	}
 
 	/** The rows this value's lineage staged to land, in staging order. */
-	public Array<Answer> stagedAssertions() {
-		return stagedAssertions;
+	public List<Answer> stagedAssertions() {
+		return stagedAssertions.toJavaList();
 	}
 
 	/** The rows this value's lineage staged to remove, in staging order. */
-	public Array<Answer> stagedRetractions() {
-		return stagedRetractions;
+	public List<Answer> stagedRetractions() {
+		return stagedRetractions.toJavaList();
 	}
 
 	@Override

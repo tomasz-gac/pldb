@@ -12,6 +12,7 @@ import io.vavr.collection.Array;
 import io.vavr.control.Try;
 import java.util.Optional;
 import lombok.Value;
+import java.util.List;
 
 /**
  * One row of data, whole: the {@link Relation} it belongs to, its reified
@@ -39,7 +40,7 @@ public class Answer {
 	}
 
 	/** The row's raw values, positional; the row must be fully ground. */
-	public Array<Object> values() {
+	public List<Object> values() {
 		return Answers.values(reified);
 	}
 

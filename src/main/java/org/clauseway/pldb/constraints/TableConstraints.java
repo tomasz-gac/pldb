@@ -67,8 +67,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * the doom hoists the failure; a live post is one success, ever, and
 	 * floats ahead of enumerations.
 	 */
-	public static Posting posted(AnswerSource source, Relation rel, Array<Unifiable<?>> args) {
-		return Propagation.activate(new TablePropagator(source, rel, args));
+	public static Posting posted(AnswerSource source, Relation rel, List<Unifiable<?>> args) {
+		return Propagation.activate(new TablePropagator(source, rel, Array.ofAll(args)));
 	}
 
 	/**
@@ -77,8 +77,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * the parked kind's arrival semantics — not the statement entry.
 	 * Conditional and Any-bearing answers are consumed natively.
 	 */
-	public static Posting posted(AnswerProducer producer, Relation rel, Array<Unifiable<?>> args) {
-		return Propagation.activate(new TableParkingPropagator(rel, producer, args));
+	public static Posting posted(AnswerProducer producer, Relation rel, List<Unifiable<?>> args) {
+		return Propagation.activate(new TableParkingPropagator(rel, producer, Array.ofAll(args)));
 	}
 
 	/**
@@ -88,8 +88,8 @@ public final class TableConstraints extends LatticeFactor<Support, TableConstrai
 	 * cyclic wait the substrate can refuse, instead of a silent regress
 	 * through fresh worlds.
 	 */
-	public static Posting postedRule(Relation rel, Goal rule, Array<Unifiable<?>> args) {
-		return Propagation.activate(TableParkingPropagator.rule(rel, rule, args));
+	public static Posting postedRule(Relation rel, Goal rule, List<Unifiable<?>> args) {
+		return Propagation.activate(TableParkingPropagator.rule(rel, rule, Array.ofAll(args)));
 	}
 
 	/**
