@@ -3,10 +3,8 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction: a read face, a write face staging facts, and a commit
 // ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
-import org.clauseway.functional.Nothing;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.Writer;
-import io.vavr.control.Try;
 
 /**
  * One transaction over one serialized source: an {@link AnswerSource}
@@ -21,7 +19,7 @@ import io.vavr.control.Try;
  */
 public interface Transaction extends AnswerSource, Writer<Transaction>, AutoCloseable {
 
-	final class Conflict extends RuntimeException {
+	final class Conflict extends Exception {
 		public Conflict(String message) {
 			super(message);
 		}
@@ -31,5 +29,5 @@ public interface Transaction extends AnswerSource, Writer<Transaction>, AutoClos
 	 * The write face: the source's own commit door proves the binding and
 	 * lands the flush. Success or refusal, the value is spent — close it.
 	 */
-	Try<Nothing> commit();
+	void commit() throws Conflict;
 }

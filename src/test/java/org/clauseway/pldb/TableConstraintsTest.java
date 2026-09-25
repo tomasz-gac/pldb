@@ -86,8 +86,7 @@ public class TableConstraintsTest {
 					s(null, lval("b"), lval(20)),
 					s(null, lval("d"), lval(40)),
 					t(null, lval(7), lval("u")),
-					t(null, lval(7), lval("v"))))
-			.get();
+					t(null, lval(7), lval("v"))));
 
 	/** A goal that runs assertions against the live package and succeeds. */
 	private static Goal probe(Consumer<Package> check) {

@@ -35,8 +35,7 @@ public class LiteralTest {
 	private static final AnswerStore db = AnswerStore.empty()
 			.asserting(Arrays.asList(
 					person(null, lval(1), lval("Ada")),
-					person(null, lval(2), lval("Alan"))))
-			.get();
+					person(null, lval(2), lval("Alan"))));
 
 	private static List<String> answers(Goal g, Unifiable<?> out) {
 		return g.solve(out).map(Object::toString).sorted().collect(Collectors.toList());
@@ -72,12 +71,10 @@ public class LiteralTest {
 
 	@Test
 	public void aHoledLiteralRefusesAtTheWriteDoorByName() {
-		// the refusal travels as the door's Try value — the Conflict ruling's
-		// idiom — and .get() rethrows where a caller wants the throw
-		Try<AnswerStore> refused = AnswerStore.empty()
-				.asserting(person(null, lval(1), lvar()));
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause())
+		// a hole is a programming error: the write door throws, naming
+		// the relation and the column
+		assertThatThrownBy(() -> AnswerStore.empty()
+				.asserting(person(null, lval(1), lvar())))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("name");
@@ -94,8 +91,7 @@ public class LiteralTest {
 				.asserting(Arrays.asList(
 						wide(null, lval(7), lval("a"), lval("b"), lval("c"), lval("d"),
 								lval("e"), lval("f"), lval("g"), lval("h"), lval("i"),
-								lval("j"), lval("k"))))
-				.get();
+								lval("j"), lval("k"))));
 		Unifiable<String> last = lvar();
 		assertThat(answers(wide(wideDb, lval(7),
 				lvar(), lvar(), lvar(), lvar(), lvar(), lvar(),
@@ -179,8 +175,7 @@ public class LiteralTest {
 		org.clauseway.pldb.inmemory.AnswerStore db = org.clauseway.pldb.inmemory.AnswerStore.empty()
 				.asserting(Arrays.asList(
 						Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null),
-						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)))
-				.get();
+						Literal.relation(LiteralTest.class, "person").arg("id", lval(2)).arg("name", lval("Alan")).from(null)));
 		org.assertj.core.api.Assertions.assertThat(db.estimate(
 						Call.of(
 								Literal.relation(LiteralTest.class, "person").arg("id", lval(1)).arg("name", lval("Ada")).from(null).getRel(),

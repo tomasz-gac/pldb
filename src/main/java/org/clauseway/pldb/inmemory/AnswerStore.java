@@ -12,7 +12,6 @@ import org.clauseway.pldb.relations.Answers;
 import org.clauseway.pldb.relations.Relation;
 import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.Map;
-import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -69,14 +68,12 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 
 	/** The strict write face; {@link #with} stays the seam's permissive dock. */
 	@Override
-	public Try<AnswerStore> asserting(List<Answer> rows) {
-		return Try.of(() -> {
-			AnswerStore grown = this;
-			for (Answer row : rows) {
-				grown = grown.with(row.getRelation(), Answers.landable(row));
-			}
-			return grown;
-		});
+	public AnswerStore asserting(List<Answer> rows) {
+		AnswerStore grown = this;
+		for (Answer row : rows) {
+			grown = grown.with(row.getRelation(), Answers.landable(row));
+		}
+		return grown;
 	}
 
 	public AnswerStore withAll(Relation relation, Iterable<Answer> answers) {
@@ -92,15 +89,13 @@ public class AnswerStore implements AnswerSource, Writer<AnswerStore> {
 	 * ⊕-folded condition with it; retracting the absent is a no-op.
 	 */
 	@Override
-	public Try<AnswerStore> retracting(List<Answer> rows) {
-		return Try.of(() -> {
-			AnswerStore shrunk = this;
-			for (Answer row : rows) {
-				shrunk = shrunk.without(row.getRelation(),
-						Answers.landable(row).getReified());
-			}
-			return shrunk;
-		});
+	public AnswerStore retracting(List<Answer> rows) {
+		AnswerStore shrunk = this;
+		for (Answer row : rows) {
+			shrunk = shrunk.without(row.getRelation(),
+					Answers.landable(row).getReified());
+		}
+		return shrunk;
 	}
 
 	public AnswerStore without(Relation relation, Reified<?> image) {

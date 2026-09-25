@@ -6,6 +6,7 @@ package org.clauseway.pldb.transaction;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
@@ -56,20 +57,20 @@ public class TransactionMemoryTest {
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
 		Transaction writer = AbstractTransaction.over(store.open("w"))
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
 		assertThat(names(writer)).containsExactly("{Ada}");
-		assertThat(writer.commit().isSuccess()).isTrue();
+		writer.commit();
 
 		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {
 			assertThat(names(reader)).containsExactly("{Ada}");
 		}
 	}
 
-	private static SharedDatabase seededWithAda() {
+	private static SharedDatabase seededWithAda() throws Transaction.Conflict {
 		SharedDatabase store = SharedDatabase.empty();
-		assertThat(AbstractTransaction.over(store.open("seed"))
+		AbstractTransaction.over(store.open("seed"))
 				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 		return store;
 	}
 
@@ -80,7 +81,7 @@ public class TransactionMemoryTest {
 		assertThat(names(tx)).containsExactly("{Ada}");
 
 		Transaction staged = tx.retracting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
+				person(null, lval(1), lval("Ada"))));
 		assertThat(names(staged))
 				.describedAs("the buffer's own reads stop seeing the staged removal")
 				.isEmpty();
@@ -95,9 +96,9 @@ public class TransactionMemoryTest {
 	@Test
 	public void aCommittedRetractionRemovesForTheNextTransaction() throws Exception {
 		SharedDatabase store = seededWithAda();
-		assertThat(AbstractTransaction.over(store.open("tx"))
+		AbstractTransaction.over(store.open("tx"))
 				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
 		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {
 			assertThat(names(reader)).isEmpty();
@@ -110,35 +111,30 @@ public class TransactionMemoryTest {
 		Transaction reader = AbstractTransaction.over(store.open("reader"));
 		assertThat(names(reader)).containsExactly("{Ada}");
 
-		assertThat(AbstractTransaction.over(store.open("mover"))
+		AbstractTransaction.over(store.open("mover"))
 				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
-		Try<?> refused = reader.asserting(Collections.singletonList(
-				book(null, lval("i1"), lval("Tar Pit")))).get().commit();
-		assertThat(refused.getCause())
+				assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
+				book(null, lval("i1"), lval("Tar Pit")))).commit())
 				.describedAs("the pinned person region lost a row — the retraction divides pins")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test
-	public void assertingAndRetractingOneFactRefusesAsConflict() throws Exception {
+	public void assertingAndRetractingOneFactRefusesTheWrite() throws Exception {
 		SharedDatabase store = seededWithAda();
 
-		Try<Transaction> retractStaged = AbstractTransaction.over(store.open("a"))
+		assertThatThrownBy(() -> AbstractTransaction.over(store.open("a"))
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
-				.get()
-				.retracting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))));
-		assertThat(retractStaged.getCause())
+				.retracting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit")))))
 				.describedAs("a transaction asserting and retracting one fact has not decided what it believes")
-				.isInstanceOf(Transaction.Conflict.class);
+				.isInstanceOf(IllegalStateException.class);
 
-		Try<Transaction> assertRemoved = AbstractTransaction.over(store.open("b"))
+		assertThatThrownBy(() -> AbstractTransaction.over(store.open("b"))
 				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
-				.get()
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
-		assertThat(assertRemoved.getCause())
-				.isInstanceOf(Transaction.Conflict.class);
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))))
+				.isInstanceOf(IllegalStateException.class);
 	}
 
 	private static Literal loanOf(AnswerSource db, Unifiable<Integer> id, Unifiable<String> copy) {
@@ -160,9 +156,9 @@ public class TransactionMemoryTest {
 		// selects the closed cluster, the door removes it, the commit
 		// certifies the reads the closure stood on
 		SharedDatabase store = SharedDatabase.empty();
-		assertThat(AbstractTransaction.over(store.open("seed"))
+		AbstractTransaction.over(store.open("seed"))
 				.asserting(loanOf(null, lval(1), lval("c1")), returnedOf(null, lval(1)))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
 		Simulated tx = AbstractTransaction.over(store.open("compact"));
 		Unifiable<Integer> id = lvar();
@@ -172,7 +168,7 @@ public class TransactionMemoryTest {
 				loanOf(null, id, copy), returnedOf(null, id))).get();
 		assertThat(cluster).hasSize(2);
 
-		assertThat(tx.retracting(cluster).get().commit().isSuccess()).isTrue();
+		tx.retracting(cluster).commit();
 
 		try (Transaction reader = AbstractTransaction.over(store.open("after"))) {
 			Unifiable<String> c = lvar();
@@ -191,14 +187,13 @@ public class TransactionMemoryTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
+				person(null, lval(1), lval("Ada"))));
 		second = second.asserting(Collections.singletonList(
-				person(null, lval(2), lval("Alan")))).get();
+				person(null, lval(2), lval("Alan"))));
 
-		assertThat(first.commit().isSuccess()).isTrue();
-		Try<?> refused = second.commit();
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
+		first.commit();
+		Transaction loser = second;
+		assertThatThrownBy(loser::commit).isInstanceOf(Transaction.Conflict.class);
 
 		try (Transaction reader = AbstractTransaction.over(store.open("r"))) {
 			assertThat(names(reader)).containsExactly("{Ada}");
@@ -210,10 +205,10 @@ public class TransactionMemoryTest {
 		SharedDatabase store = SharedDatabase.empty();
 		try (
 				Transaction seed = AbstractTransaction.over(store.open("seed"))
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(seed.commit().isSuccess()).isTrue();
+			seed.commit();
 		}
 
 		Transaction bookWriter = AbstractTransaction.over(store.open("books"));
@@ -222,15 +217,12 @@ public class TransactionMemoryTest {
 		assertThat(names(personWriter)).containsExactly("{Ada}");
 
 		bookWriter = bookWriter.asserting(Collections.singletonList(
-				book(null, lval("978-1"), lval("TAPL")))).get();
+				book(null, lval("978-1"), lval("TAPL"))));
 		personWriter = personWriter.asserting(Collections.singletonList(
-				person(null, lval(2), lval("Alan")))).get();
+				person(null, lval(2), lval("Alan"))));
 
-		assertThat(bookWriter.commit().isSuccess()).isTrue();
-		assertThat(personWriter.commit()
-				.isSuccess())
-				.describedAs("person marks never moved — the book commit must not bounce this one")
-				.isTrue();
+		bookWriter.commit();
+		personWriter.commit(); // person marks never moved — the book commit must not bounce this one
 	}
 
 	@Test
@@ -244,18 +236,15 @@ public class TransactionMemoryTest {
 
 		try (
 				Transaction books = AbstractTransaction.over(store.open("books"))
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(books.commit().isSuccess()).isTrue();
+			books.commit();
 		}
 
 		assertThat(names(people)).isEmpty();
 		Transaction staged = people.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
-		assertThat(staged.commit()
-				.isSuccess())
-				.describedAs("only book moved — the disjoint person write must land")
-				.isTrue();
+				person(null, lval(1), lval("Ada"))));
+		staged.commit(); // only book moved — the disjoint person write must land
 	}
 
 	@Test
@@ -267,9 +256,9 @@ public class TransactionMemoryTest {
 
 		try (
 				Transaction writer = AbstractTransaction.over(store.open("writer"))
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
-			assertThat(writer.commit().isSuccess()).isTrue();
+			writer.commit();
 		}
 
 		assertThat(names(reader))
@@ -283,7 +272,7 @@ public class TransactionMemoryTest {
 		SharedDatabase store = SharedDatabase.empty();
 		try (
 				Transaction abandoned = AbstractTransaction.over(store.open("a"))
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}

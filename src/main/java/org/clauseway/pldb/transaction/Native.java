@@ -1,9 +1,7 @@
 package org.clauseway.pldb.transaction;
 
-import org.clauseway.functional.Nothing;
 import org.clauseway.pldb.relations.Answer;
 import java.util.List;
-import io.vavr.control.Try;
 
 /**
  * NATIVE serialization: the backend tracks every read it serves, so this
@@ -20,20 +18,18 @@ public class Native extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> asserting(List<Answer> rows) {
-		return writeBuffer.asserting(rows)
-				.map(grown -> new Native(grown, serialization));
+	public Transaction asserting(List<Answer> rows) {
+		return new Native(writeBuffer.asserting(rows), serialization);
 	}
 
 	@Override
-	public Try<Transaction> retracting(List<Answer> rows) {
-		return writeBuffer.retracting(rows)
-				.map(marked -> new Native(marked, serialization));
+	public Transaction retracting(List<Answer> rows) {
+		return new Native(writeBuffer.retracting(rows), serialization);
 	}
 
 	@Override
-	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(
+	public void commit() throws Conflict {
+		through(() -> serialization.commit(
 				writeBuffer.stagedAssertions(),
 				writeBuffer.stagedRetractions()));
 	}

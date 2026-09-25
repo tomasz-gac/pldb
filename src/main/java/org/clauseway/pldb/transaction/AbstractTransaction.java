@@ -3,12 +3,10 @@ package org.clauseway.pldb.transaction;
 // ABOUTME: The transaction: a read face, a write face staging facts, and a commit
 // ABOUTME: proven by the source's serialization — one subtype per serialization kind.
 
-import org.clauseway.functional.Nothing;
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.AnswerSource;
 import org.clauseway.pldb.relations.Relation;
-import io.vavr.control.Try;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import lombok.AccessLevel;
@@ -38,14 +36,10 @@ public abstract class AbstractTransaction implements Transaction {
 	}
 
 	/** The shared verdict mapping: refused = Conflict, anything thrown surfaces. */
-	Try<Nothing> through(BooleanSupplier door) {
-		try {
-			return door.getAsBoolean()
-					? Try.success(Nothing.nothing())
-					: Try.failure(new Transaction.Conflict(id()
-					+ ": a concurrent commit moved a region this transaction read — re-solve"));
-		} catch (RuntimeException e) {
-			return Try.failure(e);
+	void through(BooleanSupplier door) throws Transaction.Conflict {
+		if (!door.getAsBoolean()) {
+			throw new Transaction.Conflict(id()
+					+ ": a concurrent commit moved a region this transaction read — re-solve");
 		}
 	}
 

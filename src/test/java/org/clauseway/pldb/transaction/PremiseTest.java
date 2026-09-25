@@ -6,6 +6,7 @@ package org.clauseway.pldb.transaction;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
@@ -45,9 +46,9 @@ public class PremiseTest {
 	@Test
 	public void theFootprintExposesEveryReadIncludingTheEmptyOne() throws Exception {
 		SharedDatabase store = SharedDatabase.empty();
-		assertThat(AbstractTransaction.over(store.open("seed"))
+		AbstractTransaction.over(store.open("seed"))
 				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
 		try (Simulated get = AbstractTransaction.over(store.open("get"))) {
 			solveNames(get);
@@ -71,11 +72,10 @@ public class PremiseTest {
 
 		// the pure-premise posture: the committing transaction reads NOTHING —
 		// person is certified only because the client's premise carried it
-		Try<?> landed = AbstractTransaction.over(store.open("post"))
+		AbstractTransaction.over(store.open("post"))
 				.requiring(premise)
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
-				.get().commit();
-		assertThat(landed.isSuccess()).isTrue();
+				.commit();
 	}
 
 	@Test
@@ -92,10 +92,9 @@ public class PremiseTest {
 
 		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
 		solveNames(post);
-		Try<?> landed = post
+		post
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
-				.get().commit();
-		assertThat(landed.isSuccess()).isTrue();
+				.commit();
 	}
 
 	@Test
@@ -110,19 +109,17 @@ public class PremiseTest {
 			premise = get.footprint();
 		}
 
-		assertThat(AbstractTransaction.over(store.open("mover"))
+		AbstractTransaction.over(store.open("mover"))
 				.asserting(Collections.singletonList(person(null, lval(2), lval("Alan"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
 		Simulated post = AbstractTransaction.over(store.open("post")).requiring(premise);
 		solveNames(post);
-		Try<?> refused = post
+				assertThatThrownBy(() -> post
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
-				.get().commit();
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause())
+				.commit())
 				.describedAs("the premise and the own read saw different person worlds")
-				.isInstanceOf(Transaction.Conflict.class);
+				.isInstanceOf(IllegalStateException.class);
 	}
 
 	@Test
@@ -134,16 +131,14 @@ public class PremiseTest {
 			premise = get.footprint();
 		}
 
-		assertThat(AbstractTransaction.over(store.open("mover"))
+		AbstractTransaction.over(store.open("mover"))
 				.asserting(Collections.singletonList(person(null, lval(2), lval("Alan"))))
-				.get().commit().isSuccess()).isTrue();
+				.commit();
 
-		Try<?> refused = AbstractTransaction.over(store.open("post"))
+				assertThatThrownBy(() -> AbstractTransaction.over(store.open("post"))
 				.requiring(premise)
 				.asserting(Collections.singletonList(book(null, lval("i1"), lval("Tar Pit"))))
-				.get().commit();
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause())
+				.commit())
 				.describedAs("the world the client decided against has moved — re-read, re-solve")
 				.isInstanceOf(Transaction.Conflict.class);
 	}

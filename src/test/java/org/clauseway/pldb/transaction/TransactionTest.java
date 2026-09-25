@@ -6,6 +6,7 @@ package org.clauseway.pldb.transaction;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
@@ -96,34 +97,33 @@ public class TransactionTest {
 		// the union, so a retraction divides pins like any insert — no
 		// data-derived witness needed at relation grain
 		try (Transaction seed = transaction("seed")
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()) {
-			assertThat(seed.commit().isSuccess()).isTrue();
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))) {
+			seed.commit();
 		}
 
 		Transaction reader = transaction("reader");
 		assertThat(names(reader)).containsExactly("{Ada}");
 
 		try (Transaction mover = transaction("mover")
-				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+				.retracting(Collections.singletonList(person(null, lval(1), lval("Ada"))))) {
+			mover.commit();
 		}
 
 		try (Transaction after = transaction("after")) {
 			assertThat(names(after)).isEmpty();
 		}
 
-		Try<?> refused = reader.asserting(Collections.singletonList(
-				book(null, lval("i1"), lval("Tar Pit")))).get().commit();
-		assertThat(refused.getCause())
+				assertThatThrownBy(() -> reader.asserting(Collections.singletonList(
+				book(null, lval("i1"), lval("Tar Pit")))).commit())
 				.isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test
 	public void commitLandsStagedFactsForTheNextTransaction() throws Exception {
 		Transaction writer = transaction("w")
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
 		assertThat(names(writer)).containsExactly("{Ada}");
-		assertThat(writer.commit().isSuccess()).isTrue();
+		writer.commit();
 
 		try (Transaction reader = transaction("r")) {
 			assertThat(names(reader)).containsExactly("{Ada}");
@@ -140,14 +140,13 @@ public class TransactionTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
+				person(null, lval(1), lval("Ada"))));
 		second = second.asserting(Collections.singletonList(
-				person(null, lval(2), lval("Alan")))).get();
+				person(null, lval(2), lval("Alan"))));
 
-		assertThat(first.commit().isSuccess()).isTrue();
-		Try<?> refused = second.commit();
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
+		first.commit();
+		Transaction loser = second;
+		assertThatThrownBy(loser::commit).isInstanceOf(Transaction.Conflict.class);
 
 		try (Transaction reader = transaction("r")) {
 			assertThat(names(reader)).containsExactly("{Ada}");
@@ -160,10 +159,10 @@ public class TransactionTest {
 		// person, the other committed only book — no conflict between them
 		try (
 				Transaction seed = transaction("seed")
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(seed.commit().isSuccess()).isTrue();
+			seed.commit();
 		}
 
 		Transaction bookWriter = transaction("books");
@@ -172,15 +171,12 @@ public class TransactionTest {
 		assertThat(names(personWriter)).containsExactly("{Ada}");
 
 		bookWriter = bookWriter.asserting(Collections.singletonList(
-				book(null, lval("978-1"), lval("TAPL")))).get();
+				book(null, lval("978-1"), lval("TAPL"))));
 		personWriter = personWriter.asserting(Collections.singletonList(
-				person(null, lval(2), lval("Alan")))).get();
+				person(null, lval(2), lval("Alan"))));
 
-		assertThat(bookWriter.commit().isSuccess()).isTrue();
-		assertThat(personWriter.commit()
-				.isSuccess())
-				.describedAs("person marks never moved — the book commit must not bounce this one")
-				.isTrue();
+		bookWriter.commit();
+		personWriter.commit(); // person marks never moved — the book commit must not bounce this one
 	}
 
 	@Test
@@ -193,17 +189,14 @@ public class TransactionTest {
 
 		try (
 				Transaction bookWriter = transaction("books")
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(bookWriter.commit().isSuccess()).isTrue();
+			bookWriter.commit();
 		}
 
 		reader = reader.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
-		assertThat(reader.commit()
-				.isSuccess())
-				.describedAs("person never moved — absence at pin and at commit is proof, not blindness")
-				.isTrue();
+				person(null, lval(1), lval("Ada"))));
+		reader.commit(); // person never moved — absence at pin and at commit is proof, not blindness
 	}
 
 	@Test
@@ -211,16 +204,16 @@ public class TransactionTest {
 		// no reads recorded: an empty footprint certifies vacuously — a decision
 		// that stood on no reads cannot have stood on stale ones
 		Transaction blind = transaction("blind")
-				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get();
+				.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))));
 
 		try (
 				Transaction other = transaction("other")
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(other.commit().isSuccess()).isTrue();
+			other.commit();
 		}
 
-		assertThat(blind.commit().isSuccess()).isTrue();
+		blind.commit();
 		try (Transaction check = transaction("check")) {
 			assertThat(names(check)).containsExactly("{Ada}");
 		}
@@ -230,7 +223,7 @@ public class TransactionTest {
 	public void anAbandonedTransactionLeavesNoTrace() throws Exception {
 		try (
 				Transaction abandoned = transaction("a")
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}

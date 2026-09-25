@@ -65,7 +65,7 @@ public class FootprintTest {
 		Footprint atOne = Footprint.of(region("person"), new Generation(1));
 		Footprint atTwo = Footprint.of(region("person"), new Generation(2));
 		assertThatThrownBy(() -> atOne.union(atTwo))
-				.isInstanceOf(Transaction.Conflict.class)
+				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("person")
 				.hasMessageContaining("different");
 	}

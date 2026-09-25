@@ -6,6 +6,7 @@ package org.clauseway.pldb.transaction;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
@@ -96,11 +97,11 @@ public class TransactionPostgresTest {
 		Transaction writer = transaction("pg", connect())
 				.asserting(Arrays.asList(
 						person(null, lval(1), lval("Ada")),
-						person(null, lval(2), lval("Alan")))).get();
+						person(null, lval(2), lval("Alan"))));
 		assertThat(names(writer))
 				.describedAs("the writer reads its own staged rows before commit")
 				.containsExactly("{Ada}", "{Alan}");
-		assertThat(writer.commit().isSuccess()).isTrue();
+		writer.commit();
 
 		try (Transaction reader = transaction("pg", connect())) {
 			assertThat(names(reader)).containsExactly("{Ada}", "{Alan}");
@@ -111,7 +112,7 @@ public class TransactionPostgresTest {
 	public void anAbandonedValueLeavesNoTrace() throws Exception {
 		try (
 				Transaction abandoned = transaction("pg", connect())
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
 			assertThat(names(abandoned)).containsExactly("{Ada}");
 		}
@@ -131,14 +132,13 @@ public class TransactionPostgresTest {
 		assertThat(names(second)).isEmpty();
 
 		first = first.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
+				person(null, lval(1), lval("Ada"))));
 		second = second.asserting(Collections.singletonList(
-				person(null, lval(2), lval("Alan")))).get();
+				person(null, lval(2), lval("Alan"))));
 
-		assertThat(first.commit().isSuccess()).isTrue();
-		Try<?> refused = second.commit();
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
+		first.commit();
+		Transaction loser = second;
+		assertThatThrownBy(loser::commit).isInstanceOf(Transaction.Conflict.class);
 
 		try (Transaction reader = transaction("pg", connect())) {
 			assertThat(names(reader))

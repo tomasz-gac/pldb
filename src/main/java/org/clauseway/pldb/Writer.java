@@ -5,7 +5,6 @@ package org.clauseway.pldb;
 
 import org.clauseway.pldb.relations.Answer;
 import org.clauseway.pldb.relations.Literal;
-import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -22,27 +21,27 @@ import java.util.stream.Collectors;
  * removes BY FACT — the membership claim leaves whole, every physical
  * duplicate with it; retracting the absent is a set-semantics no-op at
  * a store, and a transaction that both asserts and retracts one fact
- * refuses as {@code Conflict}: it has not decided what it believes.
+ * refuses loudly: it has not decided what it believes.
  */
 public interface Writer<S extends Writer<S>> {
 
-	Try<S> asserting(List<Answer> rows);
+	S asserting(List<Answer> rows);
 
-	Try<S> retracting(List<Answer> rows);
+	S retracting(List<Answer> rows);
 
-	default Try<S> asserting(Collection<Literal> rows) {
-		return Try.of(() -> facts(rows)).flatMap(this::asserting);
+	default S asserting(Collection<Literal> rows) {
+		return asserting(facts(rows));
 	}
 
-	default Try<S> retracting(Collection<Literal> rows) {
-		return Try.of(() -> facts(rows)).flatMap(this::retracting);
+	default S retracting(Collection<Literal> rows) {
+		return retracting(facts(rows));
 	}
 
-	default Try<S> asserting(Literal... rows) {
+	default S asserting(Literal... rows) {
 		return asserting(Arrays.asList(rows));
 	}
 
-	default Try<S> retracting(Literal... rows) {
+	default S retracting(Literal... rows) {
 		return retracting(Arrays.asList(rows));
 	}
 

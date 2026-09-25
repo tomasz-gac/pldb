@@ -51,33 +51,28 @@ public class WriteBuffer implements AnswerSource {
 				Array.empty(), Array.empty());
 	}
 
-	public Try<WriteBuffer> asserting(List<Answer> rows) {
-		return refuseCollision(removals, rows)
-				.flatMap(clear -> insertions.asserting(rows))
-				.map(grown -> new WriteBuffer(base, grown, removals,
-						stagedAssertions.appendAll(rows), stagedRetractions));
+	public WriteBuffer asserting(List<Answer> rows) {
+		refuseCollision(removals, rows);
+		return new WriteBuffer(base, insertions.asserting(rows), removals,
+				stagedAssertions.appendAll(rows), stagedRetractions);
 	}
 
-	public Try<WriteBuffer> retracting(List<Answer> rows) {
-		return refuseCollision(insertions, rows)
-				.flatMap(clear -> removals.asserting(rows))
-				.map(marked -> new WriteBuffer(base, insertions, marked,
-						stagedAssertions, stagedRetractions.appendAll(rows)));
+	public WriteBuffer retracting(List<Answer> rows) {
+		refuseCollision(insertions, rows);
+		return new WriteBuffer(base, insertions, removals.asserting(rows),
+				stagedAssertions, stagedRetractions.appendAll(rows));
 	}
 
 	/** A fact staged with the opposite polarity refuses the write whole. */
-	private static Try<AnswerStore> refuseCollision(AnswerStore opposite, List<Answer> rows) {
-		return Try.of(() -> {
-			for (Answer row : rows) {
-				if (opposite.answers(Call.of(row.getRelation(), row.getReified()))
-						.iterator().hasNext()) {
-					throw new Transaction.Conflict("the fact " + row.getRelation().getName()
-							+ row.getReified() + " is staged with the opposite polarity —"
-							+ " this transaction has not decided what it believes");
-				}
+	private static void refuseCollision(AnswerStore opposite, List<Answer> rows) {
+		for (Answer row : rows) {
+			if (opposite.answers(Call.of(row.getRelation(), row.getReified()))
+					.iterator().hasNext()) {
+				throw new IllegalStateException("the fact " + row.getRelation().getName()
+						+ row.getReified() + " is staged with the opposite polarity —"
+						+ " this transaction has not decided what it believes");
 			}
-			return opposite;
-		});
+		}
 	}
 
 	/** The rows this value's lineage staged to land, in staging order. */

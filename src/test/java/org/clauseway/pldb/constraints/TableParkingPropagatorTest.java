@@ -58,8 +58,7 @@ public class TableParkingPropagatorTest {
 			.asserting(Arrays.asList(
 					r(null, lval(1), lval("a")),
 					r(null, lval(2), lval("b")),
-					r(null, lval(3), lval("c"))))
-			.get();
+					r(null, lval(3), lval("c"))));
 
 	/** The reference relation as a rule: the body is the db lookup over the heads. */
 	private static Posting posted(Unifiable<Integer> i, Unifiable<String> t) {

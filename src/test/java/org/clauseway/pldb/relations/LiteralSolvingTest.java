@@ -36,8 +36,7 @@ public class LiteralSolvingTest {
 		return AnswerStore.empty()
 				.asserting(Arrays.stream(pairs)
 						.map(p -> edge(null, lval(p[0]), lval(p[1])))
-						.collect(Collectors.toList()))
-				.get();
+						.collect(Collectors.toList()));
 	}
 
 	/** The residence arc's target: recursion by calling the METHOD. */

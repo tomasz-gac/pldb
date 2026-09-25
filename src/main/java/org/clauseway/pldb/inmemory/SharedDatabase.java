@@ -63,8 +63,8 @@ public final class SharedDatabase {
 			return false;
 		}
 		AnswerStore next = current.getValue()
-				.asserting(asserted).get()
-				.retracting(retracted).get();
+				.asserting(asserted)
+				.retracting(retracted);
 		Map<Relation, Long> marks = new HashMap<>(current.getMarks());
 		for (Answer row : asserted) {
 			marks.merge(row.getRelation(), 1L, Long::sum);

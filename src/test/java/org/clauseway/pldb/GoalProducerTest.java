@@ -48,8 +48,7 @@ public class GoalProducerTest {
 			.asserting(Arrays.asList(
 					person((AnswerSource) null, lval(1L), lval("Ada")),
 					person((AnswerSource) null, lval(2L), lval("Alan")),
-					person((AnswerSource) null, lval(3L), lval("Kurt"))))
-			.get();
+					person((AnswerSource) null, lval(3L), lval("Kurt"))));
 
 	private final AtomicInteger hits = new AtomicInteger();
 

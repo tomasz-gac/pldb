@@ -6,6 +6,7 @@ package org.clauseway.pldb.sql;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.logic.tabling.table.Call;
 import org.clauseway.logic.unification.terms.Any;
@@ -145,9 +146,9 @@ public class LiveSourceTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+			mover.commit();
 		}
 
 		// book reads the CURRENT world while person was pinned before the
@@ -155,8 +156,8 @@ public class LiveSourceTest {
 		// the commit proof must refuse it
 		assertThat(names(torn.answers(probe(book(null, lvar(), lvar()))))).isEmpty();
 		Transaction staged = torn.asserting(Collections.singletonList(
-				book(null, lval("978-0"), lval("SICP")))).get();
-		assertThat(staged.commit().getCause())
+				book(null, lval("978-0"), lval("SICP"))));
+		assertThatThrownBy(() -> staged.commit())
 				.describedAs("person moved after its pin — a torn view must not land")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
@@ -171,18 +172,15 @@ public class LiveSourceTest {
 
 		try (
 				Transaction books = transaction("books")
-						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP")))).get()
+						.asserting(Collections.singletonList(book(null, lval("978-0"), lval("SICP"))))
 		) {
-			assertThat(books.commit().isSuccess()).isTrue();
+			books.commit();
 		}
 
 		assertThat(names(people.answers(probe(person(null, lvar(), lvar()))))).isEmpty();
 		Transaction staged = people.asserting(Collections.singletonList(
-				person(null, lval(1), lval("Ada")))).get();
-		assertThat(staged.commit()
-				.isSuccess())
-				.describedAs("only book moved — person pins spanning the foreign commit still hold")
-				.isTrue();
+				person(null, lval(1), lval("Ada"))));
+		staged.commit(); // only book moved — person pins spanning the foreign commit still hold
 	}
 
 	@Test
@@ -197,9 +195,9 @@ public class LiveSourceTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada")))).get()
+						.asserting(Collections.singletonList(person(null, lval(1), lval("Ada"))))
 		) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+			mover.commit();
 		}
 
 		Transaction second = AbstractTransaction.over(shared);

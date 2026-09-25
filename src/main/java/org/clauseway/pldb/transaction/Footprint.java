@@ -58,7 +58,7 @@ public final class Footprint implements Pin {
 		for (Map.Entry<Call<Relation>, Pin> entry : other.pins.entrySet()) {
 			Pin resident = merged.putIfAbsent(entry.getKey(), entry.getValue());
 			if (resident != null && !Objects.equals(resident, entry.getValue())) {
-				throw new Transaction.Conflict("cross-world composition: region "
+				throw new IllegalStateException("cross-world composition: region "
 						+ entry.getKey().getRelation().getName()
 						+ " was read at two different pins — the parts saw different worlds");
 			}

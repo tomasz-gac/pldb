@@ -88,8 +88,7 @@ public class SqlTheoryBatteryTest {
 					edge(null, lval(1L), lval(2L)),
 					edge(null, lval(2L), lval(1L)),
 					edge(null, lval(3L), lval(3L)),
-					edge(null, lval(1L), lval(5L))))
-			.get();
+					edge(null, lval(1L), lval(5L))));
 
 	private Connection connection;
 

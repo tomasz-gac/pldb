@@ -73,7 +73,7 @@ public class PinAtFirstTouchTest {
 		try (Transaction transaction = AbstractTransaction.over(recording)) {
 			solve(transaction);
 			solve(transaction);
-			assertThat(transaction.commit().isSuccess()).isTrue();
+			transaction.commit();
 		}
 		// two touches, ONE read: the ledger serves the repeat the same
 		// Pinned back — the transaction is its own snapshot at region grain

@@ -72,7 +72,7 @@ public class PlannerTest {
 		for (int i = 0; i < N; i++) {
 			facts.add(parent(null, lval(i), lval(i + 1)));
 		}
-		return new CountingSource(AnswerStore.empty().asserting(facts).get(), counter);
+		return new CountingSource(AnswerStore.empty().asserting(facts), counter);
 	}
 
 	/** grandparent-of-39, deliberately mis-ordered: the unbound joins first. */

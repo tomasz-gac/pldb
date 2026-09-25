@@ -75,7 +75,6 @@ public class AnswerStoreQueriesTest {
 						person(null, lval(20), lval("Magda"), lval("Gac"), lval(Gender.FEMALE)),
 						person(null, lval(21), lval("Weronika"), lval("Kroc"), lval(Gender.FEMALE)),
 						person(null, lval(22), lval("Monika"), lval("Kroc"), lval(Gender.FEMALE))))
-				.get()
 				.asserting(Arrays.asList(
 						parent(null, lval(10), lval(11)),
 						parent(null, lval(1), lval(5)),
@@ -97,8 +96,7 @@ public class AnswerStoreQueriesTest {
 						parent(null, lval(4), lval(16)),
 						parent(null, lval(6), lval(19)),
 						parent(null, lval(6), lval(22)),
-						parent(null, lval(22), lval(21))))
-				.get();
+						parent(null, lval(22), lval(21))));
 	}
 
 	private static final AnswerStore db = loadGeneology(AnswerStore.empty());

@@ -5,6 +5,7 @@ package org.clauseway.pldb.transaction;
 
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import org.clauseway.logic.unification.terms.Unifiable;
 import org.clauseway.pldb.AnswerSource;
@@ -38,22 +39,20 @@ public class TransactionPredicateTest {
 	}
 
 	/** No orphan table exists, so the flush inside commit fails for real. */
-	private Try<?> commitFailure(Transaction db) {
-		return db.asserting(Collections.singletonList(orphan(null, lval(1))))
-				.get().commit();
+	private Throwable commitFailure(Transaction db) {
+		return catchThrowable(() -> db.asserting(Collections.singletonList(orphan(null, lval(1))))
+				.commit());
 	}
 
 	@Test
 	public void aRecognizedCommitFailureMapsToConflict() {
-		Try<?> refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> true)));
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isInstanceOf(Transaction.Conflict.class);
+		Throwable refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> true)));
+		assertThat(refused).isInstanceOf(Transaction.Conflict.class);
 	}
 
 	@Test
 	public void anUnrecognizedFailureSurfacesAsItself() {
-		Try<?> refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> false)));
-		assertThat(refused.isFailure()).isTrue();
-		assertThat(refused.getCause()).isNotInstanceOf(Transaction.Conflict.class);
+		Throwable refused = commitFailure(AbstractTransaction.over(SerializableSource.pinned("h2", connection, e -> false)));
+		assertThat(refused).isNotNull().isNotInstanceOf(Transaction.Conflict.class);
 	}
 }

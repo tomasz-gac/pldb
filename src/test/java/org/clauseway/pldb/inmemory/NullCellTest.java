@@ -37,7 +37,7 @@ public class NullCellTest {
 				person(null, lval(1), lval("Ada")),
 				person(null, lval(2), lval((String) null)),
 				tagged(null, lval(1), lval("core")),
-				tagged(null, lval(2), lval((String) null)))).get();
+				tagged(null, lval(2), lval((String) null))));
 	}
 
 	@Test

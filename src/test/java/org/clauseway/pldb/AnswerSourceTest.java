@@ -36,8 +36,7 @@ public class AnswerSourceTest {
 			.asserting(Arrays.asList(
 					person(null, lval(1), lval("Ada")),
 					person(null, lval(2), lval("Alan")),
-					person(null, lval(3), lval("Kurt"))))
-			.get();
+					person(null, lval(3), lval("Kurt"))));
 
 	@Test
 	public void aLookupThroughTheSeamAnswersLikeTheDatabase() {

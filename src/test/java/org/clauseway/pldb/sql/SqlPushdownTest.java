@@ -50,8 +50,7 @@ public class SqlPushdownTest {
 			.asserting(Arrays.asList(
 					person(null, lval(1L), lval("Ada")),
 					person(null, lval(2L), lval("Alan")),
-					person(null, lval(3L), lval("Kurt"))))
-			.get();
+					person(null, lval(3L), lval("Kurt"))));
 
 	private Connection connection;
 	private final AtomicInteger statements = new AtomicInteger();

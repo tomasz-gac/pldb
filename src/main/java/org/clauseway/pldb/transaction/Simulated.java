@@ -42,15 +42,13 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Transaction> asserting(List<Answer> rows) {
-		return writeBuffer.asserting(rows)
-				.map(grown -> new Simulated(grown, serialization, reads, premise));
+	public Transaction asserting(List<Answer> rows) {
+		return new Simulated(writeBuffer.asserting(rows), serialization, reads, premise);
 	}
 
 	@Override
-	public Try<Transaction> retracting(List<Answer> rows) {
-		return writeBuffer.retracting(rows)
-				.map(marked -> new Simulated(marked, serialization, reads, premise));
+	public Transaction retracting(List<Answer> rows) {
+		return new Simulated(writeBuffer.retracting(rows), serialization, reads, premise);
 	}
 
 	/** The ledger folded: every region this transaction read, at its pin. */
@@ -71,8 +69,8 @@ public class Simulated extends AbstractTransaction {
 	}
 
 	@Override
-	public Try<Nothing> commit() {
-		return through(() -> serialization.commit(footprint().union(premise),
+	public void commit() throws Conflict {
+		through(() -> serialization.commit(footprint().union(premise),
 				writeBuffer.stagedAssertions(),
 				writeBuffer.stagedRetractions()));
 	}

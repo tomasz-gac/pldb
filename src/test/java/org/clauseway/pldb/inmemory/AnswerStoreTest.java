@@ -7,6 +7,7 @@ import static org.clauseway.logic.nogoods.Exclusion.exclude;
 import static org.clauseway.logic.unification.terms.LVal.lval;
 import static org.clauseway.logic.unification.terms.LVar.lvar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.clauseway.functional.Nothing;
 import org.clauseway.functional.fibers.Fiber;
@@ -82,7 +83,7 @@ public class AnswerStoreTest {
 				.with(LOAN, row("m1", "c1"))
 				.with(LOAN, row("m1", "c2"));
 
-		AnswerStore after = store.retracting(loanFact("m1", "c1")).get();
+		AnswerStore after = store.retracting(loanFact("m1", "c1"));
 		assertThat(images(after.answers(probe(lval("m1"), Any.of(1)))))
 				.describedAs("the bucket path serves post-removal — the index forgot the image")
 				.containsExactly("{({m1}, {c2})}");
@@ -97,7 +98,7 @@ public class AnswerStoreTest {
 	public void retractingAnAbsentFactIsANoOp() {
 		AnswerStore store = AnswerStore.empty().with(LOAN, row("m1", "c1"));
 
-		AnswerStore after = store.retracting(loanFact("m9", "c9")).get();
+		AnswerStore after = store.retracting(loanFact("m9", "c9"));
 		assertThat(images(after.answers(probe(Any.of(0), Any.of(1))))).hasSize(1);
 	}
 
@@ -108,9 +109,8 @@ public class AnswerStoreTest {
 		Answer wide = Answer.of(LOAN,
 				Answers.image(Any.of(0), lval("c9")), Condition.ONE);
 
-		Try<AnswerStore> refused = AnswerStore.empty()
-				.asserting(Collections.singletonList(wide));
-		assertThat(refused.getCause())
+				assertThatThrownBy(() -> AnswerStore.empty()
+				.asserting(Collections.singletonList(wide)))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("loan")
 				.hasMessageContaining("member");
@@ -121,14 +121,13 @@ public class AnswerStoreTest {
 		Condition guarded = forbidding("m9");
 		Answer row = Answer.of(LOAN, row("m1", "c1").getReified(), guarded);
 
-		Try<AnswerStore> refused = AnswerStore.empty()
-				.asserting(Collections.singletonList(row));
-		assertThat(refused.getCause())
+				assertThatThrownBy(() -> AnswerStore.empty()
+				.asserting(Collections.singletonList(row)))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("unconditional");
 
 		AnswerStore landed = AnswerStore.empty()
-				.asserting(Collections.singletonList(row.unconditional())).get();
+				.asserting(Collections.singletonList(row.unconditional()));
 		assertThat(images(landed.answers(probe(lval("m1"), Any.of(1))))).hasSize(1);
 	}
 

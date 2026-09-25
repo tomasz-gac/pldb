@@ -40,7 +40,7 @@ public class ProjectedTest {
 				person(null, lval(3), lval("Kurt")),
 				edge(null, lval(1), lval(2)),
 				edge(null, lval(1), lval(3)),
-				edge(null, lval(2), lval(3))).get();
+				edge(null, lval(2), lval(3)));
 	}
 
 	@Test

@@ -69,7 +69,7 @@ public class PinWorldIdentityTest {
 		Assertions.assertThatThrownBy(() ->
 						Footprint.of(probe(), first).union(Footprint.of(probe(), third)))
 				.describedAs("person moved — composing across its worlds refuses")
-				.isInstanceOf(Transaction.Conflict.class);
+				.isInstanceOf(IllegalStateException.class);
 	}
 
 	/** A stranger's relation wearing the same bare name, other namespace. */

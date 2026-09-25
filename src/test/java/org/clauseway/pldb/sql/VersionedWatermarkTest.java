@@ -110,14 +110,11 @@ public class VersionedWatermarkTest {
 		assertThat(loansOf(m1, "m1")).isEmpty();
 		assertThat(loansOf(m2, "m2")).isEmpty();
 
-		m2 = m2.asserting(Collections.singletonList(loan(null, lval("m2"), lval("c2")))).get();
-		assertThat(m2.commit().isSuccess()).isTrue();
+		m2 = m2.asserting(Collections.singletonList(loan(null, lval("m2"), lval("c2"))));
+		m2.commit();
 
-		m1 = m1.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get();
-		assertThat(m1.commit()
-				.isSuccess())
-				.describedAs("m1's region never moved — m2's commit to the SAME relation must not bounce it")
-				.isTrue();
+		m1 = m1.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1"))));
+		m1.commit(); // m1's region never moved — m2's commit to the SAME relation must not bounce it
 
 		try (Transaction reader = transaction("reader")) {
 			assertThat(loansOf(reader, "m1")).containsExactly("{c1}");
@@ -134,14 +131,14 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c9")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c9"))))
 		) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+			mover.commit();
 		}
 
 		Transaction staged = reader.asserting(Collections.singletonList(
-				loan(null, lval("m1"), lval("c1")))).get();
-		assertThat(staged.commit().getCause())
+				loan(null, lval("m1"), lval("c1"))));
+		assertThatThrownBy(() -> staged.commit())
 				.describedAs("the pinned empty region gained a row — the decision stood on its absence")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
@@ -153,15 +150,15 @@ public class VersionedWatermarkTest {
 		// row count betrays that the region moved
 		try (
 				Transaction w1 = transaction("w1")
-						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1"))))
 		) {
-			assertThat(w1.commit().isSuccess()).isTrue();
+			w1.commit();
 		}
 		try (
 				Transaction w2 = transaction("w2")
-						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c2")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c2"))))
 		) {
-			assertThat(w2.commit().isSuccess()).isTrue();
+			w2.commit();
 		}
 
 		Transaction reader = transaction("reader");
@@ -177,8 +174,8 @@ public class VersionedWatermarkTest {
 		}
 
 		Transaction staged = reader.asserting(Collections.singletonList(
-				loan(null, lval("m2"), lval("c9")))).get();
-		assertThat(staged.commit().getCause())
+				loan(null, lval("m2"), lval("c9"))));
+		assertThatThrownBy(() -> staged.commit())
 				.describedAs("a row left the pinned region — MAX alone cannot see it, the pair must")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
@@ -187,9 +184,9 @@ public class VersionedWatermarkTest {
 	public void aProtocolRetractionLandsAndBouncesThePinnedReader() throws Exception {
 		try (
 				Transaction w1 = transaction("w1")
-						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+						.asserting(Collections.singletonList(loan(null, lval("m1"), lval("c1"))))
 		) {
-			assertThat(w1.commit().isSuccess()).isTrue();
+			w1.commit();
 		}
 
 		Transaction reader = transaction("reader");
@@ -197,12 +194,9 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.retracting(Collections.singletonList(loan(null, lval("m1"), lval("c1")))).get()
+						.retracting(Collections.singletonList(loan(null, lval("m1"), lval("c1"))))
 		) {
-			assertThat(mover.commit()
-					.isSuccess())
-					.describedAs("the delete lane lands through the door")
-					.isTrue();
+			mover.commit(); // the delete lane lands through the door
 		}
 
 		try (Transaction after = transaction("after")) {
@@ -210,8 +204,8 @@ public class VersionedWatermarkTest {
 		}
 
 		Transaction staged = reader.asserting(Collections.singletonList(
-				loan(null, lval("m2"), lval("c9")))).get();
-		assertThat(staged.commit().getCause())
+				loan(null, lval("m2"), lval("c9"))));
+		assertThatThrownBy(() -> staged.commit())
 				.describedAs("the pinned region lost its row — the pair's count divides the pins")
 				.isInstanceOf(Transaction.Conflict.class);
 	}
@@ -225,9 +219,9 @@ public class VersionedWatermarkTest {
 				Transaction w = transaction("w")
 						.asserting(java.util.Arrays.asList(
 								loan(null, lval("m1"), lval("c1")),
-								loan(null, lval("m2"), lval("c2")))).get()
+								loan(null, lval("m2"), lval("c2"))))
 		) {
-			assertThat(w.commit().isSuccess()).isTrue();
+			w.commit();
 		}
 
 		try (Transaction reader = transaction("fj-reader")) {
@@ -271,17 +265,14 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(50L)))).get()
+						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(50L))))
 		) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+			mover.commit();
 		}
 
 		Transaction staged = reader.asserting(Collections.singletonList(
-				invoice(null, lval("a1"), lval(5L)))).get();
-		assertThat(staged.commit()
-				.isSuccess())
-				.describedAs("day 50 lies outside the pinned domain — the FD region never moved")
-				.isTrue();
+				invoice(null, lval("a1"), lval(5L))));
+		staged.commit(); // day 50 lies outside the pinned domain — the FD region never moved
 	}
 
 	@Test
@@ -291,14 +282,14 @@ public class VersionedWatermarkTest {
 
 		try (
 				Transaction mover = transaction("mover")
-						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(5L)))).get()
+						.asserting(Collections.singletonList(invoice(null, lval("m9"), lval(5L))))
 		) {
-			assertThat(mover.commit().isSuccess()).isTrue();
+			mover.commit();
 		}
 
 		Transaction staged = reader.asserting(Collections.singletonList(
-				invoice(null, lval("a1"), lval(7L)))).get();
-		assertThat(staged.commit().getCause())
+				invoice(null, lval("a1"), lval(7L))));
+		assertThatThrownBy(() -> staged.commit())
 				.describedAs("day 5 lies inside the pinned domain — the FD region moved")
 				.isInstanceOf(Transaction.Conflict.class);
 	}

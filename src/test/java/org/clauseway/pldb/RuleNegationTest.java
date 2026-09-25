@@ -132,8 +132,7 @@ public class RuleNegationTest {
 		AnswerStore db = AnswerStore.empty()
 				.asserting(Arrays.asList(
 						edge(null, lval(1), lval(2)),
-						edge(null, lval(2), lval(3))))
-				.get();
+						edge(null, lval(2), lval(3))));
 		// reachable: 1→2, 1→3, 2→3; NOT reachable: (3, anything), (2,1), ...
 		Unifiable<Integer> x = lvar();
 		Unifiable<Integer> y = lvar();
